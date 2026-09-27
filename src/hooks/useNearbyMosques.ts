@@ -8,12 +8,18 @@ import {
 import { getDistanceMeters } from "@/lib/mosque-distance";
 import { useLocationStore } from "@/store/locationStore";
 import type { Mosque } from "@/types/mosque";
-import { RouteMetrics } from "@/types/routing";
+import type { RouteMetrics } from "@/types/routing";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface RouteMetricsState {
   requestKey: string;
   metrics: Record<string, RouteMetrics>;
+}
+
+interface RouteMetricsDestination {
+  id: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface NearbyMosque extends Mosque {
@@ -153,19 +159,45 @@ export const useNearbyMosques = (
 
   const routeMosques = nearbyMosques.slice(0, ROUTE_METRICS_LIMIT);
 
+  const routeMetricsDestinationsSignature = routeMosques
+    .map((mosque): RouteMetricsDestination => ({
+      id: mosque.id,
+      latitude: mosque.latitude,
+      longitude: mosque.longitude,
+    }))
+    .map(({ id, latitude, longitude }) => `${id},${latitude},${longitude}`)
+    .join("|");
+
   const routeMetricsRequestKey = [
     latitude,
     longitude,
-    radiusKm,
-    routeMosques.map((mosque) => mosque.id).join(","),
+    routeMetricsDestinationsSignature,
   ].join(":");
 
-  const routeMetricMosqueIds = new Set(routeMosques.map((mosque) => mosque.id));
+  const routeMetricMosqueIds = useMemo(
+    () => new Set(routeMosques.map((mosque) => mosque.id)),
+    [routeMosques],
+  );
 
   useEffect(() => {
-    if (latitude == null || longitude == null || routeMosques.length === 0) {
+    if (
+      latitude == null ||
+      longitude == null ||
+      routeMetricsDestinationsSignature === ""
+    ) {
       return;
     }
+
+    const destinations: RouteMetricsDestination[] =
+      routeMetricsDestinationsSignature.split("|").map((destination) => {
+        const [id, latitudeString, longitudeString] = destination.split(",");
+
+        return {
+          id,
+          latitude: Number(latitudeString),
+          longitude: Number(longitudeString),
+        };
+      });
 
     let cancelled = false;
 
@@ -176,9 +208,9 @@ export const useNearbyMosques = (
             latitude,
             longitude,
           },
-          routeMosques.map((mosque) => ({
-            latitude: mosque.latitude,
-            longitude: mosque.longitude,
+          destinations.map(({ latitude, longitude }) => ({
+            latitude,
+            longitude,
           })),
         );
 
@@ -188,7 +220,7 @@ export const useNearbyMosques = (
 
         const nextMetrics: Record<string, RouteMetrics> = {};
 
-        routeMosques.forEach((mosque, index) => {
+        destinations.forEach((mosque, index) => {
           const metric = metrics[index];
 
           if (
@@ -225,7 +257,12 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude, routeMetricsRequestKey, routeMosques]);
+  }, [
+    latitude,
+    longitude,
+    routeMetricsDestinationsSignature,
+    routeMetricsRequestKey,
+  ]);
 
   const currentRouteMetrics =
     routeMetricsState?.requestKey === routeMetricsRequestKey
