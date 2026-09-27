@@ -31,7 +31,7 @@ const MosqueCard = ({
 
   const distance = route
     ? formatDistance(route.distanceMeters)
-    : formatDistance(mosque.distanceMeters);
+    : formatDistance(mosque.drivingDistanceMeters ?? mosque.distanceMeters);
 
   const durationSeconds = route
     ? route.durationSeconds

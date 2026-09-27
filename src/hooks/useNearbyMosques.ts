@@ -24,6 +24,7 @@ interface RouteMetricsDestination {
 
 export interface NearbyMosque extends Mosque {
   distanceMeters: number;
+  drivingDistanceMeters: number | null;
   durationSeconds: number | null;
   isClosest: boolean;
   routeMetricsLoading: boolean;
@@ -62,6 +63,7 @@ const createNearbyMosques = (
       return {
         ...mosque,
         distanceMeters,
+        drivingDistanceMeters: null,
         durationSeconds: null,
         isClosest: false,
         routeMetricsLoading: false,
@@ -157,7 +159,10 @@ export const useNearbyMosques = (
     return createNearbyMosques(mosques, latitude, longitude, radiusKm);
   }, [mosques, latitude, longitude, radiusKm]);
 
-  const routeMosques = nearbyMosques.slice(0, ROUTE_METRICS_LIMIT);
+  const routeMosques = useMemo(
+    () => nearbyMosques.slice(0, ROUTE_METRICS_LIMIT),
+    [nearbyMosques],
+  );
 
   const routeMetricsDestinationsSignature = routeMosques
     .map((mosque): RouteMetricsDestination => ({
@@ -264,23 +269,31 @@ export const useNearbyMosques = (
     routeMetricsRequestKey,
   ]);
 
-  const currentRouteMetrics =
-    routeMetricsState?.requestKey === routeMetricsRequestKey
-      ? routeMetricsState.metrics
-      : {};
-
   const routeMetricsLoading =
     routeMetricsState?.requestKey !== routeMetricsRequestKey;
 
-  return nearbyMosques.map((mosque) => {
-    const metrics = currentRouteMetrics[mosque.id];
+  return useMemo(() => {
+    const currentRouteMetrics =
+      routeMetricsState?.requestKey === routeMetricsRequestKey
+        ? routeMetricsState.metrics
+        : {};
 
-    return {
-      ...mosque,
-      distanceMeters: metrics?.distanceMeters ?? mosque.distanceMeters,
-      durationSeconds: metrics?.durationSeconds ?? mosque.durationSeconds,
-      routeMetricsLoading:
-        routeMetricMosqueIds.has(mosque.id) && routeMetricsLoading,
-    };
-  });
+    return nearbyMosques.map((mosque) => {
+      const metrics = currentRouteMetrics[mosque.id];
+
+      return {
+        ...mosque,
+        drivingDistanceMeters: metrics?.distanceMeters ?? null,
+        durationSeconds: metrics?.durationSeconds ?? null,
+        routeMetricsLoading:
+          routeMetricMosqueIds.has(mosque.id) && routeMetricsLoading,
+      };
+    });
+  }, [
+    nearbyMosques,
+    routeMetricsState,
+    routeMetricsRequestKey,
+    routeMetricMosqueIds,
+    routeMetricsLoading,
+  ]);
 };
