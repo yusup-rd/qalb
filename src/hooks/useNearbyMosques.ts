@@ -106,7 +106,11 @@ export const useNearbyMosques = (
       if (canUseCache && cache) {
         setMosques(cache.mosques);
 
-        if (isMosqueCacheFresh(cache)) {
+        if (
+          isMosqueCacheFresh(cache) &&
+          cache.latitude === latitude &&
+          cache.longitude === longitude
+        ) {
           return;
         }
 
