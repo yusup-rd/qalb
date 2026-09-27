@@ -16,7 +16,9 @@ interface MosqueMapProps {
 }
 
 const EARTH_RADIUS_KM = 111;
-const MAP_PADDING_FACTOR = 1.5;
+const MAP_PADDING_FACTOR = 1.25;
+const MIN_VISIBLE_RADIUS_KM = 2;
+const MAX_VISIBLE_RADIUS_KM = 75;
 
 const SELECTED_MOSQUE_LATITUDE_DELTA = 0.05;
 const SELECTED_MOSQUE_LONGITUDE_DELTA = 0.05;
@@ -26,10 +28,12 @@ const getRegionForRadius = (
   longitude: number,
   radiusKm: number,
 ): Region => {
-  const latitudeDelta = (radiusKm * 2 * MAP_PADDING_FACTOR) / EARTH_RADIUS_KM;
-
+  const visibleRadiusKm = Math.min(
+    MAX_VISIBLE_RADIUS_KM,
+    Math.max(MIN_VISIBLE_RADIUS_KM, radiusKm * MAP_PADDING_FACTOR),
+  );
+  const latitudeDelta = (visibleRadiusKm * 2) / EARTH_RADIUS_KM;
   const longitudeScale = Math.cos((latitude * Math.PI) / 180);
-
   const longitudeDelta = latitudeDelta / Math.max(longitudeScale, 0.1);
 
   return {
@@ -38,6 +42,29 @@ const getRegionForRadius = (
     latitudeDelta,
     longitudeDelta,
   };
+};
+
+const getMapAnimationDuration = (
+  previousRadius: number | null,
+  radius: number,
+) => {
+  if (previousRadius == null) {
+    return 500;
+  }
+
+  const changeRatio =
+    Math.max(radius, previousRadius) /
+    Math.max(Math.min(radius, previousRadius), 1);
+
+  if (changeRatio >= 5) {
+    return 800;
+  }
+
+  if (changeRatio >= 2) {
+    return 650;
+  }
+
+  return 500;
 };
 
 const MosqueMap = ({
@@ -50,9 +77,8 @@ const MosqueMap = ({
   const { colors } = useTheme();
 
   const mapRef = useRef<MapView>(null);
-
+  const previousRadiusRef = useRef<number | null>(null);
   const latitude = useLocationStore((state) => state.latitude);
-
   const longitude = useLocationStore((state) => state.longitude);
 
   useEffect(() => {
@@ -62,7 +88,14 @@ const MosqueMap = ({
 
     const region = getRegionForRadius(latitude, longitude, radiusKm);
 
-    mapRef.current?.animateToRegion(region, 500);
+    const duration = getMapAnimationDuration(
+      previousRadiusRef.current,
+      radiusKm,
+    );
+
+    previousRadiusRef.current = radiusKm;
+
+    mapRef.current?.animateToRegion(region, duration);
   }, [latitude, longitude, radiusKm]);
 
   useEffect(() => {
