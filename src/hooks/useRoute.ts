@@ -85,6 +85,12 @@ export const useRoute = (): UseRouteResult => {
         return;
       }
 
+      const current = useLocationStore.getState();
+      if (current.latitude !== latitude || current.longitude !== longitude) {
+        clearRoute();
+        return;
+      }
+
       setRoute(null);
       setError(
         error instanceof Error ? error : new Error("Failed to calculate route"),
