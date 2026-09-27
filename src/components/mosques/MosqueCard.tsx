@@ -12,6 +12,7 @@ interface MosqueCardProps {
   onPress: () => void;
   onDirectionsPress: () => void;
   routeLoading: boolean;
+  routeMetricsLoading: boolean;
   route: Route | null;
 }
 
@@ -21,6 +22,7 @@ const MosqueCard = ({
   onPress,
   onDirectionsPress,
   routeLoading,
+  routeMetricsLoading,
   route,
 }: MosqueCardProps) => {
   const { t: tUnits } = useTranslation(undefined, {
@@ -96,6 +98,7 @@ const MosqueCard = ({
           <>
             <View className="flex-row items-center gap-1">
               <Fa name="car" size={12} className="text-muted-foreground" />
+
               <Text className="font-sans-medium text-muted-foreground text-sm">
                 {formatDuration(durationSeconds * 1000)}
               </Text>
@@ -103,11 +106,11 @@ const MosqueCard = ({
 
             <View className="bg-muted-foreground size-1 rounded-full" />
           </>
-        ) : (
+        ) : routeMetricsLoading ? (
           <Text className="font-sans-medium text-muted-foreground text-sm">
             Calculating...
           </Text>
-        )}
+        ) : null}
 
         <Text className="font-sans-regular text-muted-foreground text-sm">
           {distance.value} {tUnits(`${distance.unit}`)}

@@ -113,6 +113,7 @@ const MosquesList = ({
           onPress={() => onSelectMosque(item.id)}
           onDirectionsPress={() => onDirectionsPress(item)}
           routeLoading={routeLoading && routedMosqueId === item.id}
+          routeMetricsLoading={item.routeMetricsLoading}
           route={routedMosqueId === item.id ? route : null}
         />
       )}
