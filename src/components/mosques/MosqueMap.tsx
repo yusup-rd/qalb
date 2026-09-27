@@ -18,13 +18,18 @@ interface MosqueMapProps {
 const EARTH_RADIUS_KM = 111;
 const MAP_PADDING_FACTOR = 1.5;
 
+const SELECTED_MOSQUE_LATITUDE_DELTA = 0.05;
+const SELECTED_MOSQUE_LONGITUDE_DELTA = 0.05;
+
 const getRegionForRadius = (
   latitude: number,
   longitude: number,
   radiusKm: number,
 ): Region => {
   const latitudeDelta = (radiusKm * 2 * MAP_PADDING_FACTOR) / EARTH_RADIUS_KM;
+
   const longitudeScale = Math.cos((latitude * Math.PI) / 180);
+
   const longitudeDelta = latitudeDelta / Math.max(longitudeScale, 0.1);
 
   return {
@@ -47,6 +52,7 @@ const MosqueMap = ({
   const mapRef = useRef<MapView>(null);
 
   const latitude = useLocationStore((state) => state.latitude);
+
   const longitude = useLocationStore((state) => state.longitude);
 
   useEffect(() => {
@@ -58,6 +64,30 @@ const MosqueMap = ({
 
     mapRef.current?.animateToRegion(region, 500);
   }, [latitude, longitude, radiusKm]);
+
+  useEffect(() => {
+    if (selectedMosqueId == null) {
+      return;
+    }
+
+    const selectedMosque = mosques.find(
+      (mosque) => mosque.id === selectedMosqueId,
+    );
+
+    if (!selectedMosque) {
+      return;
+    }
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: selectedMosque.latitude,
+        longitude: selectedMosque.longitude,
+        latitudeDelta: SELECTED_MOSQUE_LATITUDE_DELTA,
+        longitudeDelta: SELECTED_MOSQUE_LONGITUDE_DELTA,
+      },
+      500,
+    );
+  }, [selectedMosqueId, mosques]);
 
   useEffect(() => {
     if (!route || route.coordinates.length === 0) {

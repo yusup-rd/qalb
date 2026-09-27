@@ -1,6 +1,7 @@
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
 
@@ -27,8 +28,48 @@ const MosquesList = ({
   routedMosqueId,
   route,
 }: MosquesListProps) => {
+  const listRef = useRef<FlatList<NearbyMosque>>(null);
+
+  useEffect(() => {
+    if (selectedMosqueId == null) return;
+
+    const mosqueIndex = mosques.findIndex(
+      (mosque) => mosque.id === selectedMosqueId,
+    );
+
+    if (mosqueIndex === -1) return;
+
+    listRef.current?.scrollToIndex({
+      index: mosqueIndex,
+      animated: true,
+      viewPosition: 0.5,
+    });
+  }, [selectedMosqueId, mosques]);
+
+  const handleScrollToIndexFailed = ({
+    index,
+  }: {
+    index: number;
+    highestMeasuredFrameIndex: number;
+    averageItemLength: number;
+  }) => {
+    listRef.current?.scrollToOffset({
+      offset: Math.max(0, index * 100),
+      animated: false,
+    });
+
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    });
+  };
+
   return (
     <FlatList
+      ref={listRef}
       className="bg-background flex-1 px-5"
       data={mosques}
       keyExtractor={(item) => item.id}
@@ -75,6 +116,7 @@ const MosquesList = ({
           route={routedMosqueId === item.id ? route : null}
         />
       )}
+      onScrollToIndexFailed={handleScrollToIndexFailed}
       contentContainerStyle={{
         gap: 15,
         paddingBottom: 15,
