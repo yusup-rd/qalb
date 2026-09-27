@@ -94,9 +94,12 @@ const MosqueCard = ({
       <View className="flex-row items-center gap-2">
         {durationSeconds != null ? (
           <>
-            <Text className="font-sans-medium text-muted-foreground text-sm">
-              {formatDuration(durationSeconds * 1000)}
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Fa name="car" size={12} className="text-muted-foreground" />
+              <Text className="font-sans-medium text-muted-foreground text-sm">
+                {formatDuration(durationSeconds * 1000)}
+              </Text>
+            </View>
 
             <View className="bg-muted-foreground size-1 rounded-full" />
           </>
