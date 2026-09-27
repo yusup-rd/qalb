@@ -1,6 +1,7 @@
 import type { LocationAddress } from "@/types/location";
 
-const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
+const REVERSE_GEOCODING_ENDPOINT =
+  "https://nominatim.openstreetmap.org/reverse";
 
 interface NominatimAddress {
   city?: string;
@@ -20,12 +21,12 @@ interface NominatimResponse {
 // Direct Nominatim requests from the mobile app are not globally rate-limited
 // across Sabr installations. The backend should provide shared caching and
 // global rate limiting before forwarding requests to Nominatim.
-export async function reverseGeocodeWithNominatim(
+export async function reverseGeocodeWithAPI(
   latitude: number,
   longitude: number,
   language: string,
 ): Promise<LocationAddress> {
-  const url = new URL(NOMINATIM_ENDPOINT);
+  const url = new URL(REVERSE_GEOCODING_ENDPOINT);
 
   url.searchParams.set("lat", latitude.toString());
   url.searchParams.set("lon", longitude.toString());

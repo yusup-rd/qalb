@@ -1,4 +1,5 @@
 import { fetchNearbyMosques } from "@/api/mosques-api";
+import { fetchRouteMetrics } from "@/api/routing-api";
 import {
   getMosqueCache,
   isMosqueCacheFresh,
@@ -7,24 +8,25 @@ import {
 import { getDistanceMeters } from "@/lib/mosque-distance";
 import { useLocationStore } from "@/store/locationStore";
 import type { Mosque } from "@/types/mosque";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface NearbyMosque extends Mosque {
   distanceMeters: number;
-  walkingMinutes: number;
+  durationSeconds: number | null;
   isClosest: boolean;
 }
 
-export const MOSQUE_CACHE_REUSE_RADIUS_METERS = 10_000;
+const MOSQUE_CACHE_REUSE_RADIUS_METERS = 10_000;
+const ROUTE_METRICS_LIMIT = 20;
 
 const isCacheRelevant = (
-  latitude: number,
-  longitude: number,
   cacheLatitude: number,
   cacheLongitude: number,
+  latitude: number,
+  longitude: number,
 ) => {
   return (
-    getDistanceMeters(latitude, longitude, cacheLatitude, cacheLongitude) <=
+    getDistanceMeters(cacheLatitude, cacheLongitude, latitude, longitude) <=
     MOSQUE_CACHE_REUSE_RADIUS_METERS
   );
 };
@@ -47,18 +49,14 @@ const createNearbyMosques = (
       return {
         ...mosque,
         distanceMeters,
-        walkingMinutes: Math.max(1, Math.round(distanceMeters / 80)),
+        durationSeconds: null,
         isClosest: false,
       };
     })
-    .filter((mosque) => {
-      if (radiusKm == null) {
-        return true;
-      }
-
-      return mosque.distanceMeters <= radiusKm * 1000;
-    })
-    .sort((first, second) => first.distanceMeters - second.distanceMeters);
+    .filter(
+      (mosque) => radiusKm == null || mosque.distanceMeters <= radiusKm * 1_000,
+    )
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
 
   if (nearbyMosques.length > 0) {
     nearbyMosques[0].isClosest = true;
@@ -72,7 +70,18 @@ export const useNearbyMosques = (
 ): NearbyMosque[] => {
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
+
   const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [routeMetrics, setRouteMetrics] = useState<
+    Record<
+      string,
+      {
+        distanceMeters: number;
+        durationSeconds: number;
+      }
+    >
+  >({});
+
   const lastRefreshAttemptRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -91,7 +100,7 @@ export const useNearbyMosques = (
 
       const canUseCache =
         cache != null &&
-        isCacheRelevant(latitude, longitude, cache.latitude, cache.longitude);
+        isCacheRelevant(cache.latitude, cache.longitude, latitude, longitude);
 
       if (canUseCache && cache) {
         setMosques(cache.mosques);
@@ -115,6 +124,7 @@ export const useNearbyMosques = (
         }
 
         setMosques(freshMosques);
+
         await setMosqueCache(latitude, longitude, freshMosques);
       } catch (error) {
         console.error("[Mosques] Failed to fetch mosques:", error);
@@ -128,9 +138,90 @@ export const useNearbyMosques = (
     };
   }, [latitude, longitude]);
 
-  if (latitude == null || longitude == null) {
-    return [];
-  }
+  const nearbyMosques = useMemo(() => {
+    if (latitude == null || longitude == null) {
+      return [];
+    }
 
-  return createNearbyMosques(mosques, latitude, longitude, radiusKm);
+    return createNearbyMosques(mosques, latitude, longitude, radiusKm);
+  }, [mosques, latitude, longitude, radiusKm]);
+
+  useEffect(() => {
+    if (latitude == null || longitude == null || nearbyMosques.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const routeMosques = nearbyMosques.slice(0, ROUTE_METRICS_LIMIT);
+
+    const loadRouteMetrics = async () => {
+      try {
+        const metrics = await fetchRouteMetrics(
+          {
+            latitude,
+            longitude,
+          },
+          routeMosques.map((mosque) => ({
+            latitude: mosque.latitude,
+            longitude: mosque.longitude,
+          })),
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextMetrics: Record<
+          string,
+          {
+            distanceMeters: number;
+            durationSeconds: number;
+          }
+        > = {};
+
+        routeMosques.forEach((mosque, index) => {
+          const metric = metrics[index];
+
+          if (
+            !metric ||
+            !Number.isFinite(metric.distanceMeters) ||
+            !Number.isFinite(metric.durationSeconds)
+          ) {
+            return;
+          }
+
+          nextMetrics[mosque.id] = metric;
+        });
+
+        setRouteMetrics(nextMetrics);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error("[Mosques] Failed to fetch driving metrics:", error);
+      }
+    };
+
+    void loadRouteMetrics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [latitude, longitude, nearbyMosques]);
+
+  return nearbyMosques.map((mosque) => {
+    const metrics = routeMetrics[mosque.id];
+
+    if (!metrics) {
+      return mosque;
+    }
+
+    return {
+      ...mosque,
+      distanceMeters: metrics.distanceMeters,
+      durationSeconds: metrics.durationSeconds,
+    };
+  });
 };

@@ -2,9 +2,10 @@ import MosqueMap from "@/components/mosques/MosqueMap";
 import MosqueRadiusSheet from "@/components/mosques/MosqueRadiusSheet";
 import MosquesList from "@/components/mosques/MosquesList";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
+import { useRoute } from "@/hooks/useRoute";
 import { styled } from "nativewind";
-import { useState } from "react";
-import { View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
@@ -18,10 +19,41 @@ const Mosques = () => {
 
   const mosques = useNearbyMosques(radiusKm);
 
+  const {
+    route,
+    loading: routeLoading,
+    error: routeError,
+    routedMosqueId,
+    requestRoute,
+    clearRoute,
+  } = useRoute();
+
   const handleRadiusChange = (value: number) => {
     setRadiusKm(value);
     setSelectedMosqueId(null);
+    clearRoute();
   };
+
+  const handleSelectMosque = (mosqueId: string) => {
+    setSelectedMosqueId(mosqueId);
+    clearRoute();
+  };
+
+  const handleDirectionsPress = async (mosque: (typeof mosques)[number]) => {
+    setSelectedMosqueId(mosque.id);
+    await requestRoute(mosque);
+  };
+
+  useEffect(() => {
+    if (!routeError) {
+      return;
+    }
+
+    Alert.alert(
+      "Directions",
+      routeError.message || "Unable to calculate a route.",
+    );
+  }, [routeError]);
 
   return (
     <>
@@ -31,7 +63,8 @@ const Mosques = () => {
             mosques={mosques}
             radiusKm={radiusKm}
             selectedMosqueId={selectedMosqueId}
-            onSelectMosque={setSelectedMosqueId}
+            onSelectMosque={handleSelectMosque}
+            route={route}
           />
         </View>
 
@@ -40,9 +73,12 @@ const Mosques = () => {
             mosques={mosques}
             radiusKm={radiusKm}
             selectedMosqueId={selectedMosqueId}
-            onSelectMosque={setSelectedMosqueId}
+            onSelectMosque={handleSelectMosque}
             onRadiusPress={() => setRadiusSheetVisible(true)}
-            onDirectionsPress={() => {}}
+            onDirectionsPress={handleDirectionsPress}
+            routeLoading={routeLoading}
+            routedMosqueId={routedMosqueId}
+            route={route}
           />
         </View>
       </SafeAreaView>

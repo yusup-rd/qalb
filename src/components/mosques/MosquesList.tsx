@@ -1,4 +1,5 @@
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
+import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { FlatList, Pressable, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
@@ -10,6 +11,9 @@ interface MosquesListProps {
   onSelectMosque: (mosqueId: string) => void;
   onRadiusPress: () => void;
   onDirectionsPress: (mosque: NearbyMosque) => void;
+  routeLoading: boolean;
+  routedMosqueId: string | null;
+  route: Route | null;
 }
 
 const MosquesList = ({
@@ -19,6 +23,9 @@ const MosquesList = ({
   onSelectMosque,
   onRadiusPress,
   onDirectionsPress,
+  routeLoading,
+  routedMosqueId,
+  route,
 }: MosquesListProps) => {
   return (
     <FlatList
@@ -33,6 +40,7 @@ const MosquesList = ({
               <Text className="font-sans-bold text-foreground text-xl">
                 Mosques nearby
               </Text>
+
               <Text className="font-sans-regular text-muted-foreground text-sm">
                 {mosques.length} found nearby
               </Text>
@@ -63,6 +71,8 @@ const MosquesList = ({
           selected={item.id === selectedMosqueId}
           onPress={() => onSelectMosque(item.id)}
           onDirectionsPress={() => onDirectionsPress(item)}
+          routeLoading={routeLoading && routedMosqueId === item.id}
+          route={routedMosqueId === item.id ? route : null}
         />
       )}
       contentContainerStyle={{

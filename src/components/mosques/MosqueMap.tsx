@@ -1,8 +1,10 @@
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
+import type { Route } from "@/types/routing";
 import { useEffect, useRef } from "react";
 import { StyleSheet } from "react-native";
-import MapView, { Marker, type Region } from "react-native-maps";
+import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
 
 interface MosqueMapProps {
@@ -10,6 +12,7 @@ interface MosqueMapProps {
   radiusKm: number;
   selectedMosqueId: string | null;
   onSelectMosque: (mosqueId: string) => void;
+  route: Route | null;
 }
 
 const EARTH_RADIUS_KM = 111;
@@ -37,7 +40,10 @@ const MosqueMap = ({
   radiusKm,
   selectedMosqueId,
   onSelectMosque,
+  route,
 }: MosqueMapProps) => {
+  const { colors } = useTheme();
+
   const mapRef = useRef<MapView>(null);
 
   const latitude = useLocationStore((state) => state.latitude);
@@ -52,6 +58,22 @@ const MosqueMap = ({
 
     mapRef.current?.animateToRegion(region, 500);
   }, [latitude, longitude, radiusKm]);
+
+  useEffect(() => {
+    if (!route || route.coordinates.length === 0) {
+      return;
+    }
+
+    mapRef.current?.fitToCoordinates(route.coordinates, {
+      edgePadding: {
+        top: 30,
+        right: 30,
+        bottom: 30,
+        left: 30,
+      },
+      animated: true,
+    });
+  }, [route]);
 
   if (latitude == null || longitude == null) {
     return null;
@@ -71,6 +93,14 @@ const MosqueMap = ({
       pitchEnabled={false}
       initialRegion={initialRegion}
     >
+      {route ? (
+        <Polyline
+          coordinates={route.coordinates}
+          strokeColor={colors.secondary}
+          strokeWidth={5}
+        />
+      ) : null}
+
       {mosques.map((mosque) => (
         <Marker
           key={mosque.id}

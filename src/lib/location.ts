@@ -1,4 +1,4 @@
-import { reverseGeocodeWithNominatim } from "@/api/nominatim-api";
+import { reverseGeocodeWithAPI } from "@/api/reverse-geocoding-api";
 import type { LocationAddress } from "@/types/location";
 import * as Location from "expo-location";
 
@@ -6,7 +6,7 @@ const FALLBACK_CACHE_TTL = 5 * 60 * 1000;
 
 interface GeocodeCacheEntry {
   address: LocationAddress;
-  source: "nominatim" | "expo";
+  source: "api" | "expo";
   cachedAt: number;
 }
 
@@ -69,11 +69,11 @@ export async function reverseGeocode(
   let source: GeocodeCacheEntry["source"];
 
   try {
-    result = await reverseGeocodeWithNominatim(latitude, longitude, language);
-    source = "nominatim";
+    result = await reverseGeocodeWithAPI(latitude, longitude, language);
+    source = "api";
   } catch (error) {
     console.warn(
-      "Nominatim reverse geocode failed, falling back to expo-location:",
+      "API reverse geocode failed, falling back to expo-location:",
       error,
     );
     result = await reverseGeocodeWithExpo(latitude, longitude);
