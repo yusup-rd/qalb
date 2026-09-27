@@ -20,12 +20,17 @@ const CompassReadout = ({
   const { t: tCompass } = useTranslation(undefined, {
     keyPrefix: "compass",
   });
+  const { t: tUnits } = useTranslation(undefined, {
+    keyPrefix: "units",
+  });
 
   const qiblaDirection = degreesToCompassLabel(bearing);
   const facingDirection = degreesToCompassLabel(heading);
 
   const qiblaDirectionLabel = tCompass(qiblaDirection.toLowerCase());
   const facingDirectionLabel = tCompass(facingDirection.toLowerCase());
+
+  const distanceFormatted = formatDistance(distance * 1000);
 
   return (
     <View className="bg-card w-full flex-row items-center justify-between rounded-xl p-4 shadow-md">
@@ -42,7 +47,7 @@ const CompassReadout = ({
           <Text className="text-muted-foreground text-sm">•</Text>
 
           <Text className="font-sans-medium text-muted-foreground text-sm">
-            {formatDistance(distance)} {t("kilometers")}
+            {distanceFormatted.value} {tUnits(`${distanceFormatted.unit}`)}
           </Text>
         </View>
       </View>

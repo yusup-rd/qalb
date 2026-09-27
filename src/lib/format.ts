@@ -238,14 +238,29 @@ export const formatAmount = (
   }).format(amount);
 };
 
-/**
- * Formats a distance in kilometers into a localized string.
- *
- * Example:
- * 1234.56 → "1,235"
- */
-export const formatDistance = (distanceKm: number): string => {
-  const { intlLocale } = getLocaleConfig(i18n.language);
+type DistanceUnit = "meter" | "kilometer";
 
-  return Math.round(distanceKm).toLocaleString(intlLocale);
+export const formatDistance = (
+  distanceMeters: number,
+  language = i18n.language,
+): {
+  value: string;
+  unit: DistanceUnit;
+} => {
+  const { intlLocale } = getLocaleConfig(language);
+
+  if (distanceMeters < 1000) {
+    return {
+      value: Math.round(distanceMeters).toLocaleString(intlLocale),
+      unit: "meter",
+    };
+  }
+
+  return {
+    value: (distanceMeters / 1000).toLocaleString(intlLocale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+    unit: "kilometer",
+  };
 };

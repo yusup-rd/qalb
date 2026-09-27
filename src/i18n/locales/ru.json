@@ -37,6 +37,10 @@
     "w": "З",
     "nw": "СЗ"
   },
+  "units": {
+    "meter": "м",
+    "kilometer": "км"
+  },
   "hijri": {
     "era": "г.х."
   },
@@ -340,8 +344,7 @@
     },
     "readout": {
       "qibla": "Кибла",
-      "facing": "Вы направлены",
-      "kilometers": "км"
+      "facing": "Вы направлены"
     }
   },
   "tasbih": {

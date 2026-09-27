@@ -87,8 +87,8 @@ const ScheduledPrayerRow = ({
               <Text
                 className={
                   notificationSettings.enabled
-                    ? "font-sans-medium text-primary text-[10px]"
-                    : "text-muted-foreground font-sans text-[10px]"
+                    ? "font-sans-medium text-primary text-xs"
+                    : "text-muted-foreground font-sans text-xs"
                 }
               >
                 {notificationLabel}

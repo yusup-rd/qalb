@@ -35,6 +35,10 @@
     "w": "W",
     "nw": "NW"
   },
+  "units": {
+    "meter": "m",
+    "kilometer": "km"
+  },
   "hijri": {
     "era": "AH"
   },
@@ -338,8 +342,7 @@
     },
     "readout": {
       "qibla": "Qibla",
-      "facing": "You're facing",
-      "kilometers": "km"
+      "facing": "You're facing"
     }
   },
   "tasbih": {
