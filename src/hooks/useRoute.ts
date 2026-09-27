@@ -73,10 +73,9 @@ export const useRoute = (): UseRouteResult => {
         return;
       }
 
-      if (
-        locationRef.current.latitude !== latitude ||
-        locationRef.current.longitude !== longitude
-      ) {
+      const current = useLocationStore.getState();
+      if (current.latitude !== latitude || current.longitude !== longitude) {
+        clearRoute();
         return;
       }
 
