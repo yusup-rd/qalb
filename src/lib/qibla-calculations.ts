@@ -46,7 +46,7 @@ export const getDistanceToKaaba = (
   return EARTH_RADIUS_KM * c;
 };
 
-export const normalizeDegrees = (degrees: number): number => {
+const normalizeDegrees = (degrees: number): number => {
   return ((degrees % 360) + 360) % 360;
 };
 

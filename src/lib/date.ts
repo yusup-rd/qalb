@@ -47,14 +47,14 @@ export function isSameDay(a: Date, b: Date) {
 /**
  * Returns the first day of the month for a given date.
  */
-export function startOfMonth(date: Date) {
+function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 /**
  * Returns the last day of the month for a given date.
  */
-export function endOfMonth(date: Date) {
+function endOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 

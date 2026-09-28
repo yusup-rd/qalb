@@ -18,16 +18,6 @@ export const HORIZONTAL_PADDING = 24;
 export const VERTICAL_PADDING = 32;
 export const MAX_SCALE = 1.15;
 
-// Cord
-export const CORD_HEIGHT = 520;
-
-// Imame / tassel positioning
-export const TASBIH_TASSEL_LEFT = 122;
-export const TASBIH_TASSEL_TOP = 555;
-
-export const TASBIH_IMAME_LEFT = 131;
-export const TASBIH_IMAME_TOP = 470;
-
 // Geometry sampling
 export const SAMPLES_PER_SEGMENT = 80;
 

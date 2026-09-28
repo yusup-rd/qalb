@@ -5,7 +5,7 @@ import type {
   ZakatSummary,
 } from "@/types/zakat";
 
-export const calculateTotalAssets = (data: ZakatFormData): number => {
+const calculateTotalAssets = (data: ZakatFormData): number => {
   return (
     data.gold +
     data.silver +
@@ -17,18 +17,11 @@ export const calculateTotalAssets = (data: ZakatFormData): number => {
   );
 };
 
-export const calculateTotalLiabilities = (data: ZakatFormData): number => {
+const calculateTotalLiabilities = (data: ZakatFormData): number => {
   return data.shortTermDebt + data.immediateBills + data.wagesDue;
 };
 
-export const calculateNetWealth = (data: ZakatFormData): number => {
-  const totalAssets = calculateTotalAssets(data);
-  const totalLiabilities = calculateTotalLiabilities(data);
-
-  return Math.max(totalAssets - totalLiabilities, 0);
-};
-
-export const calculateNisabAmount = (
+const calculateNisabAmount = (
   data: ZakatFormData,
   marketPrices: ZakatMarketPrices,
 ): number => {
@@ -39,11 +32,11 @@ export const calculateNisabAmount = (
   return NISAB_WEIGHTS.silver * marketPrices.silverPerGram;
 };
 
-export const meetsNisab = (netWealth: number, nisabAmount: number): boolean => {
+const meetsNisab = (netWealth: number, nisabAmount: number): boolean => {
   return netWealth >= nisabAmount;
 };
 
-export const calculateZakatAmount = (
+const calculateZakatAmount = (
   netWealth: number,
   nisabAmount: number,
 ): number => {

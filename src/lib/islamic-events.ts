@@ -3,12 +3,6 @@ import {
   type IslamicEventsApiDay,
 } from "@/api/islamic-events-api";
 
-interface HijriDateParts {
-  day: number;
-  month: number;
-  year: number;
-}
-
 type IslamicEventId =
   | "islamic_new_year"
   | "ashura"
@@ -61,27 +55,6 @@ function getIslamicEventId(eventName: string): IslamicEventId | null {
 
 function getFallbackEventId(eventName: string): IslamicEventId {
   return `provider:${normalizeEventName(eventName)}`;
-}
-
-/**
- * Returns the Hijri date components for a Gregorian Date.
- *
- * Uses the Islamic calendar provided by the Intl API.
- */
-export function getHijriDateParts(date: Date): HijriDateParts {
-  const formatter = new Intl.DateTimeFormat("en-US-u-ca-islamic", {
-    day: "numeric",
-    month: "numeric",
-    year: "numeric",
-  });
-
-  const parts = formatter.formatToParts(date);
-
-  return {
-    day: Number(parts.find((part) => part.type === "day")?.value),
-    month: Number(parts.find((part) => part.type === "month")?.value),
-    year: Number(parts.find((part) => part.type === "year")?.value),
-  };
 }
 
 function normalizeApiDay(day: IslamicEventsApiDay): IslamicEvent[] {
@@ -146,9 +119,7 @@ function formatHijriDate(date: {
  * Converts an Islamic events API calendar into
  * Sabr's normalized Islamic event model.
  */
-export function normalizeIslamicEvents(
-  days: IslamicEventsApiDay[],
-): IslamicEvent[] {
+function normalizeIslamicEvents(days: IslamicEventsApiDay[]): IslamicEvent[] {
   return days.flatMap(normalizeApiDay);
 }
 

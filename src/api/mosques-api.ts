@@ -2,8 +2,8 @@ import type { Mosque } from "@/types/mosque";
 
 const MOSQUES_ENDPOINT = "https://takbeertime.com/api/mosques/nearby";
 
-export const MOSQUE_QUERY_RADIUS_METERS = 200_000;
-export const MOSQUE_QUERY_LIMIT = 20;
+const MOSQUE_QUERY_RADIUS_METERS = 200_000;
+const MOSQUE_QUERY_LIMIT = 20;
 
 interface TakbeerTimeMosque {
   id: string;
