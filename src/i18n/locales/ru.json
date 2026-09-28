@@ -258,8 +258,7 @@
       "usingSavedPrices": "Используются ранее сохранённые рыночные цены.",
       "lastUpdatedRecently": "Обновлено недавно",
       "updated": "Обновлено {{date}}",
-      "loadingPrices": "Загрузка текущих рыночных цен...",
-      "marketPriceError": "Не удалось загрузить текущие рыночные цены."
+      "loadingPrices": "Загрузка текущих рыночных цен..."
     },
     "preciousMetals": {
       "title": "Золото и серебро",

@@ -258,8 +258,7 @@
       "usingSavedPrices": "Using previously saved market prices.",
       "lastUpdatedRecently": "Last updated recently",
       "updated": "Updated {{date}}",
-      "loadingPrices": "Loading current market prices...",
-      "marketPriceError": "Unable to load current market prices."
+      "loadingPrices": "Loading current market prices..."
     },
     "preciousMetals": {
       "title": "Gold & Silver",
