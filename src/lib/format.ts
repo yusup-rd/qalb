@@ -4,8 +4,8 @@ type LocaleConfig = {
   intlLocale: string;
   hour12: boolean;
 };
-
 type MonthFormat = "short" | "long";
+type DistanceUnit = "meter" | "kilometer";
 
 const LOCALE_CONFIGS: Record<string, LocaleConfig> = {
   en: { intlLocale: "en-US", hour12: true },
@@ -238,8 +238,20 @@ export const formatAmount = (
   }).format(amount);
 };
 
-type DistanceUnit = "meter" | "kilometer";
-
+/**
+ * Formats a distance in meters into a localized value and unit.
+ *
+ * Uses meters for distances below 1 km and kilometers for distances
+ * of 1 km or more. The numeric value is localized using the provided
+ * language's Intl locale.
+ *
+ * The language can be passed explicitly to ensure the formatted value
+ * updates correctly when the app's language changes.
+ *
+ * Examples:
+ * English → "5.8 km"
+ * Russian → "5,8 км"
+ */
 export const formatDistance = (
   distanceMeters: number,
   language = i18n.language,

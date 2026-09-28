@@ -22,9 +22,11 @@
   "duration": {
     "hour_one": "{{count}} ч",
     "hour_few": "{{count}} ч",
+    "hour_many": "{{count}} ч",
     "hour_other": "{{count}} ч",
     "minute_one": "{{count}} мин",
     "minute_few": "{{count}} мин",
+    "minute_many": "{{count}} мин",
     "minute_other": "{{count}} мин"
   },
   "compass": {
@@ -114,7 +116,7 @@
       "mosques": {
         "title": "Мечети",
         "description": "{{count}} открыто рядом",
-        "badge": "{{distance}} км"
+        "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
         "title": "Время намаза",
@@ -365,7 +367,7 @@
     "list": {
       "title": "Мечети поблизости",
       "found": "Поблизости: {{count}}",
-      "radius": "{{radius}} км",
+      "radius": "{{radius}} {{unit}}",
       "changeRadius": "Изменить радиус поиска мечетей"
     },
     "card": {
@@ -378,8 +380,8 @@
       "title": "Радиус поиска",
       "description": "Показывать мечети в пределах этого расстояния",
       "maximumDistance": "Максимальное расстояние",
-      "minimum": "{{radius}} км",
-      "maximum": "{{radius}} км"
+      "minimum": "{{radius}} {{unit}}",
+      "maximum": "{{radius}} {{unit}}"
     },
     "directions": {
       "title": "Маршрут",

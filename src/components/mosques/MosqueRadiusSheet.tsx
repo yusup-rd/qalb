@@ -24,9 +24,10 @@ const MosqueRadiusSheet = ({
 }: MosqueRadiusSheetProps) => {
   const { colors } = useTheme();
 
-  const { t } = useTranslation(undefined, {
+  const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "mosques.radius",
   });
+  const kilometerUnit = i18n.t("units.kilometer");
 
   return (
     <Host>
@@ -58,7 +59,7 @@ const MosqueRadiusSheet = ({
             <View className="bg-card gap-5 rounded-xl px-4 py-5">
               <View className="items-center gap-1">
                 <Text className="font-sans-bold text-foreground text-3xl">
-                  {radiusKm} km
+                  {radiusKm} {kilometerUnit}
                 </Text>
 
                 <Text className="font-sans-medium text-muted-foreground text-sm">
@@ -82,11 +83,17 @@ const MosqueRadiusSheet = ({
 
             <View className="flex-row justify-between px-1">
               <Text className="font-sans-medium text-muted-foreground text-xs">
-                {t("minimum", { radius: MIN_RADIUS_KM })}
+                {t("minimum", {
+                  radius: MIN_RADIUS_KM,
+                  unit: kilometerUnit,
+                })}
               </Text>
 
               <Text className="font-sans-medium text-muted-foreground text-xs">
-                {t("maximum", { radius: MAX_RADIUS_KM })}
+                {t("maximum", {
+                  radius: MAX_RADIUS_KM,
+                  unit: kilometerUnit,
+                })}
               </Text>
             </View>
           </View>

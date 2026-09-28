@@ -29,9 +29,10 @@ const MosquesList = ({
   routedMosqueId,
   route,
 }: MosquesListProps) => {
-  const { t } = useTranslation(undefined, {
+  const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "mosques.list",
   });
+  const kilometerUnit = i18n.t("units.kilometer");
 
   const listRef = useRef<FlatList<NearbyMosque>>(null);
 
@@ -99,7 +100,10 @@ const MosquesList = ({
               className="bg-muted flex-row items-center gap-1.5 rounded-full px-3 py-2"
             >
               <Text className="font-sans-semibold text-foreground text-sm">
-                {t("radius", { radius: radiusKm })}
+                {t("radius", {
+                  radius: radiusKm,
+                  unit: kilometerUnit,
+                })}
               </Text>
 
               <Fa

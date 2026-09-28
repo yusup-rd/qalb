@@ -21,8 +21,12 @@
   },
   "duration": {
     "hour_one": "{{count}} hr",
+    "hour_few": "{{count}} hrs",
+    "hour_many": "{{count}} hrs",
     "hour_other": "{{count}} hrs",
     "minute_one": "{{count}} min",
+    "minute_few": "{{count}} mins",
+    "minute_many": "{{count}} mins",
     "minute_other": "{{count}} mins"
   },
   "compass": {
@@ -112,7 +116,7 @@
       "mosques": {
         "title": "Mosques",
         "description": "{{count}} open nearby",
-        "badge": "{{distance}} km"
+        "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
         "title": "Prayer Times",
@@ -363,7 +367,7 @@
     "list": {
       "title": "Mosques nearby",
       "found": "{{count}} found nearby",
-      "radius": "{{radius}} km",
+      "radius": "{{radius}} {{unit}}",
       "changeRadius": "Change mosque search radius"
     },
     "card": {
@@ -376,8 +380,8 @@
       "title": "Search radius",
       "description": "Show mosques within this distance",
       "maximumDistance": "Maximum distance",
-      "minimum": "{{radius}} km",
-      "maximum": "{{radius}} km"
+      "minimum": "{{radius}} {{unit}}",
+      "maximum": "{{radius}} {{unit}}"
     },
     "directions": {
       "title": "Directions",

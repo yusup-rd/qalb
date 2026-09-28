@@ -28,13 +28,16 @@ const MosqueCard = ({
   const { t } = useTranslation(undefined, {
     keyPrefix: "mosques.card",
   });
-  const { t: tUnits } = useTranslation(undefined, {
+  const { t: tUnits, i18n } = useTranslation(undefined, {
     keyPrefix: "units",
   });
 
   const distance = route
-    ? formatDistance(route.distanceMeters)
-    : formatDistance(mosque.drivingDistanceMeters ?? mosque.distanceMeters);
+    ? formatDistance(route.distanceMeters, i18n.language)
+    : formatDistance(
+        mosque.drivingDistanceMeters ?? mosque.distanceMeters,
+        i18n.language,
+      );
 
   const durationSeconds = route
     ? route.durationSeconds
