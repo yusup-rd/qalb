@@ -1,4 +1,4 @@
-export interface RouteCoordinate {
+interface RouteCoordinate {
   latitude: number;
   longitude: number;
 }

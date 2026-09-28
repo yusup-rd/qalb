@@ -3,7 +3,7 @@ import { create } from "zustand";
 export type LocationPermissionStatus =
   "checking" | "granted" | "denied" | "blocked";
 
-export type LocationNameStatus = "idle" | "loading" | "resolved" | "failed";
+type LocationNameStatus = "idle" | "loading" | "resolved" | "failed";
 
 interface LocationStore {
   latitude: number | null;

@@ -5,7 +5,7 @@ import type {
 } from "@/types/prayer";
 import { create } from "zustand";
 
-export interface PrayerNotificationSettings {
+interface PrayerNotificationSettings {
   enabled: boolean;
   minutesBefore: number;
 }

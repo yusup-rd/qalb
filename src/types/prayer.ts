@@ -23,8 +23,3 @@ export type CalculationMethodId =
   "mwl" | "isna" | "egyptian" | "karachi" | "umm-al-qura";
 
 export type AsrMethod = "standard" | "hanafi";
-
-export interface PrayerCalculationSettings {
-  method: CalculationMethodId;
-  asrMethod: AsrMethod;
-}

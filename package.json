@@ -50,6 +50,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "knip": "^6.38.0",
     "postcss": "^8.5.28",
     "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",

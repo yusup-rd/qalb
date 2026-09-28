@@ -3,13 +3,13 @@ import {
   type IslamicEventsApiDay,
 } from "@/api/islamic-events-api";
 
-export interface HijriDateParts {
+interface HijriDateParts {
   day: number;
   month: number;
   year: number;
 }
 
-export type IslamicEventId =
+type IslamicEventId =
   | "islamic_new_year"
   | "ashura"
   | "isra_miraj"
