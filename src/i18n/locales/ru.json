@@ -361,6 +361,31 @@
       "total": "Всего"
     }
   },
+  "mosques": {
+    "list": {
+      "title": "Мечети поблизости",
+      "found": "Поблизости: {{count}}",
+      "radius": "{{radius}} км",
+      "changeRadius": "Изменить радиус поиска мечетей"
+    },
+    "card": {
+      "closest": "Ближайшая",
+      "calculating": "Расчёт...",
+      "directions": "Маршрут",
+      "loading": "Загрузка..."
+    },
+    "radius": {
+      "title": "Радиус поиска",
+      "description": "Показывать мечети в пределах этого расстояния",
+      "maximumDistance": "Максимальное расстояние",
+      "minimum": "{{radius}} км",
+      "maximum": "{{radius}} км"
+    },
+    "directions": {
+      "title": "Маршрут",
+      "error": "Не удалось построить маршрут."
+    }
+  },
   "settings": {
     "header": {
       "title": "Духовное пространство",

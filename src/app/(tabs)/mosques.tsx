@@ -5,6 +5,7 @@ import { useNearbyMosques } from "@/hooks/useNearbyMosques";
 import { useRoute } from "@/hooks/useRoute";
 import { styled } from "nativewind";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
@@ -13,6 +14,10 @@ const SafeAreaView = styled(NativeSafeAreaView);
 const DEFAULT_RADIUS_KM = 10;
 
 const Mosques = () => {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "mosques.directions",
+  });
+
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [radiusSheetVisible, setRadiusSheetVisible] = useState(false);
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
@@ -49,11 +54,8 @@ const Mosques = () => {
       return;
     }
 
-    Alert.alert(
-      "Directions",
-      routeError.message || "Unable to calculate a route.",
-    );
-  }, [routeError]);
+    Alert.alert(t("title"), routeError.message || t("error"));
+  }, [routeError, t]);
 
   return (
     <>

@@ -359,6 +359,31 @@
       "total": "Total"
     }
   },
+  "mosques": {
+    "list": {
+      "title": "Mosques nearby",
+      "found": "{{count}} found nearby",
+      "radius": "{{radius}} km",
+      "changeRadius": "Change mosque search radius"
+    },
+    "card": {
+      "closest": "Closest",
+      "calculating": "Calculating...",
+      "directions": "Directions",
+      "loading": "Loading..."
+    },
+    "radius": {
+      "title": "Search radius",
+      "description": "Show mosques within this distance",
+      "maximumDistance": "Maximum distance",
+      "minimum": "{{radius}} km",
+      "maximum": "{{radius}} km"
+    },
+    "directions": {
+      "title": "Directions",
+      "error": "Unable to calculate a route."
+    }
+  },
   "settings": {
     "header": {
       "title": "Sanctuary Preferences",

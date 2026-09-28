@@ -25,6 +25,9 @@ const MosqueCard = ({
   routeMetricsLoading,
   route,
 }: MosqueCardProps) => {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "mosques.card",
+  });
   const { t: tUnits } = useTranslation(undefined, {
     keyPrefix: "units",
   });
@@ -79,7 +82,7 @@ const MosqueCard = ({
             {mosque.isClosest ? (
               <View className="bg-secondary-soft items-center justify-center rounded-full px-3 py-1">
                 <Text className="font-sans-semibold text-secondary-soft-foreground text-xs">
-                  Closest
+                  {t("closest")}
                 </Text>
               </View>
             ) : null}
@@ -108,7 +111,7 @@ const MosqueCard = ({
           </>
         ) : routeMetricsLoading ? (
           <Text className="font-sans-medium text-muted-foreground text-sm">
-            Calculating...
+            {t("calculating")}
           </Text>
         ) : null}
 
@@ -142,7 +145,7 @@ const MosqueCard = ({
             selected ? "text-primary-foreground" : "text-primary",
           )}
         >
-          {routeLoading ? "Loading..." : "Directions"}
+          {routeLoading ? t("loading") : t("directions")}
         </Text>
       </Pressable>
     </Pressable>
