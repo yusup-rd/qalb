@@ -465,6 +465,14 @@ const extraRussian = new Set(
   [...russianKeys].filter((key) => !englishKeys.has(key)),
 );
 
+const missingEnglish = new Set(
+  [...staticKeys].filter(
+    (key) =>
+      !englishKeys.has(key) &&
+      !PLURAL_SUFFIXES.some((suffix) => englishKeys.has(`${key}${suffix}`)),
+  ),
+);
+
 const dynamicallyUsedKeys = new Set();
 
 for (const key of englishKeys) {
@@ -507,6 +515,11 @@ if (uncertainUsages.length > 0) {
 }
 
 printSection("Missing from Russian", formatList(missingRussian));
+
+printSection(
+  "Used in source but missing from English",
+  formatList(missingEnglish),
+);
 
 printSection("Only in Russian", formatList(extraRussian));
 
