@@ -66,6 +66,13 @@ const PrayerTimeSettingsSheet = ({
     ? prayer.description.toLowerCase()
     : null;
 
+  const notificationDescription = isSolarEvent
+    ? t("description.solarEvent")
+    : t("description.prayer");
+  const notificationInfo = isSolarEvent
+    ? t("info.solarEvent")
+    : t("info.prayer");
+
   return (
     <Host>
       <BottomSheet
@@ -132,7 +139,7 @@ const PrayerTimeSettingsSheet = ({
                     </Text>
 
                     <Text className="text-muted-foreground font-sans text-xs">
-                      {t("description")}
+                      {notificationDescription}
                     </Text>
                   </View>
                 </View>
@@ -160,6 +167,11 @@ const PrayerTimeSettingsSheet = ({
                 {reminderOptions.map(({ minutes, key }, index) => {
                   const selected = minutesBefore === minutes;
 
+                  const label =
+                    minutes === 0 && isSolarEvent
+                      ? t("remindTimes.solarEventAtTime")
+                      : t(`remindTimes.${key}`);
+
                   return (
                     <Pressable
                       key={minutes}
@@ -177,7 +189,7 @@ const PrayerTimeSettingsSheet = ({
                           selected ? "font-sans-semibold" : "font-sans",
                         )}
                       >
-                        {t(`remindTimes.${key}`)}
+                        {label}
                       </Text>
 
                       <View
@@ -206,7 +218,7 @@ const PrayerTimeSettingsSheet = ({
               />
 
               <Text className="text-primary-soft-foreground flex-1 font-sans text-xs leading-5">
-                {t("info")}
+                {notificationInfo}
               </Text>
             </View>
 

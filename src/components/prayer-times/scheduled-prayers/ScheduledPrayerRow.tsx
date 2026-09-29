@@ -39,7 +39,7 @@ const ScheduledPrayerRow = ({
     }
 
     if (notificationSettings.minutesBefore === 0) {
-      return t("status.atTime");
+      return isSolarEvent ? t("status.solarEventAtTime") : t("status.atTime");
     }
 
     return t("status.minutesBefore", {
@@ -49,13 +49,19 @@ const ScheduledPrayerRow = ({
 
   const notificationLabel = getNotificationLabel();
 
+  const accessibilityLabel = isSolarEvent
+    ? t("accessibility.solarEventSettings", {
+        prayer: tPrayer(prayerKey),
+      })
+    : t("accessibility.settings", {
+        prayer: tPrayer(prayerKey),
+      });
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={t("accessibility.settings", {
-        prayer: tPrayer(prayerKey),
-      })}
+      accessibilityLabel={accessibilityLabel}
       className={clsx(
         "active:bg-muted flex-row items-center justify-between px-4 py-3.5",
         showBorder && "border-border border-b",

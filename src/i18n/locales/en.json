@@ -187,25 +187,34 @@
       "title": "{{date}} Prayer Times",
       "notification": {
         "title": "Notification",
-        "description": "Remind me about this prayer",
+        "description": {
+          "prayer": "Remind me about this prayer",
+          "solarEvent": "Remind me about this event"
+        },
         "remind": "Remind me",
         "remindTimes": {
           "atTime": "At prayer time",
+          "solarEventAtTime": "At event time",
           "fiveMinutesBefore": "5 minutes before",
           "tenMinutesBefore": "10 minutes before",
           "fifteenMinutesBefore": "15 minutes before"
         },
-        "info": "Notification settings apply to this prayer every day.",
+        "info": {
+          "prayer": "Notification settings apply to this prayer every day.",
+          "solarEvent": "Notification settings apply to this event every day."
+        },
         "action": {
           "done": "Done"
         },
         "status": {
           "off": "Off",
           "atTime": "At prayer time",
+          "solarEventAtTime": "At event time",
           "minutesBefore": "{{count}} min before"
         },
         "accessibility": {
-          "settings": "{{prayer}} prayer settings"
+          "settings": "{{prayer}} prayer settings",
+          "solarEventSettings": "{{prayer}} event settings"
         }
       }
     },

@@ -187,25 +187,34 @@
       "title": "Время намаза — {{date}}",
       "notification": {
         "title": "Уведомление",
-        "description": "Напоминать об этом намазе",
+        "description": {
+          "prayer": "Напоминать об этом намазе",
+          "solarEvent": "Напоминать об этом событии"
+        },
         "remind": "Напомнить",
         "remindTimes": {
           "atTime": "Во время намаза",
+          "solarEventAtTime": "Во время события",
           "fiveMinutesBefore": "За 5 минут",
           "tenMinutesBefore": "За 10 минут",
           "fifteenMinutesBefore": "За 15 минут"
         },
-        "info": "Настройки уведомления применяются к этому намазу каждый день.",
+        "info": {
+          "prayer": "Настройки уведомления применяются к этому намазу каждый день.",
+          "solarEvent": "Настройки уведомления применяются к этому событию каждый день."
+        },
         "action": {
           "done": "Готово"
         },
         "status": {
           "off": "Выкл.",
           "atTime": "Во время намаза",
+          "solarEventAtTime": "Во время события",
           "minutesBefore": "За {{count}} мин."
         },
         "accessibility": {
-          "settings": "Настройки намаза {{prayer}}"
+          "settings": "Настройки намаза {{prayer}}",
+          "solarEventSettings": "Настройки события {{prayer}}"
         }
       }
     },
