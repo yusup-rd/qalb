@@ -1,3 +1,4 @@
+import { usePrayerStore } from "@/store/prayerStore";
 import type { Prayer, SolarEvent } from "@/types/prayer";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { clsx } from "clsx";
@@ -21,6 +22,10 @@ const PrayerCard = ({
   const { t: tPrayer } = useTranslation(undefined, {
     keyPrefix: "prayers",
   });
+
+  const notificationEnabled = usePrayerStore(
+    (state) => state.prayerNotifications[prayer.name].enabled,
+  );
 
   const isSolarEvent = prayer.name === "Sunrise";
   const isSoon = !isSolarEvent && prayer.status === "soon";
@@ -67,6 +72,14 @@ const PrayerCard = ({
             </Text>
 
             {isSoon && <View className="bg-secondary size-1.5 rounded-full" />}
+
+            {notificationEnabled && (
+              <Ionicons
+                name="notifications"
+                size={13}
+                className="text-muted-foreground"
+              />
+            )}
           </View>
 
           {!isSolarEvent && (
