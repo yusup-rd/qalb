@@ -54,7 +54,7 @@ const Mosques = () => {
       return;
     }
 
-    Alert.alert(t("title"), routeError.message || t("error"));
+    Alert.alert(t("title"), t("error"));
   }, [routeError, t]);
 
   return (
