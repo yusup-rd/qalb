@@ -1,5 +1,5 @@
 import { formatDayMonth } from "@/lib/format";
-import type { Prayer } from "@/types/prayer";
+import type { Prayer, SolarEvent } from "@/types/prayer";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 import ScheduledPrayerRow from "./ScheduledPrayerRow";
@@ -7,13 +7,15 @@ import ScheduledPrayerRow from "./ScheduledPrayerRow";
 interface ScheduledTimesProps {
   selectedDate: Date;
   prayers: Prayer[];
+  sunriseEvent: SolarEvent | null;
   isToday: boolean;
-  onPrayerPress: (prayer: Prayer) => void;
+  onPrayerPress: (prayer: Prayer | SolarEvent) => void;
 }
 
 const ScheduledTimes = ({
   selectedDate,
   prayers,
+  sunriseEvent,
   isToday,
   onPrayerPress,
 }: ScheduledTimesProps) => {
@@ -27,6 +29,16 @@ const ScheduledTimes = ({
         date: formatDayMonth(selectedDate),
       });
 
+  const displayItems: (Prayer | SolarEvent)[] = [];
+
+  prayers.forEach((prayer) => {
+    displayItems.push(prayer);
+
+    if (prayer.name === "Fajr" && sunriseEvent) {
+      displayItems.push(sunriseEvent);
+    }
+  });
+
   return (
     <View className="gap-2">
       <Text className="font-sans-semibold text-foreground text-lg">
@@ -34,12 +46,12 @@ const ScheduledTimes = ({
       </Text>
 
       <View className="bg-card overflow-hidden rounded-xl shadow-md">
-        {prayers.map((prayer, index) => (
+        {displayItems.map((item, index) => (
           <ScheduledPrayerRow
-            key={prayer.name}
-            prayer={prayer}
-            onPress={() => onPrayerPress(prayer)}
-            showBorder={index < prayers.length - 1}
+            key={item.name}
+            prayer={item}
+            onPress={() => onPrayerPress(item)}
+            showBorder={index < displayItems.length - 1}
           />
         ))}
       </View>

@@ -4,12 +4,15 @@ import HeroCountdown from "@/components/home/HeroCountdown";
 import PrayersToday from "@/components/home/PrayersToday";
 import QuickAccess from "@/components/home/QuickAccess";
 import SpiritualPauseCard from "@/components/home/SpiritualPauseCard";
+import PrayerTimeSettingsSheet from "@/components/prayer-times/scheduled-prayers/PrayerTimeSettingsSheet";
 import ErrorCard from "@/components/ui/ErrorCard";
 import LoadingCard from "@/components/ui/LoadingCard";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { useLocationStore } from "@/store/locationStore";
+import { usePrayerStore } from "@/store/prayerStore";
+import type { Prayer, SolarEvent } from "@/types/prayer";
 import { styled } from "nativewind";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AppState,
@@ -32,6 +35,17 @@ const Index = () => {
   );
   const retryLocation = useLocationStore((state) => state.retryLocation);
 
+  const { prayerNotifications, setPrayerNotification } = usePrayerStore();
+
+  const [prayerSettingsVisible, setPrayerSettingsVisible] = useState(false);
+  const [selectedPrayer, setSelectedPrayer] = useState<
+    Prayer | SolarEvent | null
+  >(null);
+  const [draftNotificationEnabled, setDraftNotificationEnabled] =
+    useState(false);
+  const [draftNotificationMinutesBefore, setDraftNotificationMinutesBefore] =
+    useState(10);
+
   const previousAppState = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
@@ -53,6 +67,32 @@ const Index = () => {
       subscription.remove();
     };
   }, [locationPermissionStatus, retryLocation]);
+
+  const handlePrayerPress = (prayer: Prayer | SolarEvent) => {
+    const settings = prayerNotifications[prayer.name];
+
+    setSelectedPrayer(prayer);
+    setDraftNotificationEnabled(settings.enabled);
+    setDraftNotificationMinutesBefore(settings.minutesBefore);
+    setPrayerSettingsVisible(true);
+  };
+
+  const handlePrayerSettingsClose = () => {
+    setPrayerSettingsVisible(false);
+  };
+
+  const handlePrayerSettingsSave = () => {
+    if (!selectedPrayer) {
+      return;
+    }
+
+    setPrayerNotification(selectedPrayer.name, {
+      enabled: draftNotificationEnabled,
+      minutesBefore: draftNotificationMinutesBefore,
+    });
+
+    setPrayerSettingsVisible(false);
+  };
 
   const renderLocationContent = () => {
     if (locationLoading) {
@@ -106,27 +146,43 @@ const Index = () => {
           solarEvent={prayerTimes.solarEvent}
         />
 
-        <PrayersToday prayers={prayerTimes.prayers} />
+        <PrayersToday
+          prayers={prayerTimes.prayers}
+          sunriseEvent={prayerTimes.sunriseEvent}
+          isSunriseCompleted={prayerTimes.isSunriseCompleted}
+          onPrayerPress={handlePrayerPress}
+        />
       </>
     );
   };
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="gap-5 p-5"
-        showsVerticalScrollIndicator={false}
-      >
-        {renderLocationContent()}
+    <>
+      <SafeAreaView className="bg-background flex-1" edges={["top"]}>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-5 p-5"
+          showsVerticalScrollIndicator={false}
+        >
+          {renderLocationContent()}
 
-        <QuickAccess />
+          <QuickAccess />
+          <SpiritualPauseCard />
+          <AyahCard />
+        </ScrollView>
+      </SafeAreaView>
 
-        <SpiritualPauseCard />
-
-        <AyahCard />
-      </ScrollView>
-    </SafeAreaView>
+      <PrayerTimeSettingsSheet
+        visible={prayerSettingsVisible}
+        prayer={selectedPrayer}
+        enabled={draftNotificationEnabled}
+        minutesBefore={draftNotificationMinutesBefore}
+        onEnabledChange={setDraftNotificationEnabled}
+        onMinutesBeforeChange={setDraftNotificationMinutesBefore}
+        onClose={handlePrayerSettingsClose}
+        onSave={handlePrayerSettingsSave}
+      />
+    </>
   );
 };
 

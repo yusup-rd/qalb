@@ -3,7 +3,12 @@ import { formatDuration, formatDurationClock, formatTime } from "@/lib/format";
 import { calculatePrayerTimes } from "@/lib/prayer-calculations";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
-import type { Prayer, PrayerName, PrayerStatus } from "@/types/prayer";
+import type {
+  Prayer,
+  PrayerName,
+  PrayerStatus,
+  SolarEvent,
+} from "@/types/prayer";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -30,16 +35,12 @@ function getPrayerTime(
   switch (name) {
     case "Fajr":
       return times.fajr;
-
     case "Dhuhr":
       return times.dhuhr;
-
     case "Asr":
       return times.asr;
-
     case "Maghrib":
       return times.maghrib;
-
     case "Isha":
       return times.isha;
   }
@@ -75,9 +76,16 @@ function getPrayerData(
     };
   });
 
+  const sunriseEvent: SolarEvent = {
+    name: "Sunrise",
+    time: times.sunrise,
+    formattedTime: formatTime(times.sunrise, language),
+  };
+
   return {
     prayers,
     sunrise: times.sunrise,
+    sunriseEvent,
     sunset: times.sunset,
   };
 }
@@ -88,6 +96,7 @@ export function usePrayerTimes(selectedDate?: Date) {
 
   const calculationMethod = usePrayerStore((state) => state.calculationMethod);
   const asrMethod = usePrayerStore((state) => state.asrMethod);
+
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
 
@@ -148,7 +157,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         asrMethod,
         language,
       ),
-
       today: getPrayerData(
         currentDate,
         latitude,
@@ -157,7 +165,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         asrMethod,
         language,
       ),
-
       tomorrow: getPrayerData(
         tomorrow,
         latitude,
@@ -166,7 +173,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         asrMethod,
         language,
       ),
-
       selected: getPrayerData(
         selectedDateValue,
         latitude,
@@ -175,7 +181,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         asrMethod,
         language,
       ),
-
       selectedNextDay: getPrayerData(
         selectedNextDay,
         latitude,
@@ -200,7 +205,11 @@ export function usePrayerTimes(selectedDate?: Date) {
       return {
         prayers: [],
         selectedPrayers: [],
+        sunrise: null,
+        sunriseEvent: null,
+        isSunriseCompleted: false,
         selectedSunrise: null,
+        selectedSunriseEvent: null,
         selectedSunset: null,
         selectedNightSunset: null,
         selectedNextFajr: null,
@@ -208,7 +217,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         nextPrayer: null,
         countdown: "00:00:00",
         elapsedPercent: 0,
-        sunrise: null,
         sunset: null,
         now,
         solarEvent: null,
@@ -219,6 +227,7 @@ export function usePrayerTimes(selectedDate?: Date) {
       calculatedData;
 
     const nowTime = now.getTime();
+
     const nextTodayPrayer = today.prayers.find(
       (prayer) => prayer.time.getTime() > nowTime,
     );
@@ -308,7 +317,6 @@ export function usePrayerTimes(selectedDate?: Date) {
      * For another selected date:
      *   selected date's sunset → following day's Fajr
      */
-
     const isSelectedDateToday = selectedKey === todayKey;
 
     const isBeforeSelectedSunset =
@@ -330,17 +338,28 @@ export function usePrayerTimes(selectedDate?: Date) {
     return {
       prayers,
       selectedPrayers: selected.prayers,
+
+      sunrise: today.sunrise,
+      sunriseEvent: today.sunriseEvent,
+      isSunriseCompleted: today.sunrise.getTime() <= nowTime,
+
       selectedSunrise: selected.sunrise,
+      selectedSunriseEvent: selected.sunriseEvent,
+
       selectedSunset: selected.sunset,
       selectedNightSunset: nightSunset,
       selectedNextFajr: nightFajr,
+
       previousPrayer,
       nextPrayer,
+
       countdown: formatDurationClock(nextPrayer.time.getTime() - nowTime),
+
       elapsedPercent,
-      sunrise: today.sunrise,
+
       sunset: today.sunset,
       now,
+
       solarEvent: {
         label: solarEvent.label,
         remainingFormatted: formatDuration(solarEvent.time.getTime() - nowTime),

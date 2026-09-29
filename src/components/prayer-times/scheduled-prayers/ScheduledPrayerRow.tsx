@@ -1,12 +1,12 @@
 import { usePrayerStore } from "@/store/prayerStore";
-import type { Prayer } from "@/types/prayer";
-import { Ionicons } from "@expo/vector-icons";
+import type { Prayer, SolarEvent } from "@/types/prayer";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import { Pressable, Text, View } from "react-native";
 
 interface ScheduledPrayerRowProps {
-  prayer: Prayer;
+  prayer: Prayer | SolarEvent;
   onPress: () => void;
   showBorder: boolean;
 }
@@ -27,8 +27,11 @@ const ScheduledPrayerRow = ({
     (state) => state.prayerNotifications[prayer.name],
   );
 
+  const isSolarEvent = prayer.name === "Sunrise";
   const prayerKey = prayer.name.toLowerCase();
-  const descriptionKey = prayer.description.toLowerCase();
+  const descriptionKey = !isSolarEvent
+    ? prayer.description.toLowerCase()
+    : null;
 
   const getNotificationLabel = () => {
     if (!notificationSettings.enabled) {
@@ -60,10 +63,14 @@ const ScheduledPrayerRow = ({
     >
       <View className="min-w-0 flex-1 flex-row items-center gap-3">
         <View className="bg-muted size-9 shrink-0 items-center justify-center rounded-full">
-          <Ionicons name={prayer.icon} size={16} className="text-primary" />
+          {isSolarEvent ? (
+            <Feather name="sunrise" size={16} className="text-primary" />
+          ) : (
+            <Ionicons name={prayer.icon} size={16} className="text-primary" />
+          )}
         </View>
 
-        <View className="min-w-0 flex-1 gap-0.5">
+        <View className={clsx("min-w-0 flex-1", !isSolarEvent && "gap-0.5")}>
           <View className="flex-row items-center gap-2">
             <Text className="font-sans-semibold text-foreground text-sm">
               {tPrayer(prayerKey)}
@@ -77,31 +84,34 @@ const ScheduledPrayerRow = ({
                     : "notifications-off"
                 }
                 size={12}
-                className={
+                className={clsx(
                   notificationSettings.enabled
                     ? "text-primary"
-                    : "text-muted-foreground"
-                }
+                    : "text-muted-foreground",
+                )}
               />
 
               <Text
-                className={
+                className={clsx(
+                  "text-xs",
                   notificationSettings.enabled
-                    ? "font-sans-medium text-primary text-xs"
-                    : "text-muted-foreground font-sans text-xs"
-                }
+                    ? "font-sans-medium text-primary"
+                    : "text-muted-foreground font-sans",
+                )}
               >
                 {notificationLabel}
               </Text>
             </View>
           </View>
 
-          <Text
-            className="text-muted-foreground font-sans text-xs"
-            numberOfLines={1}
-          >
-            {tPrayer(descriptionKey)}
-          </Text>
+          {!isSolarEvent && descriptionKey && (
+            <Text
+              className="text-muted-foreground font-sans text-xs"
+              numberOfLines={1}
+            >
+              {tPrayer(descriptionKey)}
+            </Text>
+          )}
         </View>
       </View>
 

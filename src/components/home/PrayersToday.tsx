@@ -1,6 +1,6 @@
 import { calculationMethods } from "@/constants/prayer-calculation";
 import { usePrayerStore } from "@/store/prayerStore";
-import type { Prayer } from "@/types/prayer";
+import type { Prayer, SolarEvent } from "@/types/prayer";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -10,10 +10,20 @@ import PrayerCard from "./PrayerCard";
 
 interface PrayersTodayProps {
   prayers: Prayer[];
+  sunriseEvent: SolarEvent | null;
+  isSunriseCompleted: boolean;
+  onPrayerPress: (prayer: Prayer | SolarEvent) => void;
 }
 
-const PrayersToday = ({ prayers }: PrayersTodayProps) => {
-  const { t } = useTranslation(undefined, { keyPrefix: "home.prayersToday" });
+const PrayersToday = ({
+  prayers,
+  sunriseEvent,
+  isSunriseCompleted,
+  onPrayerPress,
+}: PrayersTodayProps) => {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "home.prayersToday",
+  });
   const { t: tAsr } = useTranslation(undefined, {
     keyPrefix: "asrMethods.short",
   });
@@ -36,6 +46,16 @@ const PrayersToday = ({ prayers }: PrayersTodayProps) => {
   const handleSettingsPress = () => {
     router.push("/prayer-times");
   };
+
+  const displayItems: (Prayer | SolarEvent)[] = [];
+
+  prayers.forEach((prayer) => {
+    displayItems.push(prayer);
+
+    if (prayer.name === "Fajr" && sunriseEvent) {
+      displayItems.push(sunriseEvent);
+    }
+  });
 
   return (
     <View className="gap-1">
@@ -63,8 +83,15 @@ const PrayersToday = ({ prayers }: PrayersTodayProps) => {
       <InfoSection message={t("info")} />
 
       <View className="gap-2">
-        {prayers.map((prayer) => (
-          <PrayerCard key={prayer.name} prayer={prayer} />
+        {displayItems.map((item) => (
+          <PrayerCard
+            key={item.name}
+            prayer={item}
+            isSunriseCompleted={
+              item.name === "Sunrise" ? isSunriseCompleted : false
+            }
+            onPress={onPrayerPress}
+          />
         ))}
       </View>
     </View>
