@@ -14,12 +14,19 @@ interface InfoSectionProps {
   collapsible?: boolean;
 }
 
+interface InfoSectionContentProps {
+  message: string;
+  collapsible: boolean;
+}
+
 const COLLAPSED_LINES = 2;
 const ANIMATION_DURATION = 250;
 
-const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
+const InfoSectionContent = ({
+  message,
+  collapsible,
+}: InfoSectionContentProps) => {
   const expanded = useSharedValue(0);
-
   const [isExpanded, setIsExpanded] = useState(false);
   const [collapsedHeight, setCollapsedHeight] = useState(0);
   const [expandedHeight, setExpandedHeight] = useState(0);
@@ -38,11 +45,9 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
 
     if (!isExpanded) {
       setIsExpanded(true);
-
       expanded.value = withTiming(1, {
         duration: ANIMATION_DURATION,
       });
-
       return;
     }
 
@@ -83,55 +88,52 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
 
   if (!collapsible || !isCollapsible) {
     return (
-      <View className="border-border flex-row items-center gap-2 rounded-lg border p-2">
-        <Fa name="circle-info" size={16} className="text-muted-foreground" />
+      <View className="border-border rounded-lg border p-2">
+        <View className="flex-row items-center gap-2">
+          <Fa name="circle-info" size={16} className="text-muted-foreground" />
 
-        <Text className="text-muted-foreground flex-1 font-sans text-xs">
-          {message}
-        </Text>
+          <Text className="text-muted-foreground flex-1 font-sans text-xs">
+            {message}
+          </Text>
+        </View>
 
         {collapsible && (
-          <>
-            <Text
-              className="text-muted-foreground absolute font-sans text-xs"
-              pointerEvents="none"
-              onLayout={(event) => {
-                const height = event.nativeEvent.layout.height;
+          <View
+            pointerEvents="none"
+            className="absolute top-2 right-2 left-2 flex-row gap-2 opacity-0"
+          >
+            <View className="w-4" />
 
-                setExpandedHeight((current) =>
-                  current === height ? current : height,
-                );
-              }}
-              style={{
-                left: 0,
-                right: 0,
-                opacity: 0,
-              }}
-            >
-              {message}
-            </Text>
+            <View className="flex-1">
+              <Text
+                className="text-muted-foreground font-sans text-xs"
+                onLayout={(event) => {
+                  const height = event.nativeEvent.layout.height;
 
-            <Text
-              className="text-muted-foreground absolute font-sans text-xs"
-              numberOfLines={COLLAPSED_LINES}
-              ellipsizeMode="tail"
-              pointerEvents="none"
-              onLayout={(event) => {
-                const height = event.nativeEvent.layout.height;
+                  setExpandedHeight((current) =>
+                    current === height ? current : height,
+                  );
+                }}
+              >
+                {message}
+              </Text>
 
-                setCollapsedHeight((current) =>
-                  current === height ? current : height,
-                );
-              }}
-              style={{
-                left: 0,
-                right: 0,
-                opacity: 0,
-              }}
-            >
-              {message}
-            </Text>
-          </>
+              <Text
+                className="text-muted-foreground absolute top-0 right-0 left-0 font-sans text-xs"
+                numberOfLines={COLLAPSED_LINES}
+                ellipsizeMode="tail"
+                onLayout={(event) => {
+                  const height = event.nativeEvent.layout.height;
+
+                  setCollapsedHeight((current) =>
+                    current === height ? current : height,
+                  );
+                }}
+              >
+                {message}
+              </Text>
+            </View>
+          </View>
         )}
       </View>
     );
@@ -185,6 +187,16 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
         </Animated.View>
       </View>
     </Pressable>
+  );
+};
+
+const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
+  return (
+    <InfoSectionContent
+      key={message}
+      message={message}
+      collapsible={collapsible}
+    />
   );
 };
 
