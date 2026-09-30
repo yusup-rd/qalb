@@ -120,7 +120,10 @@
       },
       "mosques": {
         "title": "Mosques",
-        "description": "{{count}} mosques nearby",
+        "description_one": "{{count}} mosque nearby",
+        "description_few": "{{count}} mosques nearby",
+        "description_many": "{{count}} mosques nearby",
+        "description_other": "{{count}} mosques nearby",
         "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
