@@ -120,7 +120,7 @@
       },
       "mosques": {
         "title": "Мечети",
-        "description": "{{count}} открыто рядом",
+        "description": "{{count}} мечетей рядом",
         "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {

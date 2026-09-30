@@ -1,6 +1,7 @@
 import MosqueMap from "@/components/mosques/MosqueMap";
 import MosqueRadiusSheet from "@/components/mosques/MosqueRadiusSheet";
 import MosquesList from "@/components/mosques/MosquesList";
+import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
 import { useRoute } from "@/hooks/useRoute";
 import { styled } from "nativewind";
@@ -11,14 +12,12 @@ import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-conte
 
 const SafeAreaView = styled(NativeSafeAreaView);
 
-const DEFAULT_RADIUS_KM = 10;
-
 const Mosques = () => {
   const { t } = useTranslation(undefined, {
     keyPrefix: "mosques.directions",
   });
 
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_MOSQUE_RADIUS_KM);
   const [radiusSheetVisible, setRadiusSheetVisible] = useState(false);
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
 

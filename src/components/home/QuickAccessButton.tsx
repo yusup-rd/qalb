@@ -1,3 +1,5 @@
+import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
+import { useNearbyMosques } from "@/hooks/useNearbyMosques";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { Href, router } from "expo-router";
@@ -31,7 +33,6 @@ const quickAccessConfig: Record<
     titleKey: "quran.title",
     route: "/quran",
   },
-
   mosques: {
     icon: "mosque",
     iconClassName: "text-primary-soft-foreground",
@@ -41,7 +42,6 @@ const quickAccessConfig: Record<
     titleKey: "mosques.title",
     route: "/mosques",
   },
-
   prayer: {
     icon: "calendar-days",
     iconClassName: "text-muted-foreground",
@@ -51,7 +51,6 @@ const quickAccessConfig: Record<
     titleKey: "prayerTimes.title",
     route: "/prayer-times",
   },
-
   zakat: {
     icon: "money-bill-wave",
     iconClassName: "text-muted-foreground",
@@ -61,7 +60,6 @@ const quickAccessConfig: Record<
     titleKey: "zakat.title",
     route: "/zakat",
   },
-
   tasbih: {
     icon: "hands-praying",
     iconClassName: "text-primary-soft-foreground",
@@ -77,21 +75,37 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
+
   const kilometerUnit = i18n.t("units.kilometer");
 
   const item = quickAccessConfig[type];
+
+  const mosques = useNearbyMosques(
+    type === "mosques" ? DEFAULT_MOSQUE_RADIUS_KM : null,
+  );
 
   const getBadge = () => {
     switch (type) {
       case "quran":
         return t("quran.badge");
 
-      case "mosques":
-        // TODO: Replace with dynamic distance from nearest mosque API.
+      case "mosques": {
+        const closestMosque = mosques[0];
+
+        if (!closestMosque) {
+          return "—";
+        }
+
+        const distanceMeters =
+          closestMosque.drivingDistanceMeters ?? closestMosque.distanceMeters;
+
+        const distanceKm = distanceMeters / 1_000;
+
         return t("mosques.badge", {
-          distance: 0.4,
+          distance: Number(distanceKm.toFixed(1)),
           unit: kilometerUnit,
         });
+      }
 
       case "prayer":
         return t("prayerTimes.badge");
@@ -117,10 +131,8 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
         });
 
       case "mosques":
-        // TODO: Replace with dynamic mosque data.
-        // Count should come from nearby mosque availability.
         return t("mosques.description", {
-          count: 4,
+          count: mosques.length,
         });
 
       case "prayer":
