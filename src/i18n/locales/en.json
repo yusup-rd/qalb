@@ -100,7 +100,7 @@
     },
     "prayersToday": {
       "title": "Today's Prayers",
-      "info": "These are calculated times for the Adhan (call to prayer). Actual congregational (Iqamah) times vary depending on your local mosque.",
+      "info": "These are calculated Adhan (call to prayer) times. Iqamah times for congregational prayer vary by mosque. To adjust a prayer to your local Iqamah time, tap the prayer and use Manual Time Adjustment.",
       "nextIn": "Next in {{time}}",
       "settingsAccessibilityLabel": "Prayer settings. Asr: {{asrLabel}}, Method: {{calculationMethodLabel}}"
     },

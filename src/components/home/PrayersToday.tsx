@@ -80,7 +80,7 @@ const PrayersToday = ({
         </Pressable>
       </View>
 
-      <InfoSection message={t("info")} />
+      <InfoSection message={t("info")} collapsible />
 
       <View className="gap-2">
         {displayItems.map((item) => (
