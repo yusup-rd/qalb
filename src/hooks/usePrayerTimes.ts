@@ -129,6 +129,10 @@ function getPrayerData(
   };
 }
 
+function sortPrayersByTime(prayers: Prayer[]) {
+  return [...prayers].sort((a, b) => a.time.getTime() - b.time.getTime());
+}
+
 export function usePrayerTimes(selectedDate?: Date) {
   const { i18n: i18nInstance } = useTranslation();
   const language = i18nInstance.language;
@@ -273,11 +277,15 @@ export function usePrayerTimes(selectedDate?: Date) {
 
     const nowTime = now.getTime();
 
-    const nextTodayPrayer = today.prayers.find(
+    const orderedYesterdayPrayers = sortPrayersByTime(yesterday.prayers);
+    const orderedTodayPrayers = sortPrayersByTime(today.prayers);
+    const orderedTomorrowPrayers = sortPrayersByTime(tomorrow.prayers);
+
+    const nextTodayPrayer = orderedTodayPrayers.find(
       (prayer) => prayer.time.getTime() > nowTime,
     );
 
-    const previousTodayPrayer = [...today.prayers]
+    const previousTodayPrayer = [...orderedTodayPrayers]
       .reverse()
       .find((prayer) => prayer.time.getTime() <= nowTime);
 
@@ -286,10 +294,12 @@ export function usePrayerTimes(selectedDate?: Date) {
 
     if (nextTodayPrayer) {
       nextPrayer = nextTodayPrayer;
-      previousPrayer = previousTodayPrayer ?? yesterday.prayers[4];
+      previousPrayer =
+        previousTodayPrayer ??
+        orderedYesterdayPrayers[orderedYesterdayPrayers.length - 1];
     } else {
-      nextPrayer = tomorrow.prayers[0];
-      previousPrayer = today.prayers[4];
+      nextPrayer = orderedTomorrowPrayers[0];
+      previousPrayer = orderedTodayPrayers[orderedTodayPrayers.length - 1];
     }
 
     const prayers = today.prayers.map((prayer) => {
@@ -299,8 +309,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         status = "completed";
       }
 
-      const isNextPrayerToday =
-        prayer.time.getTime() === nextPrayer.time.getTime();
+      const isNextPrayerToday = prayer.name === nextPrayer.name;
 
       if (isNextPrayerToday) {
         status = "soon";
