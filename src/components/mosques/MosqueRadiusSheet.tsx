@@ -3,6 +3,7 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import Slider from "@react-native-community/slider";
+import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 
 interface MosqueRadiusSheetProps {
@@ -23,6 +24,11 @@ const MosqueRadiusSheet = ({
 }: MosqueRadiusSheetProps) => {
   const { colors } = useTheme();
 
+  const { t, i18n } = useTranslation(undefined, {
+    keyPrefix: "mosques.radius",
+  });
+  const kilometerUnit = i18n.t("units.kilometer");
+
   return (
     <Host>
       <BottomSheet
@@ -42,22 +48,22 @@ const MosqueRadiusSheet = ({
           <View className="gap-6 px-1 py-6">
             <View className="gap-1">
               <Text className="font-sans-bold text-foreground text-xl">
-                Search radius
+                {t("title")}
               </Text>
 
               <Text className="font-sans-medium text-muted-foreground text-sm">
-                Show mosques within this distance
+                {t("description")}
               </Text>
             </View>
 
             <View className="bg-card gap-5 rounded-xl px-4 py-5">
               <View className="items-center gap-1">
                 <Text className="font-sans-bold text-foreground text-3xl">
-                  {radiusKm} km
+                  {radiusKm} {kilometerUnit}
                 </Text>
 
                 <Text className="font-sans-medium text-muted-foreground text-sm">
-                  Maximum distance
+                  {t("maximumDistance")}
                 </Text>
               </View>
 
@@ -77,11 +83,17 @@ const MosqueRadiusSheet = ({
 
             <View className="flex-row justify-between px-1">
               <Text className="font-sans-medium text-muted-foreground text-xs">
-                {MIN_RADIUS_KM} km
+                {t("minimum", {
+                  radius: MIN_RADIUS_KM,
+                  unit: kilometerUnit,
+                })}
               </Text>
 
               <Text className="font-sans-medium text-muted-foreground text-xs">
-                {MAX_RADIUS_KM} km
+                {t("maximum", {
+                  radius: MAX_RADIUS_KM,
+                  unit: kilometerUnit,
+                })}
               </Text>
             </View>
           </View>

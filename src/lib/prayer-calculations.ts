@@ -16,7 +16,7 @@ import type { AsrMethod, CalculationMethodId } from "@/types/prayer";
  * Fajr, Isha, and other prayer times, while the Asr method
  * determines the madhab-specific shadow-length calculation.
  */
-export function getCalculationParameters(
+function getCalculationParameters(
   method: CalculationMethodId,
   asrMethod: AsrMethod,
 ): CalculationParameters {

@@ -5,7 +5,7 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import ru from "./locales/ru.json";
 
-export const I18N_STORAGE_KEY = "@app/language";
+const I18N_STORAGE_KEY = "@app/language";
 
 const resources = {
   en: {
@@ -57,7 +57,5 @@ export const changeLanguage = async (language: string) => {
     await AsyncStorage.setItem(I18N_STORAGE_KEY, language);
   } catch {}
 };
-
-export const getSupportedLanguages = () => supportedLanguages;
 
 export default i18n;

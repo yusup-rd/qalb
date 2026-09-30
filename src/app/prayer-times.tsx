@@ -10,7 +10,12 @@ import LoadingCard from "@/components/ui/LoadingCard";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
-import type { AsrMethod, CalculationMethodId, Prayer } from "@/types/prayer";
+import type {
+  AsrMethod,
+  CalculationMethodId,
+  Prayer,
+  SolarEvent,
+} from "@/types/prayer";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking, ScrollView } from "react-native";
@@ -23,7 +28,9 @@ const PrayerTimes = () => {
   const [calculationSheetVisible, setCalculationSheetVisible] = useState(false);
   const [prayerSettingsVisible, setPrayerSettingsVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
+  const [selectedPrayer, setSelectedPrayer] = useState<
+    Prayer | SolarEvent | null
+  >(null);
   const [draftCalculationMethod, setDraftCalculationMethod] =
     useState<CalculationMethodId>("mwl");
   const [draftAsrMethod, setDraftAsrMethod] = useState<AsrMethod>("standard");
@@ -67,7 +74,7 @@ const PrayerTimes = () => {
     setCalculationSheetVisible(false);
   };
 
-  const handlePrayerPress = (prayer: Prayer) => {
+  const handlePrayerPress = (prayer: Prayer | SolarEvent) => {
     const settings = prayerNotifications[prayer.name];
 
     setSelectedPrayer(prayer);
@@ -140,6 +147,7 @@ const PrayerTimes = () => {
           <ScheduledTimes
             selectedDate={selectedDate}
             prayers={prayerTimes.selectedPrayers}
+            sunriseEvent={prayerTimes.selectedSunriseEvent}
             isToday={isToday}
             onPrayerPress={handlePrayerPress}
           />

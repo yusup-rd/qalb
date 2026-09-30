@@ -1,5 +1,5 @@
 export type PrayerName = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
-
+export type SolarEventName = "Sunrise";
 export type PrayerStatus = "completed" | "soon" | "upcoming";
 
 export type PrayerIcon =
@@ -19,12 +19,15 @@ export interface Prayer {
   remainingFormatted?: string;
 }
 
+export interface SolarEvent {
+  name: SolarEventName;
+  time: Date;
+  formattedTime: string;
+}
+
+export type PrayerNotificationName = PrayerName | SolarEventName;
+
 export type CalculationMethodId =
   "mwl" | "isna" | "egyptian" | "karachi" | "umm-al-qura";
 
 export type AsrMethod = "standard" | "hanafi";
-
-export interface PrayerCalculationSettings {
-  method: CalculationMethodId;
-  asrMethod: AsrMethod;
-}

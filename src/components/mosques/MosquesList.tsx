@@ -2,6 +2,7 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
 
@@ -28,6 +29,11 @@ const MosquesList = ({
   routedMosqueId,
   route,
 }: MosquesListProps) => {
+  const { t, i18n } = useTranslation(undefined, {
+    keyPrefix: "mosques.list",
+  });
+  const kilometerUnit = i18n.t("units.kilometer");
+
   const listRef = useRef<FlatList<NearbyMosque>>(null);
 
   useEffect(() => {
@@ -79,22 +85,25 @@ const MosquesList = ({
           <View className="flex-row items-center justify-between gap-5">
             <View className="gap-0.5">
               <Text className="font-sans-bold text-foreground text-xl">
-                Mosques nearby
+                {t("title")}
               </Text>
 
               <Text className="font-sans-regular text-muted-foreground text-sm">
-                {mosques.length} found nearby
+                {t("found", { count: mosques.length })}
               </Text>
             </View>
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Change mosque search radius"
+              accessibilityLabel={t("changeRadius")}
               onPress={onRadiusPress}
               className="bg-muted flex-row items-center gap-1.5 rounded-full px-3 py-2"
             >
               <Text className="font-sans-semibold text-foreground text-sm">
-                {radiusKm} km
+                {t("radius", {
+                  radius: radiusKm,
+                  unit: kilometerUnit,
+                })}
               </Text>
 
               <Fa

@@ -62,11 +62,6 @@ export type ThemeColors = typeof lightColors | typeof darkColors;
 
 export type ThemeMode = "light" | "dark" | "system";
 
-export const theme = {
-  light: lightColors,
-  dark: darkColors,
-} as const;
-
 export const nativeTabColors =
   Platform.OS === "ios"
     ? {

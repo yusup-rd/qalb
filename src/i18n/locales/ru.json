@@ -22,9 +22,11 @@
   "duration": {
     "hour_one": "{{count}} ч",
     "hour_few": "{{count}} ч",
+    "hour_many": "{{count}} ч",
     "hour_other": "{{count}} ч",
     "minute_one": "{{count}} мин",
     "minute_few": "{{count}} мин",
+    "minute_many": "{{count}} мин",
     "minute_other": "{{count}} мин"
   },
   "compass": {
@@ -114,7 +116,7 @@
       "mosques": {
         "title": "Мечети",
         "description": "{{count}} открыто рядом",
-        "badge": "{{distance}} км"
+        "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
         "title": "Время намаза",
@@ -185,25 +187,34 @@
       "title": "Время намаза — {{date}}",
       "notification": {
         "title": "Уведомление",
-        "description": "Напоминать об этом намазе",
+        "description": {
+          "prayer": "Напоминать об этом намазе",
+          "solarEvent": "Напоминать об этом событии"
+        },
         "remind": "Напомнить",
         "remindTimes": {
           "atTime": "Во время намаза",
+          "solarEventAtTime": "Во время события",
           "fiveMinutesBefore": "За 5 минут",
           "tenMinutesBefore": "За 10 минут",
           "fifteenMinutesBefore": "За 15 минут"
         },
-        "info": "Настройки уведомления применяются к этому намазу каждый день.",
+        "info": {
+          "prayer": "Настройки уведомления применяются к этому намазу каждый день.",
+          "solarEvent": "Настройки уведомления применяются к этому событию каждый день."
+        },
         "action": {
           "done": "Готово"
         },
         "status": {
           "off": "Выкл.",
           "atTime": "Во время намаза",
+          "solarEventAtTime": "Во время события",
           "minutesBefore": "За {{count}} мин."
         },
         "accessibility": {
-          "settings": "Настройки намаза {{prayer}}"
+          "settings": "Настройки намаза {{prayer}}",
+          "solarEventSettings": "Настройки события {{prayer}}"
         }
       }
     },
@@ -256,8 +267,7 @@
       "usingSavedPrices": "Используются ранее сохранённые рыночные цены.",
       "lastUpdatedRecently": "Обновлено недавно",
       "updated": "Обновлено {{date}}",
-      "loadingPrices": "Загрузка текущих рыночных цен...",
-      "marketPriceError": "Не удалось загрузить текущие рыночные цены."
+      "loadingPrices": "Загрузка текущих рыночных цен..."
     },
     "preciousMetals": {
       "title": "Золото и серебро",
@@ -359,6 +369,31 @@
     "counter": {
       "rounds": "Круги",
       "total": "Всего"
+    }
+  },
+  "mosques": {
+    "list": {
+      "title": "Мечети поблизости",
+      "found": "Поблизости: {{count}}",
+      "radius": "{{radius}} {{unit}}",
+      "changeRadius": "Изменить радиус поиска мечетей"
+    },
+    "card": {
+      "closest": "Ближайшая",
+      "calculating": "Расчёт...",
+      "directions": "Маршрут",
+      "loading": "Загрузка..."
+    },
+    "radius": {
+      "title": "Радиус поиска",
+      "description": "Показывать мечети в пределах этого расстояния",
+      "maximumDistance": "Максимальное расстояние",
+      "minimum": "{{radius}} {{unit}}",
+      "maximum": "{{radius}} {{unit}}"
+    },
+    "directions": {
+      "title": "Маршрут",
+      "error": "Не удалось построить маршрут."
     }
   },
   "settings": {

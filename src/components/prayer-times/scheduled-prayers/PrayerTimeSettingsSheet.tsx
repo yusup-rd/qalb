@@ -1,16 +1,16 @@
 import { useTheme } from "@/providers/ThemeProvider";
-import type { Prayer } from "@/types/prayer";
+import type { Prayer, SolarEvent } from "@/types/prayer";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 
 interface PrayerTimeSettingsSheetProps {
   visible: boolean;
-  prayer: Prayer | null;
+  prayer: Prayer | SolarEvent | null;
   enabled: boolean;
   minutesBefore: number;
   onEnabledChange: (enabled: boolean) => void;
@@ -60,8 +60,18 @@ const PrayerTimeSettingsSheet = ({
     return null;
   }
 
+  const isSolarEvent = prayer.name === "Sunrise";
   const prayerKey = prayer.name.toLowerCase();
-  const descriptionKey = prayer.description.toLowerCase();
+  const descriptionKey = !isSolarEvent
+    ? prayer.description.toLowerCase()
+    : null;
+
+  const notificationDescription = isSolarEvent
+    ? t("description.solarEvent")
+    : t("description.prayer");
+  const notificationInfo = isSolarEvent
+    ? t("info.solarEvent")
+    : t("info.prayer");
 
   return (
     <Host>
@@ -86,11 +96,15 @@ const PrayerTimeSettingsSheet = ({
           >
             <View className="items-center gap-1">
               <View className="bg-primary-soft mb-1 size-12 items-center justify-center rounded-full">
-                <Ionicons
-                  name={prayer.icon}
-                  size={22}
-                  className="text-primary"
-                />
+                {isSolarEvent ? (
+                  <Feather name="sunrise" size={22} className="text-primary" />
+                ) : (
+                  <Ionicons
+                    name={prayer.icon}
+                    size={22}
+                    className="text-primary"
+                  />
+                )}
               </View>
 
               <Text className="font-sans-bold text-foreground text-xl">
@@ -101,9 +115,11 @@ const PrayerTimeSettingsSheet = ({
                 {prayer.formattedTime}
               </Text>
 
-              <Text className="text-muted-foreground font-sans text-xs">
-                {tPrayer(descriptionKey)}
-              </Text>
+              {!isSolarEvent && descriptionKey && (
+                <Text className="text-muted-foreground font-sans text-xs">
+                  {tPrayer(descriptionKey)}
+                </Text>
+              )}
             </View>
 
             <View className="bg-card overflow-hidden rounded-xl shadow-md">
@@ -123,7 +139,7 @@ const PrayerTimeSettingsSheet = ({
                     </Text>
 
                     <Text className="text-muted-foreground font-sans text-xs">
-                      {t("description")}
+                      {notificationDescription}
                     </Text>
                   </View>
                 </View>
@@ -151,6 +167,11 @@ const PrayerTimeSettingsSheet = ({
                 {reminderOptions.map(({ minutes, key }, index) => {
                   const selected = minutesBefore === minutes;
 
+                  const label =
+                    minutes === 0 && isSolarEvent
+                      ? t("remindTimes.solarEventAtTime")
+                      : t(`remindTimes.${key}`);
+
                   return (
                     <Pressable
                       key={minutes}
@@ -168,7 +189,7 @@ const PrayerTimeSettingsSheet = ({
                           selected ? "font-sans-semibold" : "font-sans",
                         )}
                       >
-                        {t(`remindTimes.${key}`)}
+                        {label}
                       </Text>
 
                       <View
@@ -197,7 +218,7 @@ const PrayerTimeSettingsSheet = ({
               />
 
               <Text className="text-primary-soft-foreground flex-1 font-sans text-xs leading-5">
-                {t("info")}
+                {notificationInfo}
               </Text>
             </View>
 

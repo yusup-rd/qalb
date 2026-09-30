@@ -74,9 +74,10 @@ const quickAccessConfig: Record<
 };
 
 const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
-  const { t } = useTranslation(undefined, {
+  const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
+  const kilometerUnit = i18n.t("units.kilometer");
 
   const item = quickAccessConfig[type];
 
@@ -89,6 +90,7 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
         // TODO: Replace with dynamic distance from nearest mosque API.
         return t("mosques.badge", {
           distance: 0.4,
+          unit: kilometerUnit,
         });
 
       case "prayer":

@@ -2,7 +2,7 @@ import type { Mosque } from "@/types/mosque";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CACHE_KEY = "@app/mosques/cache-v3";
-export const MOSQUE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MOSQUE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface MosqueCache {
   version: 1;

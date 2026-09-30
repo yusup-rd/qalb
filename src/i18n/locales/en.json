@@ -21,8 +21,12 @@
   },
   "duration": {
     "hour_one": "{{count}} hr",
+    "hour_few": "{{count}} hrs",
+    "hour_many": "{{count}} hrs",
     "hour_other": "{{count}} hrs",
     "minute_one": "{{count}} min",
+    "minute_few": "{{count}} mins",
+    "minute_many": "{{count}} mins",
     "minute_other": "{{count}} mins"
   },
   "compass": {
@@ -112,7 +116,7 @@
       "mosques": {
         "title": "Mosques",
         "description": "{{count}} open nearby",
-        "badge": "{{distance}} km"
+        "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
         "title": "Prayer Times",
@@ -183,25 +187,34 @@
       "title": "{{date}} Prayer Times",
       "notification": {
         "title": "Notification",
-        "description": "Remind me about this prayer",
+        "description": {
+          "prayer": "Remind me about this prayer",
+          "solarEvent": "Remind me about this event"
+        },
         "remind": "Remind me",
         "remindTimes": {
           "atTime": "At prayer time",
+          "solarEventAtTime": "At event time",
           "fiveMinutesBefore": "5 minutes before",
           "tenMinutesBefore": "10 minutes before",
           "fifteenMinutesBefore": "15 minutes before"
         },
-        "info": "Notification settings apply to this prayer every day.",
+        "info": {
+          "prayer": "Notification settings apply to this prayer every day.",
+          "solarEvent": "Notification settings apply to this event every day."
+        },
         "action": {
           "done": "Done"
         },
         "status": {
           "off": "Off",
           "atTime": "At prayer time",
+          "solarEventAtTime": "At event time",
           "minutesBefore": "{{count}} min before"
         },
         "accessibility": {
-          "settings": "{{prayer}} prayer settings"
+          "settings": "{{prayer}} prayer settings",
+          "solarEventSettings": "{{prayer}} event settings"
         }
       }
     },
@@ -254,8 +267,7 @@
       "usingSavedPrices": "Using previously saved market prices.",
       "lastUpdatedRecently": "Last updated recently",
       "updated": "Updated {{date}}",
-      "loadingPrices": "Loading current market prices...",
-      "marketPriceError": "Unable to load current market prices."
+      "loadingPrices": "Loading current market prices..."
     },
     "preciousMetals": {
       "title": "Gold & Silver",
@@ -357,6 +369,31 @@
     "counter": {
       "rounds": "Rounds",
       "total": "Total"
+    }
+  },
+  "mosques": {
+    "list": {
+      "title": "Mosques nearby",
+      "found": "{{count}} found nearby",
+      "radius": "{{radius}} {{unit}}",
+      "changeRadius": "Change mosque search radius"
+    },
+    "card": {
+      "closest": "Closest",
+      "calculating": "Calculating...",
+      "directions": "Directions",
+      "loading": "Loading..."
+    },
+    "radius": {
+      "title": "Search radius",
+      "description": "Show mosques within this distance",
+      "maximumDistance": "Maximum distance",
+      "minimum": "{{radius}} {{unit}}",
+      "maximum": "{{radius}} {{unit}}"
+    },
+    "directions": {
+      "title": "Directions",
+      "error": "Unable to calculate a route."
     }
   },
   "settings": {
