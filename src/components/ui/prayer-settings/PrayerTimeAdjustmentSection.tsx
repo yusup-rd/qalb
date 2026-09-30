@@ -6,8 +6,9 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import Slider from "@react-native-community/slider";
 import { clsx } from "clsx";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 
 interface PrayerTimeAdjustmentSectionProps {
   adjustment: PrayerTimeAdjustment;
@@ -34,6 +35,8 @@ const PrayerTimeAdjustmentSection = ({
   const { t: tAdjustment } = useTranslation(undefined, {
     keyPrefix: "prayerTimes.schedule.adjustment",
   });
+
+  const [androidPickerVisible, setAndroidPickerVisible] = useState(false);
 
   const fixedTimeDate = parseTimeString(adjustment.fixedTime);
 
@@ -67,6 +70,8 @@ const PrayerTimeAdjustmentSection = ({
   };
 
   const handleFixedTimeChange = (event: DateTimePickerChangeEvent) => {
+    setAndroidPickerVisible(false);
+
     const selectedDate = new Date(event.nativeEvent.timestamp);
 
     updateAdjustment({
@@ -205,21 +210,44 @@ const PrayerTimeAdjustmentSection = ({
       {adjustment.mode === "fixed" && (
         <View className="bg-card gap-4 rounded-xl px-4 py-5 shadow-md">
           <View className="items-center gap-1">
-            <Text className="font-sans-bold text-foreground text-3xl">
-              {formatTime(fixedTimeDate)}
-            </Text>
+            {Platform.OS === "android" ? (
+              <Pressable
+                onPress={() => setAndroidPickerVisible(true)}
+                accessibilityRole="button"
+              >
+                <Text className="font-sans-bold text-foreground text-3xl">
+                  {formatTime(fixedTimeDate)}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text className="font-sans-bold text-foreground text-3xl">
+                {formatTime(fixedTimeDate)}
+              </Text>
+            )}
 
             <Text className="font-sans-medium text-muted-foreground text-sm">
               {tAdjustment("fixed.description")}
             </Text>
           </View>
 
-          <DateTimePicker
-            value={fixedTimeDate}
-            mode="time"
-            display="spinner"
-            onValueChange={handleFixedTimeChange}
-          />
+          {Platform.OS === "android" && androidPickerVisible && (
+            <DateTimePicker
+              value={fixedTimeDate}
+              mode="time"
+              display="spinner"
+              onChange={handleFixedTimeChange}
+              onDismiss={() => setAndroidPickerVisible(false)}
+            />
+          )}
+
+          {Platform.OS === "ios" && (
+            <DateTimePicker
+              value={fixedTimeDate}
+              mode="time"
+              display="spinner"
+              onChange={handleFixedTimeChange}
+            />
+          )}
         </View>
       )}
     </View>
