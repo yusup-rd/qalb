@@ -309,7 +309,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         status = "completed";
       }
 
-      const isNextPrayerToday = prayer.name === nextPrayer.name;
+      const isNextPrayerToday = nextTodayPrayer?.name === prayer.name;
 
       if (isNextPrayerToday) {
         status = "soon";
