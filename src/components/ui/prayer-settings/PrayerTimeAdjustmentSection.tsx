@@ -49,11 +49,6 @@ const PrayerTimeAdjustmentSection = ({
       ...changes,
     };
 
-    if (changes.mode === "none") {
-      nextAdjustment.offsetMinutes = 0;
-      nextAdjustment.fixedTime = null;
-    }
-
     if (
       changes.mode === "fixed" &&
       adjustment.mode !== "fixed" &&
@@ -120,15 +115,13 @@ const PrayerTimeAdjustmentSection = ({
                   )}
                 >
                   {mode === "none"
-                    ? tAdjustment("none")
+                    ? tAdjustment("none.title")
                     : tAdjustment(`${key}.title`)}
                 </Text>
 
-                {selected && mode !== "none" && (
-                  <Text className="text-muted-foreground font-sans text-xs">
-                    {tAdjustment(`${mode}.description`)}
-                  </Text>
-                )}
+                <Text className="text-muted-foreground font-sans text-xs">
+                  {tAdjustment(`${key}.description`)}
+                </Text>
               </View>
 
               <View

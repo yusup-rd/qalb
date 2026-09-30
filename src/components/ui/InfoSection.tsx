@@ -24,12 +24,15 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
   const [collapsedHeight, setCollapsedHeight] = useState(0);
   const [expandedHeight, setExpandedHeight] = useState(0);
 
+  const isCollapsible =
+    collapsible && collapsedHeight > 0 && expandedHeight > collapsedHeight + 1;
+
   const finishCollapse = () => {
     setIsExpanded(false);
   };
 
   const toggleExpanded = () => {
-    if (!collapsible) {
+    if (!isCollapsible) {
       return;
     }
 
@@ -57,7 +60,7 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
   };
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    if (collapsedHeight === 0 || expandedHeight === 0) {
+    if (collapsedHeight === 0 || expandedHeight === 0 || !isCollapsible) {
       return {};
     }
 
@@ -78,7 +81,7 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
     ],
   }));
 
-  if (!collapsible) {
+  if (!collapsible || !isCollapsible) {
     return (
       <View className="border-border flex-row items-center gap-2 rounded-lg border p-2">
         <Fa name="circle-info" size={16} className="text-muted-foreground" />
@@ -86,6 +89,50 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
         <Text className="text-muted-foreground flex-1 font-sans text-xs">
           {message}
         </Text>
+
+        {collapsible && (
+          <>
+            <Text
+              className="text-muted-foreground absolute font-sans text-xs"
+              pointerEvents="none"
+              onLayout={(event) => {
+                const height = event.nativeEvent.layout.height;
+
+                setExpandedHeight((current) =>
+                  current === height ? current : height,
+                );
+              }}
+              style={{
+                left: 0,
+                right: 0,
+                opacity: 0,
+              }}
+            >
+              {message}
+            </Text>
+
+            <Text
+              className="text-muted-foreground absolute font-sans text-xs"
+              numberOfLines={COLLAPSED_LINES}
+              ellipsizeMode="tail"
+              pointerEvents="none"
+              onLayout={(event) => {
+                const height = event.nativeEvent.layout.height;
+
+                setCollapsedHeight((current) =>
+                  current === height ? current : height,
+                );
+              }}
+              style={{
+                left: 0,
+                right: 0,
+                opacity: 0,
+              }}
+            >
+              {message}
+            </Text>
+          </>
+        )}
       </View>
     );
   }
@@ -104,7 +151,6 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
           className="flex-1 overflow-hidden"
           style={contentAnimatedStyle}
         >
-          {/* Collapsed text */}
           <Text
             className="text-muted-foreground font-sans text-xs"
             numberOfLines={COLLAPSED_LINES}
@@ -120,7 +166,6 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
             {message}
           </Text>
 
-          {/* Expanded text */}
           <Text
             className="text-muted-foreground font-sans text-xs"
             style={{
@@ -129,52 +174,6 @@ const InfoSection = ({ message, collapsible = false }: InfoSectionProps) => {
               right: 0,
               top: 0,
               opacity: isExpanded ? 1 : 0,
-            }}
-          >
-            {message}
-          </Text>
-
-          {/* Collapsed height measurement */}
-          <Text
-            className="text-muted-foreground font-sans text-xs"
-            numberOfLines={COLLAPSED_LINES}
-            ellipsizeMode="tail"
-            pointerEvents="none"
-            onLayout={(event) => {
-              const height = event.nativeEvent.layout.height;
-
-              setCollapsedHeight((current) =>
-                current === height ? current : height,
-              );
-            }}
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 0,
-              opacity: 0,
-            }}
-          >
-            {message}
-          </Text>
-
-          {/* Expanded height measurement */}
-          <Text
-            className="text-muted-foreground font-sans text-xs"
-            pointerEvents="none"
-            onLayout={(event) => {
-              const height = event.nativeEvent.layout.height;
-
-              setExpandedHeight((current) =>
-                current === height ? current : height,
-              );
-            }}
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 0,
-              opacity: 0,
             }}
           >
             {message}
