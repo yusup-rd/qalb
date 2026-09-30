@@ -31,6 +31,34 @@ export const calculationMethods: CalculationMethodOption[] = [
     id: "umm-al-qura",
     key: "ummAlQura",
   },
+  {
+    id: "dubai",
+    key: "dubai",
+  },
+  {
+    id: "moonsighting-committee",
+    key: "moonsightingCommittee",
+  },
+  {
+    id: "kuwait",
+    key: "kuwait",
+  },
+  {
+    id: "qatar",
+    key: "qatar",
+  },
+  {
+    id: "singapore",
+    key: "singapore",
+  },
+  {
+    id: "tehran",
+    key: "tehran",
+  },
+  {
+    id: "turkey",
+    key: "turkey",
+  },
 ];
 
 export const asrMethods: AsrMethodOption[] = [

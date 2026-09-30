@@ -38,6 +38,18 @@ export interface PrayerTimeAdjustment {
 }
 
 export type CalculationMethodId =
-  "mwl" | "isna" | "egyptian" | "karachi" | "umm-al-qura";
+  | "mwl"
+  | "isna"
+  | "egyptian"
+  | "karachi"
+  | "umm-al-qura"
+  | "dubai"
+  | "moonsighting-committee"
+  | "kuwait"
+  | "qatar"
+  | "singapore"
+  | "tehran"
+  | "turkey"
+  | "other";
 
 export type AsrMethod = "standard" | "hanafi";

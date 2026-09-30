@@ -52,14 +52,29 @@
       "isna": "ISNA",
       "egyptian": "Egyptian",
       "karachi": "Karachi",
-      "ummAlQura": "Umm al-Qura"
+      "ummAlQura": "Umm al-Qura",
+      "dubai": "Dubai",
+      "moonsightingCommittee": "Moonsighting Committee",
+      "kuwait": "Kuwait",
+      "qatar": "Qatar",
+      "singapore": "Singapore & Malaysia",
+      "tehran": "Tehran",
+      "turkey": "Turkey",
+      "custom": "Custom"
     },
     "full": {
       "mwl": "Muslim World League",
       "isna": "Islamic Society of North America",
-      "egyptian": "Egyptian General Authority",
+      "egyptian": "Egyptian General Authority of Survey",
       "karachi": "University of Islamic Sciences, Karachi",
-      "ummAlQura": "Umm al-Qura University"
+      "ummAlQura": "Umm al-Qura University, Makkah",
+      "dubai": "Dubai Islamic Affairs and Charitable Activities Department",
+      "moonsightingCommittee": "Moonsighting Committee",
+      "kuwait": "Ministry of Awqaf and Islamic Affairs, Kuwait",
+      "qatar": "Ministry of Awqaf and Islamic Affairs, Qatar",
+      "singapore": "MUIS (Singapore) & JAKIM (Malaysia)",
+      "tehran": "Institute of Geophysics, University of Tehran",
+      "turkey": "Presidency of Religious Affairs (Diyanet), Turkey"
     }
   },
   "asrMethods": {
