@@ -1,5 +1,6 @@
 import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
+import { formatDistance } from "@/lib/format";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { Href, router } from "expo-router";
@@ -75,8 +76,10 @@ const MosqueQuickAccessButton = () => {
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
+  const { t: tUnits } = useTranslation(undefined, {
+    keyPrefix: "units",
+  });
 
-  const kilometerUnit = i18n.t("units.kilometer");
   const mosques = useNearbyMosques(DEFAULT_MOSQUE_RADIUS_KM);
   const closestMosque = mosques[0];
 
@@ -84,11 +87,11 @@ const MosqueQuickAccessButton = () => {
     ? (() => {
         const distanceMeters =
           closestMosque.drivingDistanceMeters ?? closestMosque.distanceMeters;
-        const distanceKm = distanceMeters / 1_000;
+        const distance = formatDistance(distanceMeters, i18n.language);
 
         return t("mosques.badge", {
-          distance: Number(distanceKm.toFixed(1)),
-          unit: kilometerUnit,
+          distance: distance.value,
+          unit: tUnits(distance.unit),
         });
       })()
     : "—";
