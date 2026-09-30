@@ -1,7 +1,9 @@
 import type {
   AsrMethod,
   CalculationMethodId,
+  PrayerName,
   PrayerNotificationName,
+  PrayerTimeAdjustment,
 } from "@/types/prayer";
 import { create } from "zustand";
 
@@ -13,19 +15,29 @@ interface PrayerNotificationSettings {
 interface PrayerStore {
   calculationMethod: CalculationMethodId;
   asrMethod: AsrMethod;
+
   prayerNotifications: Record<
     PrayerNotificationName,
     PrayerNotificationSettings
   >;
+
+  prayerTimeAdjustments: Record<PrayerName, PrayerTimeAdjustment>;
+
   setCalculationMethod: (method: CalculationMethodId) => void;
   setAsrMethod: (method: AsrMethod) => void;
   setCalculationSettings: (
     method: CalculationMethodId,
     asrMethod: AsrMethod,
   ) => void;
+
   setPrayerNotification: (
     prayer: PrayerNotificationName,
     settings: PrayerNotificationSettings,
+  ) => void;
+
+  setPrayerTimeAdjustment: (
+    prayer: PrayerName,
+    adjustment: PrayerTimeAdjustment,
   ) => void;
 }
 
@@ -60,6 +72,34 @@ export const usePrayerStore = create<PrayerStore>((set) => ({
     },
   },
 
+  prayerTimeAdjustments: {
+    Fajr: {
+      mode: "none",
+      offsetMinutes: 0,
+      fixedTime: null,
+    },
+    Dhuhr: {
+      mode: "none",
+      offsetMinutes: 0,
+      fixedTime: null,
+    },
+    Asr: {
+      mode: "none",
+      offsetMinutes: 0,
+      fixedTime: null,
+    },
+    Maghrib: {
+      mode: "none",
+      offsetMinutes: 0,
+      fixedTime: null,
+    },
+    Isha: {
+      mode: "none",
+      offsetMinutes: 0,
+      fixedTime: null,
+    },
+  },
+
   setCalculationMethod: (method) =>
     set({
       calculationMethod: method,
@@ -81,6 +121,14 @@ export const usePrayerStore = create<PrayerStore>((set) => ({
       prayerNotifications: {
         ...state.prayerNotifications,
         [prayer]: settings,
+      },
+    })),
+
+  setPrayerTimeAdjustment: (prayer, adjustment) =>
+    set((state) => ({
+      prayerTimeAdjustments: {
+        ...state.prayerTimeAdjustments,
+        [prayer]: adjustment,
       },
     })),
 }));

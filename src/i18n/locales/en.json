@@ -203,9 +203,6 @@
           "prayer": "Notification settings apply to this prayer every day.",
           "solarEvent": "Notification settings apply to this event every day."
         },
-        "action": {
-          "done": "Done"
-        },
         "status": {
           "off": "Off",
           "atTime": "At prayer time",
@@ -215,6 +212,18 @@
         "accessibility": {
           "settings": "{{prayer}} prayer settings",
           "solarEventSettings": "{{prayer}} event settings"
+        }
+      },
+      "adjustment": {
+        "title": "Manual Time Adjustment",
+        "none": "None",
+        "offset": {
+          "title": "Offset",
+          "description": "Move the calculated time earlier or later."
+        },
+        "fixed": {
+          "title": "Fixed time",
+          "description": "Use the same fixed time every day."
         }
       }
     },

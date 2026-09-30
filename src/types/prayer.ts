@@ -1,5 +1,7 @@
 export type PrayerName = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
+
 export type SolarEventName = "Sunrise";
+
 export type PrayerStatus = "completed" | "soon" | "upcoming";
 
 export type PrayerIcon =
@@ -26,6 +28,14 @@ export interface SolarEvent {
 }
 
 export type PrayerNotificationName = PrayerName | SolarEventName;
+
+export type PrayerTimeAdjustmentMode = "none" | "offset" | "fixed";
+
+export interface PrayerTimeAdjustment {
+  mode: PrayerTimeAdjustmentMode;
+  offsetMinutes: number;
+  fixedTime: string | null;
+}
 
 export type CalculationMethodId =
   "mwl" | "isna" | "egyptian" | "karachi" | "umm-al-qura";
