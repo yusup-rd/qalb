@@ -49,6 +49,11 @@ const PrayerTimeAdjustmentSection = ({
       ...changes,
     };
 
+    if (changes.mode === "none") {
+      nextAdjustment.offsetMinutes = 0;
+      nextAdjustment.fixedTime = null;
+    }
+
     if (
       changes.mode === "fixed" &&
       adjustment.mode !== "fixed" &&
