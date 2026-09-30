@@ -108,6 +108,7 @@ const PrayerTimeSettingsSheet = ({
             {!isSolarEvent && adjustment && (
               <PrayerTimeAdjustmentSection
                 adjustment={adjustment}
+                prayerTime={prayer.time}
                 onChange={onAdjustmentChange}
               />
             )}

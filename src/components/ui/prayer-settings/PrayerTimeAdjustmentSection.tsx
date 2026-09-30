@@ -11,6 +11,7 @@ import { Pressable, Text, View } from "react-native";
 
 interface PrayerTimeAdjustmentSectionProps {
   adjustment: PrayerTimeAdjustment;
+  prayerTime: Date;
   onChange: (adjustment: PrayerTimeAdjustment) => void;
 }
 
@@ -25,6 +26,7 @@ const MAX_OFFSET_MINUTES = 60;
 
 const PrayerTimeAdjustmentSection = ({
   adjustment,
+  prayerTime,
   onChange,
 }: PrayerTimeAdjustmentSectionProps) => {
   const { colors } = useTheme();
@@ -35,11 +37,27 @@ const PrayerTimeAdjustmentSection = ({
 
   const fixedTimeDate = parseTimeString(adjustment.fixedTime);
 
+  const formatPrayerTime = (time: Date) =>
+    [
+      time.getHours().toString().padStart(2, "0"),
+      time.getMinutes().toString().padStart(2, "0"),
+    ].join(":");
+
   const updateAdjustment = (changes: Partial<PrayerTimeAdjustment>) => {
-    onChange({
+    const nextAdjustment = {
       ...adjustment,
       ...changes,
-    });
+    };
+
+    if (
+      changes.mode === "fixed" &&
+      adjustment.mode !== "fixed" &&
+      !adjustment.fixedTime
+    ) {
+      nextAdjustment.fixedTime = formatPrayerTime(prayerTime);
+    }
+
+    onChange(nextAdjustment);
   };
 
   const handleOffsetChange = (value: number) => {
