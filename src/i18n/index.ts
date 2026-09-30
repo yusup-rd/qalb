@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
 import i18n from "i18next";
+import "intl-pluralrules";
 import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import ru from "./locales/ru.json";
