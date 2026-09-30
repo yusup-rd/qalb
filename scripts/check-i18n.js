@@ -82,7 +82,6 @@ function getTemplatePrefix(node) {
 
 function joinPrefix(prefix, key) {
   if (!prefix) return key;
-
   if (!key) return prefix;
 
   return `${prefix}.${key}`;
@@ -186,6 +185,19 @@ function addProtectedPrefix(prefixes, prefix) {
   prefixes.add(prefix.endsWith(".") ? prefix : `${prefix}.`);
 }
 
+function hasCountOption(node) {
+  if (!node || !ts.isObjectLiteralExpression(node)) {
+    return false;
+  }
+
+  return node.properties.some(
+    (property) =>
+      ts.isPropertyAssignment(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === "count",
+  );
+}
+
 function analyzeSourceFile(filePath) {
   const text = fs.readFileSync(filePath, "utf8");
 
@@ -202,8 +214,8 @@ function analyzeSourceFile(filePath) {
   );
 
   const translationFunctions = getTranslationFunctionInfo(sourceFile);
-
   const staticKeys = new Set();
+  const countUsedKeys = new Set();
   const protectedPrefixes = new Set();
   const uncertainUsages = [];
 
@@ -219,11 +231,16 @@ function analyzeSourceFile(filePath) {
 
       if (prefix !== undefined && node.arguments.length > 0) {
         const keyNode = node.arguments[0];
-
         const literal = getStringLiteral(keyNode);
 
         if (literal !== null) {
-          staticKeys.add(joinPrefix(prefix, literal));
+          const fullKey = joinPrefix(prefix, literal);
+
+          staticKeys.add(fullKey);
+
+          if (hasCountOption(node.arguments[1])) {
+            countUsedKeys.add(fullKey);
+          }
         } else {
           const templatePrefix = getTemplatePrefix(keyNode);
 
@@ -277,11 +294,14 @@ function analyzeSourceFile(filePath) {
 
       if (node.arguments.length > 0) {
         const keyNode = node.arguments[0];
-
         const literal = getStringLiteral(keyNode);
 
         if (literal !== null) {
           staticKeys.add(literal);
+
+          if (hasCountOption(node.arguments[1])) {
+            countUsedKeys.add(literal);
+          }
         } else {
           const templatePrefix = getTemplatePrefix(keyNode);
 
@@ -312,9 +332,7 @@ function analyzeSourceFile(filePath) {
 
       for (const property of attributes.properties) {
         if (!ts.isJsxAttribute(property)) continue;
-
         if (property.name.text !== "i18nKey") continue;
-
         if (!property.initializer) continue;
 
         if (ts.isStringLiteral(property.initializer)) {
@@ -327,7 +345,6 @@ function analyzeSourceFile(filePath) {
           property.initializer.expression
         ) {
           const expression = property.initializer.expression;
-
           const literal = getStringLiteral(expression);
 
           if (literal !== null) {
@@ -360,6 +377,7 @@ function analyzeSourceFile(filePath) {
 
   return {
     staticKeys,
+    countUsedKeys,
     protectedPrefixes,
     uncertainUsages,
   };
@@ -408,6 +426,7 @@ const russianKeys = flattenObject(ru);
 const sourceFiles = getAllSourceFiles(SRC_DIR);
 
 const staticKeys = new Set();
+const countUsedKeys = new Set();
 const protectedPrefixes = new Set();
 const uncertainUsages = [];
 
@@ -416,6 +435,10 @@ for (const filePath of sourceFiles) {
 
   for (const key of result.staticKeys) {
     staticKeys.add(key);
+  }
+
+  for (const key of result.countUsedKeys) {
+    countUsedKeys.add(key);
   }
 
   for (const prefix of result.protectedPrefixes) {
@@ -427,20 +450,6 @@ for (const filePath of sourceFiles) {
 
 const PLURAL_SUFFIXES = ["_zero", "_one", "_two", "_few", "_many", "_other"];
 
-function isPluralVariantOfUsedKey(key, usedKeys) {
-  for (const suffix of PLURAL_SUFFIXES) {
-    if (!key.endsWith(suffix)) continue;
-
-    const baseKey = key.slice(0, -suffix.length);
-
-    if (usedKeys.has(baseKey)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 const definitelyUnused = new Set();
 
 for (const key of englishKeys) {
@@ -450,7 +459,24 @@ for (const key of englishKeys) {
     continue;
   }
 
-  if (isPluralVariantOfUsedKey(key, staticKeys)) {
+  /*
+   * A key used with count may resolve to one of its plural variants.
+   * Keep all variants belonging to that source key from being reported
+   * as unused.
+   */
+  let belongsToCountUsedKey = false;
+
+  for (const usedKey of countUsedKeys) {
+    if (
+      key.startsWith(`${usedKey}_`) &&
+      PLURAL_SUFFIXES.some((suffix) => key.endsWith(suffix))
+    ) {
+      belongsToCountUsedKey = true;
+      break;
+    }
+  }
+
+  if (belongsToCountUsedKey) {
     continue;
   }
 
@@ -465,13 +491,37 @@ const extraRussian = new Set(
   [...russianKeys].filter((key) => !englishKeys.has(key)),
 );
 
-const missingEnglish = new Set(
-  [...staticKeys].filter(
-    (key) =>
-      !englishKeys.has(key) &&
-      !PLURAL_SUFFIXES.some((suffix) => englishKeys.has(`${key}${suffix}`)),
-  ),
-);
+const missingEnglish = new Set();
+
+for (const key of staticKeys) {
+  if (englishKeys.has(key)) {
+    continue;
+  }
+
+  /*
+   * When a source key is used with count, English must define both
+   * _one and _other. Having only one of them is not sufficient.
+   */
+  if (countUsedKeys.has(key)) {
+    if (!englishKeys.has(`${key}_one`)) {
+      missingEnglish.add(`${key}_one`);
+    }
+
+    if (!englishKeys.has(`${key}_other`)) {
+      missingEnglish.add(`${key}_other`);
+    }
+
+    continue;
+  }
+
+  /*
+   * Non-count usages may still refer to a plural base key if the
+   * locale defines one of its plural variants.
+   */
+  if (!PLURAL_SUFFIXES.some((suffix) => englishKeys.has(`${key}${suffix}`))) {
+    missingEnglish.add(key);
+  }
+}
 
 const dynamicallyUsedKeys = new Set();
 
@@ -482,13 +532,13 @@ for (const key of englishKeys) {
 }
 
 console.log("");
+
 console.log("i18n audit");
 console.log("────────────────────────────────────────");
-
 console.log(`${englishKeys.size} translation keys`);
 console.log(`${sourceFiles.length} source files`);
-
 console.log("");
+
 console.log(`✓ Used directly              ${staticKeys.size}`);
 console.log(`✓ Used dynamically           ${dynamicallyUsedKeys.size}`);
 console.log(`⚠ Cannot statically verify   ${uncertainUsages.length}`);
