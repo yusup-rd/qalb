@@ -133,6 +133,8 @@ const InfoSectionContent = ({
                 {message}
               </Text>
             </View>
+
+            <View className="w-3" />
           </View>
         )}
       </View>
