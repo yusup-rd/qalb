@@ -100,7 +100,12 @@
     },
     "prayersToday": {
       "title": "Today's Prayers",
-      "info": "These are calculated times for the Adhan (call to prayer). Actual congregational (Iqamah) times vary depending on your local mosque.",
+      "info": "These are calculated Adhan (call to prayer) times. Iqamah times for congregational prayer vary by mosque. To adjust a prayer to your local Iqamah time, tap the prayer and use Manual Time Adjustment.",
+      "manualAdjustmentInfo": "Manual time adjustments: {{adjustments}}.",
+      "manualAdjustment": {
+        "offset": "{{prayer}} {{offset}}",
+        "fixed": "{{prayer}} at {{time}}"
+      },
       "nextIn": "Next in {{time}}",
       "settingsAccessibilityLabel": "Prayer settings. Asr: {{asrLabel}}, Method: {{calculationMethodLabel}}"
     },
@@ -115,7 +120,10 @@
       },
       "mosques": {
         "title": "Mosques",
-        "description": "{{count}} open nearby",
+        "description_one": "{{count}} mosque nearby",
+        "description_few": "{{count}} mosques nearby",
+        "description_many": "{{count}} mosques nearby",
+        "description_other": "{{count}} mosques nearby",
         "badge": "{{distance}} {{unit}}"
       },
       "prayerTimes": {
@@ -203,9 +211,6 @@
           "prayer": "Notification settings apply to this prayer every day.",
           "solarEvent": "Notification settings apply to this event every day."
         },
-        "action": {
-          "done": "Done"
-        },
         "status": {
           "off": "Off",
           "atTime": "At prayer time",
@@ -215,6 +220,28 @@
         "accessibility": {
           "settings": "{{prayer}} prayer settings",
           "solarEventSettings": "{{prayer}} event settings"
+        }
+      },
+      "adjustment": {
+        "title": "Manual Time Adjustment",
+        "none": {
+          "title": "None",
+          "description": "Use the calculated Adhan time."
+        },
+        "offset": {
+          "title": "Offset",
+          "description": "Move the calculated time earlier or later."
+        },
+        "fixed": {
+          "title": "Fixed time",
+          "description": "Use the same fixed time every day."
+        },
+        "resetToAdhan": {
+          "title": "Reset to Adhan settings?",
+          "description": "This will remove your custom time adjustment for {{prayer}}.",
+          "cancel": "Cancel",
+          "confirm": "Reset",
+          "button": "Reset to Adhan settings"
         }
       }
     },

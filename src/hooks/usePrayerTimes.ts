@@ -7,6 +7,7 @@ import type {
   Prayer,
   PrayerName,
   PrayerStatus,
+  PrayerTimeAdjustment,
   SolarEvent,
 } from "@/types/prayer";
 import { useEffect, useMemo, useState } from "react";
@@ -46,6 +47,41 @@ function getPrayerTime(
   }
 }
 
+function applyPrayerTimeAdjustment(
+  date: Date,
+  adjustment: PrayerTimeAdjustment,
+) {
+  if (adjustment.mode === "offset") {
+    const adjustedDate = new Date(date);
+
+    adjustedDate.setMinutes(
+      adjustedDate.getMinutes() + adjustment.offsetMinutes,
+    );
+
+    return adjustedDate;
+  }
+
+  if (adjustment.mode === "fixed" && adjustment.fixedTime) {
+    const [hours, minutes] = adjustment.fixedTime.split(":").map(Number);
+
+    if (
+      Number.isInteger(hours) &&
+      Number.isInteger(minutes) &&
+      hours >= 0 &&
+      hours <= 23 &&
+      minutes >= 0 &&
+      minutes <= 59
+    ) {
+      const adjustedDate = new Date(date);
+      adjustedDate.setHours(hours, minutes, 0, 0);
+
+      return adjustedDate;
+    }
+  }
+
+  return date;
+}
+
 function getPrayerData(
   date: Date,
   latitude: number,
@@ -53,6 +89,7 @@ function getPrayerData(
   calculationMethod: Parameters<typeof calculatePrayerTimes>[3],
   asrMethod: Parameters<typeof calculatePrayerTimes>[4],
   language: string,
+  prayerTimeAdjustments: Record<PrayerName, PrayerTimeAdjustment>,
 ) {
   const times = calculatePrayerTimes(
     latitude,
@@ -63,7 +100,9 @@ function getPrayerData(
   );
 
   const prayers: Prayer[] = prayerNames.map((name) => {
-    const time = getPrayerTime(name, times);
+    const calculatedTime = getPrayerTime(name, times);
+    const adjustment = prayerTimeAdjustments[name];
+    const time = applyPrayerTimeAdjustment(calculatedTime, adjustment);
     const metadata = prayerMetadata[name];
 
     return {
@@ -90,16 +129,20 @@ function getPrayerData(
   };
 }
 
+function sortPrayersByTime(prayers: Prayer[]) {
+  return [...prayers].sort((a, b) => a.time.getTime() - b.time.getTime());
+}
+
 export function usePrayerTimes(selectedDate?: Date) {
   const { i18n: i18nInstance } = useTranslation();
   const language = i18nInstance.language;
-
   const calculationMethod = usePrayerStore((state) => state.calculationMethod);
   const asrMethod = usePrayerStore((state) => state.asrMethod);
-
+  const prayerTimeAdjustments = usePrayerStore(
+    (state) => state.prayerTimeAdjustments,
+  );
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
-
   const [now, setNow] = useState(getNow);
 
   useEffect(() => {
@@ -156,6 +199,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         calculationMethod,
         asrMethod,
         language,
+        prayerTimeAdjustments,
       ),
       today: getPrayerData(
         currentDate,
@@ -164,6 +208,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         calculationMethod,
         asrMethod,
         language,
+        prayerTimeAdjustments,
       ),
       tomorrow: getPrayerData(
         tomorrow,
@@ -172,6 +217,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         calculationMethod,
         asrMethod,
         language,
+        prayerTimeAdjustments,
       ),
       selected: getPrayerData(
         selectedDateValue,
@@ -180,6 +226,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         calculationMethod,
         asrMethod,
         language,
+        prayerTimeAdjustments,
       ),
       selectedNextDay: getPrayerData(
         selectedNextDay,
@@ -188,6 +235,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         calculationMethod,
         asrMethod,
         language,
+        prayerTimeAdjustments,
       ),
     };
   }, [
@@ -198,6 +246,7 @@ export function usePrayerTimes(selectedDate?: Date) {
     calculationMethod,
     asrMethod,
     language,
+    prayerTimeAdjustments,
   ]);
 
   return useMemo(() => {
@@ -228,24 +277,27 @@ export function usePrayerTimes(selectedDate?: Date) {
 
     const nowTime = now.getTime();
 
-    const nextTodayPrayer = today.prayers.find(
+    const orderedYesterdayPrayers = sortPrayersByTime(yesterday.prayers);
+    const orderedTodayPrayers = sortPrayersByTime(today.prayers);
+    const orderedTomorrowPrayers = sortPrayersByTime(tomorrow.prayers);
+
+    const nextTodayPrayer = orderedTodayPrayers.find(
       (prayer) => prayer.time.getTime() > nowTime,
     );
 
-    const previousTodayPrayer = [...today.prayers]
+    const adjacentPrayers = sortPrayersByTime([
+      ...orderedYesterdayPrayers,
+      ...orderedTodayPrayers,
+      ...orderedTomorrowPrayers,
+    ]);
+
+    const nextPrayer =
+      adjacentPrayers.find((prayer) => prayer.time.getTime() > nowTime) ??
+      orderedTomorrowPrayers[0]!;
+
+    const previousPrayer = [...adjacentPrayers]
       .reverse()
-      .find((prayer) => prayer.time.getTime() <= nowTime);
-
-    let previousPrayer: Prayer;
-    let nextPrayer: Prayer;
-
-    if (nextTodayPrayer) {
-      nextPrayer = nextTodayPrayer;
-      previousPrayer = previousTodayPrayer ?? yesterday.prayers[4];
-    } else {
-      nextPrayer = tomorrow.prayers[0];
-      previousPrayer = today.prayers[4];
-    }
+      .find((prayer) => prayer.time.getTime() <= nowTime)!;
 
     const prayers = today.prayers.map((prayer) => {
       let status: PrayerStatus = "upcoming";
@@ -254,8 +306,7 @@ export function usePrayerTimes(selectedDate?: Date) {
         status = "completed";
       }
 
-      const isNextPrayerToday =
-        prayer.time.getTime() === nextPrayer.time.getTime();
+      const isNextPrayerToday = nextTodayPrayer?.name === prayer.name;
 
       if (isNextPrayerToday) {
         status = "soon";
@@ -338,28 +389,20 @@ export function usePrayerTimes(selectedDate?: Date) {
     return {
       prayers,
       selectedPrayers: selected.prayers,
-
       sunrise: today.sunrise,
       sunriseEvent: today.sunriseEvent,
       isSunriseCompleted: today.sunrise.getTime() <= nowTime,
-
       selectedSunrise: selected.sunrise,
       selectedSunriseEvent: selected.sunriseEvent,
-
       selectedSunset: selected.sunset,
       selectedNightSunset: nightSunset,
       selectedNextFajr: nightFajr,
-
       previousPrayer,
       nextPrayer,
-
       countdown: formatDurationClock(nextPrayer.time.getTime() - nowTime),
-
       elapsedPercent,
-
       sunset: today.sunset,
       now,
-
       solarEvent: {
         label: solarEvent.label,
         remainingFormatted: formatDuration(solarEvent.time.getTime() - nowTime),

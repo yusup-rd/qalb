@@ -132,7 +132,8 @@ export function formatHijriDate(date: Date, language = i18n.language) {
  * Formats a Date into a localized 12-hour/24-hour time string.
  *
  * Example:
- * "5:42 AM"
+ * English → "5:42 PM"
+ * Russian → "17:42"
  */
 export function formatTime(date: Date, language = i18n.language) {
   const { intlLocale, hour12 } = getLocaleConfig(language);
@@ -142,6 +143,45 @@ export function formatTime(date: Date, language = i18n.language) {
     minute: "2-digit",
     hour12,
   });
+}
+
+/**
+ * Formats a signed minute offset using the localized duration translation.
+ *
+ * Examples:
+ * English → "-5 min", "+15 mins"
+ * Russian → "-5 мин", "+15 мин"
+ */
+export function formatMinuteOffset(minutes: number, language = i18n.language) {
+  const sign = minutes > 0 ? "+" : minutes < 0 ? "-" : "";
+
+  return `${sign}${i18n.t("duration.minute", {
+    count: Math.abs(minutes),
+    lng: language,
+  })}`;
+}
+
+/**
+ * Parses an "HH:mm" time string into a Date.
+ *
+ * The date portion is based on the current date and only the
+ * hour and minute are taken from the provided string.
+ *
+ * Example:
+ * "17:30" → Date with today's date at 17:30
+ */
+export function parseTimeString(time: string | null) {
+  const date = new Date();
+
+  if (!time) {
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  const [hours, minutes] = time.split(":").map(Number);
+  date.setHours(hours, minutes, 0, 0);
+
+  return date;
 }
 
 /**
@@ -191,10 +231,11 @@ export function formatDuration(milliseconds: number) {
     return i18n.t("duration.hour", { count: hours });
   }
 
-  return `${i18n.t("duration.hour", { count: hours })} ${i18n.t(
-    "duration.minute",
-    { count: minutes },
-  )}`;
+  return `${i18n.t("duration.hour", {
+    count: hours,
+  })} ${i18n.t("duration.minute", {
+    count: minutes,
+  })}`;
 }
 
 /**

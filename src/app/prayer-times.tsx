@@ -3,10 +3,10 @@ import DaylightArc from "@/components/prayer-times/daylight/DaylightArc";
 import NightPortions from "@/components/prayer-times/night-portions/NightPortions";
 import PrayerCalculationSelector from "@/components/prayer-times/prayer-calculation/PrayerCalculationSelector";
 import PrayerCalculationSheet from "@/components/prayer-times/prayer-calculation/PrayerCalculationSheet";
-import PrayerTimeSettingsSheet from "@/components/prayer-times/scheduled-prayers/PrayerTimeSettingsSheet";
 import ScheduledTimes from "@/components/prayer-times/scheduled-prayers/ScheduledTimes";
 import ErrorCard from "@/components/ui/ErrorCard";
 import LoadingCard from "@/components/ui/LoadingCard";
+import PrayerTimeSettingsSheet from "@/components/ui/prayer-settings/PrayerTimeSettingsSheet";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
@@ -14,6 +14,7 @@ import type {
   AsrMethod,
   CalculationMethodId,
   Prayer,
+  PrayerTimeAdjustment,
   SolarEvent,
 } from "@/types/prayer";
 import { useState } from "react";
@@ -34,17 +35,15 @@ const PrayerTimes = () => {
   const [draftCalculationMethod, setDraftCalculationMethod] =
     useState<CalculationMethodId>("mwl");
   const [draftAsrMethod, setDraftAsrMethod] = useState<AsrMethod>("standard");
-  const [draftNotificationEnabled, setDraftNotificationEnabled] =
-    useState(false);
-  const [draftNotificationMinutesBefore, setDraftNotificationMinutesBefore] =
-    useState(10);
 
   const {
     calculationMethod,
     asrMethod,
     prayerNotifications,
+    prayerTimeAdjustments,
     setCalculationSettings,
     setPrayerNotification,
+    setPrayerTimeAdjustment,
   } = usePrayerStore();
 
   const {
@@ -75,11 +74,7 @@ const PrayerTimes = () => {
   };
 
   const handlePrayerPress = (prayer: Prayer | SolarEvent) => {
-    const settings = prayerNotifications[prayer.name];
-
     setSelectedPrayer(prayer);
-    setDraftNotificationEnabled(settings.enabled);
-    setDraftNotificationMinutesBefore(settings.minutesBefore);
     setPrayerSettingsVisible(true);
   };
 
@@ -87,17 +82,34 @@ const PrayerTimes = () => {
     setPrayerSettingsVisible(false);
   };
 
-  const handlePrayerSettingsSave = () => {
+  const handlePrayerNotificationEnabledChange = (enabled: boolean) => {
     if (!selectedPrayer) {
       return;
     }
 
     setPrayerNotification(selectedPrayer.name, {
-      enabled: draftNotificationEnabled,
-      minutesBefore: draftNotificationMinutesBefore,
+      enabled,
+      minutesBefore: prayerNotifications[selectedPrayer.name].minutesBefore,
     });
+  };
 
-    setPrayerSettingsVisible(false);
+  const handlePrayerNotificationMinutesChange = (minutes: number) => {
+    if (!selectedPrayer) {
+      return;
+    }
+
+    setPrayerNotification(selectedPrayer.name, {
+      enabled: prayerNotifications[selectedPrayer.name].enabled,
+      minutesBefore: minutes,
+    });
+  };
+
+  const handlePrayerAdjustmentChange = (adjustment: PrayerTimeAdjustment) => {
+    if (!selectedPrayer || selectedPrayer.name === "Sunrise") {
+      return;
+    }
+
+    setPrayerTimeAdjustment(selectedPrayer.name, adjustment);
   };
 
   const handleLocationAction = () => {
@@ -108,6 +120,15 @@ const PrayerTimes = () => {
 
     void retryLocation();
   };
+
+  const selectedPrayerNotification = selectedPrayer
+    ? prayerNotifications[selectedPrayer.name]
+    : null;
+
+  const selectedPrayerAdjustment =
+    selectedPrayer && selectedPrayer.name !== "Sunrise"
+      ? prayerTimeAdjustments[selectedPrayer.name]
+      : null;
 
   return (
     <>
@@ -191,12 +212,13 @@ const PrayerTimes = () => {
       <PrayerTimeSettingsSheet
         visible={prayerSettingsVisible}
         prayer={selectedPrayer}
-        enabled={draftNotificationEnabled}
-        minutesBefore={draftNotificationMinutesBefore}
-        onEnabledChange={setDraftNotificationEnabled}
-        onMinutesBeforeChange={setDraftNotificationMinutesBefore}
+        enabled={selectedPrayerNotification?.enabled ?? false}
+        minutesBefore={selectedPrayerNotification?.minutesBefore ?? 10}
+        adjustment={selectedPrayerAdjustment}
+        onEnabledChange={handlePrayerNotificationEnabledChange}
+        onMinutesBeforeChange={handlePrayerNotificationMinutesChange}
+        onAdjustmentChange={handlePrayerAdjustmentChange}
         onClose={handlePrayerSettingsClose}
-        onSave={handlePrayerSettingsSave}
       />
     </>
   );

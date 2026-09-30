@@ -1,3 +1,6 @@
+import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
+import { useNearbyMosques } from "@/hooks/useNearbyMosques";
+import { formatDistance } from "@/lib/format";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { Href, router } from "expo-router";
@@ -31,7 +34,6 @@ const quickAccessConfig: Record<
     titleKey: "quran.title",
     route: "/quran",
   },
-
   mosques: {
     icon: "mosque",
     iconClassName: "text-primary-soft-foreground",
@@ -41,7 +43,6 @@ const quickAccessConfig: Record<
     titleKey: "mosques.title",
     route: "/mosques",
   },
-
   prayer: {
     icon: "calendar-days",
     iconClassName: "text-muted-foreground",
@@ -51,7 +52,6 @@ const quickAccessConfig: Record<
     titleKey: "prayerTimes.title",
     route: "/prayer-times",
   },
-
   zakat: {
     icon: "money-bill-wave",
     iconClassName: "text-muted-foreground",
@@ -61,7 +61,6 @@ const quickAccessConfig: Record<
     titleKey: "zakat.title",
     route: "/zakat",
   },
-
   tasbih: {
     icon: "hands-praying",
     iconClassName: "text-primary-soft-foreground",
@@ -73,11 +72,83 @@ const quickAccessConfig: Record<
   },
 };
 
-const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+const MosqueQuickAccessButton = () => {
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
-  const kilometerUnit = i18n.t("units.kilometer");
+  const { t: tUnits } = useTranslation(undefined, {
+    keyPrefix: "units",
+  });
+
+  const mosques = useNearbyMosques(DEFAULT_MOSQUE_RADIUS_KM);
+  const closestMosque = mosques[0];
+
+  const badge = closestMosque
+    ? (() => {
+        const distanceMeters =
+          closestMosque.drivingDistanceMeters ?? closestMosque.distanceMeters;
+        const distance = formatDistance(distanceMeters, i18n.language);
+
+        return t("mosques.badge", {
+          distance: distance.value,
+          unit: tUnits(distance.unit),
+        });
+      })()
+    : "—";
+
+  return (
+    <Pressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+      onPress={() => router.push("/mosques")}
+      accessibilityLabel={t("mosques.title")}
+    >
+      <View className="flex-row items-center justify-between gap-2">
+        <View className="bg-primary-soft size-9 items-center justify-center rounded-full">
+          <Fa
+            name="mosque"
+            size={16}
+            className="text-primary-soft-foreground"
+          />
+        </View>
+
+        <View className="bg-primary-soft flex items-center justify-center rounded-full px-2 py-0.5">
+          <Text className="font-sans-semibold text-primary-soft-foreground text-xs">
+            {badge}
+          </Text>
+        </View>
+      </View>
+
+      <View>
+        <Text
+          className="font-sans-semibold text-foreground text-lg"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {t("mosques.title")}
+        </Text>
+
+        <Text
+          className="text-muted-foreground font-sans text-sm"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {t("mosques.description", {
+            count: mosques.length,
+          })}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
+const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "home.quickAccess",
+  });
+
+  if (type === "mosques") {
+    return <MosqueQuickAccessButton />;
+  }
 
   const item = quickAccessConfig[type];
 
@@ -85,20 +156,10 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
     switch (type) {
       case "quran":
         return t("quran.badge");
-
-      case "mosques":
-        // TODO: Replace with dynamic distance from nearest mosque API.
-        return t("mosques.badge", {
-          distance: 0.4,
-          unit: kilometerUnit,
-        });
-
       case "prayer":
         return t("prayerTimes.badge");
-
       case "zakat":
         return t("zakat.badge");
-
       case "tasbih":
         return t("tasbih.badge");
     }
@@ -115,20 +176,10 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
         return t("quran.description.continue", {
           surahName: "Al-Kahf",
         });
-
-      case "mosques":
-        // TODO: Replace with dynamic mosque data.
-        // Count should come from nearby mosque availability.
-        return t("mosques.description", {
-          count: 4,
-        });
-
       case "prayer":
         return t("prayerTimes.description");
-
       case "zakat":
         return t("zakat.description");
-
       case "tasbih":
         return t("tasbih.description");
     }

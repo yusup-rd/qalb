@@ -1,4 +1,5 @@
 import { calculationMethods } from "@/constants/prayer-calculation";
+import { formatTime, parseTimeString } from "@/lib/format";
 import { usePrayerStore } from "@/store/prayerStore";
 import type { Prayer, SolarEvent } from "@/types/prayer";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -30,8 +31,15 @@ const PrayersToday = ({
   const { t: tMethod } = useTranslation(undefined, {
     keyPrefix: "prayerCalculationMethods.short",
   });
+  const { t: tPrayer } = useTranslation(undefined, {
+    keyPrefix: "prayers",
+  });
+  const { t: tDuration } = useTranslation(undefined, {
+    keyPrefix: "duration",
+  });
 
-  const { calculationMethod, asrMethod } = usePrayerStore();
+  const { calculationMethod, asrMethod, prayerTimeAdjustments } =
+    usePrayerStore();
 
   const calculationMethodOption = calculationMethods.find(
     (method) => method.id === calculationMethod,
@@ -57,6 +65,49 @@ const PrayersToday = ({
     }
   });
 
+  const adjustedPrayers = prayers.filter(
+    (prayer) => prayerTimeAdjustments[prayer.name]?.mode !== "none",
+  );
+
+  const infoMessage =
+    adjustedPrayers.length === 0
+      ? t("info")
+      : t("manualAdjustmentInfo", {
+          adjustments: adjustedPrayers
+            .map((prayer) => {
+              const adjustment = prayerTimeAdjustments[prayer.name];
+
+              if (!adjustment) {
+                return null;
+              }
+
+              const prayerLabel = tPrayer(prayer.name.toLowerCase());
+
+              if (adjustment.mode === "fixed") {
+                return t("manualAdjustment.fixed", {
+                  prayer: prayerLabel,
+                  time: formatTime(parseTimeString(adjustment.fixedTime)),
+                });
+              }
+
+              if (adjustment.mode === "offset") {
+                const minutes = Math.abs(adjustment.offsetMinutes);
+                const direction = adjustment.offsetMinutes >= 0 ? "+" : "-";
+
+                return t("manualAdjustment.offset", {
+                  prayer: prayerLabel,
+                  offset: `${direction}${tDuration("minute", {
+                    count: minutes,
+                  })}`,
+                });
+              }
+
+              return null;
+            })
+            .filter(Boolean)
+            .join(", "),
+        });
+
   return (
     <View className="gap-2">
       <View className="flex-row items-center justify-between gap-2">
@@ -80,7 +131,7 @@ const PrayersToday = ({
         </Pressable>
       </View>
 
-      <InfoSection message={t("info")} />
+      <InfoSection message={infoMessage} collapsible />
 
       <View className="gap-2">
         {displayItems.map((item) => (

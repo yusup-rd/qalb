@@ -1,0 +1,1 @@
+export const DEFAULT_MOSQUE_RADIUS_KM = 10;
