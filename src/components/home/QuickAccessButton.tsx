@@ -71,48 +71,92 @@ const quickAccessConfig: Record<
   },
 };
 
-const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+const MosqueQuickAccessButton = () => {
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
 
   const kilometerUnit = i18n.t("units.kilometer");
+  const mosques = useNearbyMosques(DEFAULT_MOSQUE_RADIUS_KM);
+  const closestMosque = mosques[0];
 
-  const item = quickAccessConfig[type];
-
-  const mosques = useNearbyMosques(
-    type === "mosques" ? DEFAULT_MOSQUE_RADIUS_KM : null,
-  );
-
-  const getBadge = () => {
-    switch (type) {
-      case "quran":
-        return t("quran.badge");
-
-      case "mosques": {
-        const closestMosque = mosques[0];
-
-        if (!closestMosque) {
-          return "—";
-        }
-
+  const badge = closestMosque
+    ? (() => {
         const distanceMeters =
           closestMosque.drivingDistanceMeters ?? closestMosque.distanceMeters;
-
         const distanceKm = distanceMeters / 1_000;
 
         return t("mosques.badge", {
           distance: Number(distanceKm.toFixed(1)),
           unit: kilometerUnit,
         });
-      }
+      })()
+    : "—";
 
+  return (
+    <Pressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+      onPress={() => router.push("/mosques")}
+      accessibilityLabel={t("mosques.title")}
+    >
+      <View className="flex-row items-center justify-between gap-2">
+        <View className="bg-primary-soft size-9 items-center justify-center rounded-full">
+          <Fa
+            name="mosque"
+            size={16}
+            className="text-primary-soft-foreground"
+          />
+        </View>
+
+        <View className="bg-primary-soft flex items-center justify-center rounded-full px-2 py-0.5">
+          <Text className="font-sans-semibold text-primary-soft-foreground text-xs">
+            {badge}
+          </Text>
+        </View>
+      </View>
+
+      <View>
+        <Text
+          className="font-sans-semibold text-foreground text-lg"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {t("mosques.title")}
+        </Text>
+
+        <Text
+          className="text-muted-foreground font-sans text-sm"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {t("mosques.description", {
+            count: mosques.length,
+          })}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
+const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "home.quickAccess",
+  });
+
+  if (type === "mosques") {
+    return <MosqueQuickAccessButton />;
+  }
+
+  const item = quickAccessConfig[type];
+
+  const getBadge = () => {
+    switch (type) {
+      case "quran":
+        return t("quran.badge");
       case "prayer":
         return t("prayerTimes.badge");
-
       case "zakat":
         return t("zakat.badge");
-
       case "tasbih":
         return t("tasbih.badge");
     }
@@ -129,18 +173,10 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
         return t("quran.description.continue", {
           surahName: "Al-Kahf",
         });
-
-      case "mosques":
-        return t("mosques.description", {
-          count: mosques.length,
-        });
-
       case "prayer":
         return t("prayerTimes.description");
-
       case "zakat":
         return t("zakat.description");
-
       case "tasbih":
         return t("tasbih.description");
     }
