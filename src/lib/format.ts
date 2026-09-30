@@ -100,19 +100,31 @@ export function formatMonthYear(date: Date, language = i18n.language) {
 /**
  * Formats a Date into a localized Hijri calendar date.
  *
- * Uses the Islamic calendar provided by the Intl API.
+ * By default, Intl uses midnight as the calendar boundary.
+ * When `afterSunset` is true, the date is advanced by one
+ * Gregorian day so the displayed Hijri date follows the
+ * Islamic sunset-based day boundary.
  *
- * Example:
+ * Examples:
  * "14 Sha'ban 1446 AH"
  */
-export function formatHijriDate(date: Date, language = i18n.language) {
+export function formatHijriDate(
+  date: Date,
+  language = i18n.language,
+  afterSunset = false,
+) {
   const { intlLocale } = getLocaleConfig(language);
+  const hijriDate = new Date(date);
+
+  if (afterSunset) {
+    hijriDate.setDate(hijriDate.getDate() + 1);
+  }
 
   const formatted = new Intl.DateTimeFormat(`${intlLocale}-u-ca-islamic`, {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(date);
+  }).format(hijriDate);
 
   const withoutEra = formatted.replace(/(\s*(AH|г\.))+\s*$/i, "").trim();
 
