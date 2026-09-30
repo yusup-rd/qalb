@@ -1,4 +1,5 @@
 import { calculationMethods } from "@/constants/prayer-calculation";
+import { formatTime, parseTimeString } from "@/lib/format";
 import { usePrayerStore } from "@/store/prayerStore";
 import type { Prayer, SolarEvent } from "@/types/prayer";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -85,7 +86,7 @@ const PrayersToday = ({
               if (adjustment.mode === "fixed") {
                 return t("manualAdjustment.fixed", {
                   prayer: prayerLabel,
-                  time: adjustment.fixedTime,
+                  time: formatTime(parseTimeString(adjustment.fixedTime)),
                 });
               }
 
