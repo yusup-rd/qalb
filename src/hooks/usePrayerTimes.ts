@@ -285,22 +285,19 @@ export function usePrayerTimes(selectedDate?: Date) {
       (prayer) => prayer.time.getTime() > nowTime,
     );
 
-    const previousTodayPrayer = [...orderedTodayPrayers]
+    const adjacentPrayers = sortPrayersByTime([
+      ...orderedYesterdayPrayers,
+      ...orderedTodayPrayers,
+      ...orderedTomorrowPrayers,
+    ]);
+
+    const nextPrayer =
+      adjacentPrayers.find((prayer) => prayer.time.getTime() > nowTime) ??
+      orderedTomorrowPrayers[0]!;
+
+    const previousPrayer = [...adjacentPrayers]
       .reverse()
-      .find((prayer) => prayer.time.getTime() <= nowTime);
-
-    let previousPrayer: Prayer;
-    let nextPrayer: Prayer;
-
-    if (nextTodayPrayer) {
-      nextPrayer = nextTodayPrayer;
-      previousPrayer =
-        previousTodayPrayer ??
-        orderedYesterdayPrayers[orderedYesterdayPrayers.length - 1];
-    } else {
-      nextPrayer = orderedTomorrowPrayers[0];
-      previousPrayer = orderedTodayPrayers[orderedTodayPrayers.length - 1];
-    }
+      .find((prayer) => prayer.time.getTime() <= nowTime)!;
 
     const prayers = today.prayers.map((prayer) => {
       let status: PrayerStatus = "upcoming";
