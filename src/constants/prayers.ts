@@ -1,10 +1,10 @@
-import type { PrayerName } from "@/types/prayer";
+import type { PrayerIcon, PrayerName } from "@/types/prayer";
 
 export const prayerMetadata: Record<
   PrayerName,
   {
     description: string;
-    icon: import("@/types/prayer").PrayerIcon;
+    icon: PrayerIcon;
   }
 > = {
   Fajr: {

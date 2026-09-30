@@ -1,6 +1,6 @@
 export type PrayerName = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
-export type SolarEventName = "Sunrise";
+type SolarEventName = "Sunrise";
 
 export type PrayerStatus = "completed" | "soon" | "upcoming";
 
@@ -29,7 +29,7 @@ export interface SolarEvent {
 
 export type PrayerNotificationName = PrayerName | SolarEventName;
 
-export type PrayerTimeAdjustmentMode = "none" | "offset" | "fixed";
+type PrayerTimeAdjustmentMode = "none" | "offset" | "fixed";
 
 export interface PrayerTimeAdjustment {
   mode: PrayerTimeAdjustmentMode;
