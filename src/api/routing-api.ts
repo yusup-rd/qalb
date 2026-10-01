@@ -36,9 +36,18 @@ export const fetchRoute = async (
     `${destination.longitude},${destination.latitude}`,
   ].join(";");
 
-  const response = await fetch(
-    `${ROUTING_ENDPOINT}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${ROUTING_ENDPOINT}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
+      { signal: controller.signal },
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`Routing request failed with status ${response.status}`);
@@ -92,7 +101,18 @@ export const fetchRouteMetrics = async (
 
   const url = `${ROUTING_ENDPOINT}/table/v1/driving/${coordinates}?${params.toString()}`;
 
-  const response = await fetch(url);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(
