@@ -4,6 +4,7 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { clsx } from "clsx";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, Text, View } from "react-native";
 
@@ -44,10 +45,21 @@ const LanguageSheet = ({
     keyPrefix: "settings.sections.appearance.language",
   });
 
+  const [isChanging, setIsChanging] = useState(false);
+
   const handleSelect = async (language: string) => {
-    await changeLanguage(language);
-    onLanguageChange(language);
-    onClose();
+    if (isChanging) return;
+
+    try {
+      setIsChanging(true);
+      await changeLanguage(language);
+      onLanguageChange(language);
+      onClose();
+    } catch (error) {
+      console.error("Failed to change language:", error);
+    } finally {
+      setIsChanging(false);
+    }
   };
 
   const currentLanguage = i18n.language === "ru" ? "ru" : "en";

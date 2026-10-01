@@ -62,19 +62,24 @@ export type ThemeColors = typeof lightColors | typeof darkColors;
 
 export type ThemeMode = "light" | "dark" | "system";
 
-export const nativeTabColors =
-  Platform.OS === "ios"
-    ? {
-        foreground: DynamicColorIOS({
-          light: lightColors.foreground,
-          dark: darkColors.foreground,
-        }),
-        primary: DynamicColorIOS({
-          light: lightColors.primary,
-          dark: darkColors.primary,
-        }),
-      }
-    : {
-        foreground: lightColors.foreground,
-        primary: lightColors.primary,
-      };
+export const getNativeTabColors = (isDark: boolean) => {
+  if (Platform.OS === "ios") {
+    return {
+      foreground: DynamicColorIOS({
+        light: lightColors.foreground,
+        dark: darkColors.foreground,
+      }),
+      primary: DynamicColorIOS({
+        light: lightColors.primary,
+        dark: darkColors.primary,
+      }),
+    };
+  }
+
+  const colors = isDark ? darkColors : lightColors;
+
+  return {
+    foreground: colors.foreground,
+    primary: colors.primary,
+  };
+};

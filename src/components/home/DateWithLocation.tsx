@@ -1,3 +1,4 @@
+import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { formatDate, formatHijriDate } from "@/lib/format";
 import { useLocationStore } from "@/store/locationStore";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -7,10 +8,14 @@ import { Text, View } from "react-native";
 
 const DateWithLocation = () => {
   const today = new Date();
+
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.dateLocation",
   });
 
+  const { now, sunset } = usePrayerTimes();
+
+  const isAfterSunset = sunset != null && now.getTime() >= sunset.getTime();
   const locationName = useLocationStore((state) => state.locationName);
   const locationNameStatus = useLocationStore(
     (state) => state.locationNameStatus,
@@ -33,7 +38,7 @@ const DateWithLocation = () => {
         <View className="bg-muted-foreground/50 size-1 rounded-full" />
 
         <Text className="font-sans-semibold text-secondary text-xs">
-          {formatHijriDate(today, i18n.language)}
+          {formatHijriDate(today, i18n.language, isAfterSunset)}
         </Text>
       </View>
 

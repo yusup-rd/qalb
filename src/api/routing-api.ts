@@ -36,15 +36,25 @@ export const fetchRoute = async (
     `${destination.longitude},${destination.latitude}`,
   ].join(";");
 
-  const response = await fetch(
-    `${ROUTING_ENDPOINT}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-  if (!response.ok) {
-    throw new Error(`Routing request failed with status ${response.status}`);
+  let result: OsrmRouteResponse;
+
+  try {
+    const response = await fetch(
+      `${ROUTING_ENDPOINT}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
+      { signal: controller.signal },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Routing request failed with status ${response.status}`);
+    }
+
+    result = (await response.json()) as OsrmRouteResponse;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const result = (await response.json()) as OsrmRouteResponse;
 
   if (result.code !== "Ok" || !result.routes?.[0]?.geometry) {
     throw new Error(result.message ?? "No route found");
@@ -92,15 +102,26 @@ export const fetchRouteMetrics = async (
 
   const url = `${ROUTING_ENDPOINT}/table/v1/driving/${coordinates}?${params.toString()}`;
 
-  const response = await fetch(url);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-  if (!response.ok) {
-    throw new Error(
-      `Routing metrics request failed with status ${response.status}`,
-    );
+  let result: OsrmTableResponse;
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Routing metrics request failed with status ${response.status}`,
+      );
+    }
+
+    result = (await response.json()) as OsrmTableResponse;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const result = (await response.json()) as OsrmTableResponse;
 
   if (result.code !== "Ok") {
     throw new Error(

@@ -1,6 +1,7 @@
 import { prayerMetadata } from "@/constants/prayers";
 import { formatDuration, formatDurationClock, formatTime } from "@/lib/format";
 import { calculatePrayerTimes } from "@/lib/prayer-calculations";
+import { applyPrayerTimeAdjustment } from "@/lib/prayer-time-adjustments";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
 import type {
@@ -45,41 +46,6 @@ function getPrayerTime(
     case "Isha":
       return times.isha;
   }
-}
-
-function applyPrayerTimeAdjustment(
-  date: Date,
-  adjustment: PrayerTimeAdjustment,
-) {
-  if (adjustment.mode === "offset") {
-    const adjustedDate = new Date(date);
-
-    adjustedDate.setMinutes(
-      adjustedDate.getMinutes() + adjustment.offsetMinutes,
-    );
-
-    return adjustedDate;
-  }
-
-  if (adjustment.mode === "fixed" && adjustment.fixedTime) {
-    const [hours, minutes] = adjustment.fixedTime.split(":").map(Number);
-
-    if (
-      Number.isInteger(hours) &&
-      Number.isInteger(minutes) &&
-      hours >= 0 &&
-      hours <= 23 &&
-      minutes >= 0 &&
-      minutes <= 59
-    ) {
-      const adjustedDate = new Date(date);
-      adjustedDate.setHours(hours, minutes, 0, 0);
-
-      return adjustedDate;
-    }
-  }
-
-  return date;
 }
 
 function getPrayerData(

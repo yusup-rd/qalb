@@ -3,6 +3,7 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import Slider from "@react-native-community/slider";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 
@@ -23,10 +24,27 @@ const MosqueRadiusSheet = ({
   onRadiusChange,
 }: MosqueRadiusSheetProps) => {
   const { colors } = useTheme();
-
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "mosques.radius",
   });
+
+  const [draftRadius, setDraftRadius] = useState(radiusKm);
+
+  const previousVisibleRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible) {
+      previousVisibleRef.current = false;
+      return;
+    }
+
+    if (!previousVisibleRef.current) {
+      setDraftRadius(radiusKm);
+    }
+
+    previousVisibleRef.current = true;
+  }, [visible, radiusKm]);
+
   const kilometerUnit = i18n.t("units.kilometer");
 
   return (
@@ -59,7 +77,7 @@ const MosqueRadiusSheet = ({
             <View className="bg-card gap-5 rounded-xl px-4 py-5">
               <View className="items-center gap-1">
                 <Text className="font-sans-bold text-foreground text-3xl">
-                  {radiusKm} {kilometerUnit}
+                  {draftRadius} {kilometerUnit}
                 </Text>
 
                 <Text className="font-sans-medium text-muted-foreground text-sm">
@@ -68,16 +86,15 @@ const MosqueRadiusSheet = ({
               </View>
 
               <Slider
-                value={radiusKm}
+                value={draftRadius}
                 minimumValue={MIN_RADIUS_KM}
                 maximumValue={MAX_RADIUS_KM}
                 step={1}
                 minimumTrackTintColor={colors.primary}
                 maximumTrackTintColor={colors.muted}
                 thumbTintColor={colors.primary}
-                onValueChange={(value) => {
-                  onRadiusChange(Math.round(value));
-                }}
+                onValueChange={(value) => setDraftRadius(Math.round(value))}
+                onSlidingComplete={(value) => onRadiusChange(Math.round(value))}
               />
             </View>
 

@@ -27,7 +27,9 @@ function getCalculationParameters(
   return params;
 }
 
-function getCalculationMethod(method: CalculationMethodId) {
+function getCalculationMethod(
+  method: CalculationMethodId,
+): CalculationParameters {
   switch (method) {
     case "mwl":
       return CalculationMethod.MuslimWorldLeague();
@@ -43,6 +45,27 @@ function getCalculationMethod(method: CalculationMethodId) {
 
     case "umm-al-qura":
       return CalculationMethod.UmmAlQura();
+
+    case "dubai":
+      return CalculationMethod.Dubai();
+
+    case "moonsighting-committee":
+      return CalculationMethod.MoonsightingCommittee();
+
+    case "kuwait":
+      return CalculationMethod.Kuwait();
+
+    case "qatar":
+      return CalculationMethod.Qatar();
+
+    case "singapore":
+      return CalculationMethod.Singapore();
+
+    case "tehran":
+      return CalculationMethod.Tehran();
+
+    case "turkey":
+      return CalculationMethod.Turkey();
 
     default:
       return CalculationMethod.MuslimWorldLeague();

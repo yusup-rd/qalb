@@ -65,9 +65,10 @@ const PrayersToday = ({
     }
   });
 
-  const adjustedPrayers = prayers.filter(
-    (prayer) => prayerTimeAdjustments[prayer.name]?.mode !== "none",
-  );
+  const adjustedPrayers = prayers.filter((prayer) => {
+    const mode = prayerTimeAdjustments[prayer.name]?.mode;
+    return mode != null && mode !== "none";
+  });
 
   const infoMessage =
     adjustedPrayers.length === 0
@@ -83,7 +84,7 @@ const PrayersToday = ({
 
               const prayerLabel = tPrayer(prayer.name.toLowerCase());
 
-              if (adjustment.mode === "fixed") {
+              if (adjustment.mode === "fixed" && adjustment.fixedTime) {
                 return t("manualAdjustment.fixed", {
                   prayer: prayerLabel,
                   time: formatTime(parseTimeString(adjustment.fixedTime)),

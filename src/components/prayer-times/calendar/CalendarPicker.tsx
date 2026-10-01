@@ -1,3 +1,4 @@
+import AutoScrollText from "@/components/ui/animated/AutoScrollText";
 import { useIslamicEvents } from "@/hooks/useIslamicEvents";
 import { addDays, isSameDay, startOfWeek } from "@/lib/date";
 import { formatDate, formatHijriDate, formatWeekday } from "@/lib/format";
@@ -46,6 +47,10 @@ const CalendarPicker = ({
     selectDate(addDays(selectedDate, 1));
   };
 
+  const hijriDateRange = `${formatHijriDate(selectedDate)} \u2014 ${formatHijriDate(
+    addDays(selectedDate, 1),
+  )}`;
+
   return (
     <>
       <View className="bg-card gap-2 rounded-xl p-4 shadow-md">
@@ -64,15 +69,12 @@ const CalendarPicker = ({
               {formatDate(selectedDate)}
             </Text>
 
-            <View className="flex-row items-center gap-1">
-              <Text
-                className="text-secondary font-sans-medium text-xs"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {formatHijriDate(selectedDate)}
-              </Text>
-            </View>
+            <AutoScrollText
+              className="text-secondary font-sans-medium text-xs"
+              accessibilityLabel={hijriDateRange}
+            >
+              {hijriDateRange}
+            </AutoScrollText>
           </View>
 
           <Pressable
@@ -97,7 +99,6 @@ const CalendarPicker = ({
         <View className="flex-row gap-1">
           {weekDays.map((date) => {
             const selected = isSameDay(date, selectedDate);
-
             const events = getIslamicEventsForDate(date, islamicEvents);
 
             return (
@@ -105,7 +106,7 @@ const CalendarPicker = ({
                 key={date.toISOString()}
                 onPress={() => selectDate(date)}
                 className={clsx(
-                  "flex-1 items-center rounded-lg p-2",
+                  "will-change-variable flex-1 items-center rounded-lg p-2",
                   selected ? "bg-primary shadow-xs" : "bg-card",
                 )}
               >

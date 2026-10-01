@@ -19,7 +19,6 @@ const EARTH_RADIUS_KM = 111;
 const MAP_PADDING_FACTOR = 1.25;
 const MIN_VISIBLE_RADIUS_KM = 2;
 const MAX_VISIBLE_RADIUS_KM = 75;
-
 const SELECTED_MOSQUE_LATITUDE_DELTA = 0.05;
 const SELECTED_MOSQUE_LONGITUDE_DELTA = 0.05;
 
@@ -98,29 +97,39 @@ const MosqueMap = ({
     mapRef.current?.animateToRegion(region, duration);
   }, [latitude, longitude, radiusKm]);
 
+  const selectedMosque = mosques.find(
+    (mosque) => mosque.id === selectedMosqueId,
+  );
+
+  const selectedMosqueIdValue = selectedMosque?.id;
+  const selectedMosqueLatitude = selectedMosque?.latitude;
+  const selectedMosqueLongitude = selectedMosque?.longitude;
+  const hasRoute = route != null;
+
   useEffect(() => {
-    if (selectedMosqueId == null) {
+    if (selectedMosqueLatitude == null || selectedMosqueLongitude == null) {
       return;
     }
 
-    const selectedMosque = mosques.find(
-      (mosque) => mosque.id === selectedMosqueId,
-    );
-
-    if (!selectedMosque) {
+    if (hasRoute) {
       return;
     }
 
     mapRef.current?.animateToRegion(
       {
-        latitude: selectedMosque.latitude,
-        longitude: selectedMosque.longitude,
+        latitude: selectedMosqueLatitude,
+        longitude: selectedMosqueLongitude,
         latitudeDelta: SELECTED_MOSQUE_LATITUDE_DELTA,
         longitudeDelta: SELECTED_MOSQUE_LONGITUDE_DELTA,
       },
       500,
     );
-  }, [selectedMosqueId, mosques]);
+  }, [
+    selectedMosqueIdValue,
+    selectedMosqueLatitude,
+    selectedMosqueLongitude,
+    hasRoute,
+  ]);
 
   useEffect(() => {
     if (!route || route.coordinates.length === 0) {
@@ -164,20 +173,24 @@ const MosqueMap = ({
         />
       ) : null}
 
-      {mosques.map((mosque) => (
-        <Marker
-          key={mosque.id}
-          coordinate={{
-            latitude: mosque.latitude,
-            longitude: mosque.longitude,
-          }}
-          onPress={() => onSelectMosque(mosque.id)}
-          tracksViewChanges={false}
-          zIndex={mosque.id === selectedMosqueId ? 1000 : 0}
-        >
-          <MosqueMarker selected={mosque.id === selectedMosqueId} />
-        </Marker>
-      ))}
+      {mosques.map((mosque) => {
+        const selected = mosque.id === selectedMosqueId;
+
+        return (
+          <Marker
+            key={`${mosque.id}-${selected ? "selected" : "default"}`}
+            coordinate={{
+              latitude: mosque.latitude,
+              longitude: mosque.longitude,
+            }}
+            onPress={() => onSelectMosque(mosque.id)}
+            tracksViewChanges={false}
+            zIndex={selected ? 1000 : 0}
+          >
+            <MosqueMarker selected={selected} />
+          </Marker>
+        );
+      })}
     </MapView>
   );
 };

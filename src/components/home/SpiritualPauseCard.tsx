@@ -5,10 +5,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Text, View } from "react-native";
 
 const SpiritualPauseCard = () => {
-  const backgroundImage = require("@/assets/images/spiritual-pause-card/spiritual-pause.webp");
+  // TODO: Make this dynamic based on the time of day - morning/evening dhikr, etc.
+  // const backgroundImage = require("@/assets/images/spiritual-pause-card/morning-adhkar.webp");
+  // const backgroundImage = require("@/assets/images/spiritual-pause-card/post-prayer-dhikr.webp");
+  // const backgroundImage = require("@/assets/images/spiritual-pause-card/evening-adhkar.webp");
+  const backgroundImage = require("@/assets/images/spiritual-pause-card/night-istighfar.webp");
 
   return (
-    <View className="bg-card h-36 overflow-hidden rounded-xl shadow-md">
+    <View className="bg-card h-52 overflow-hidden rounded-xl shadow-md">
       <ImageBackground
         source={backgroundImage}
         contentFit="cover"

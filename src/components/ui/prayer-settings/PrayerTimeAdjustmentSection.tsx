@@ -37,6 +37,13 @@ const PrayerTimeAdjustmentSection = ({
   });
 
   const [androidPickerVisible, setAndroidPickerVisible] = useState(false);
+  const [draftOffset, setDraftOffset] = useState(adjustment.offsetMinutes);
+  const [syncedOffset, setSyncedOffset] = useState(adjustment.offsetMinutes);
+
+  if (syncedOffset !== adjustment.offsetMinutes) {
+    setSyncedOffset(adjustment.offsetMinutes);
+    setDraftOffset(adjustment.offsetMinutes);
+  }
 
   const fixedTimeDate = parseTimeString(adjustment.fixedTime);
 
@@ -64,8 +71,10 @@ const PrayerTimeAdjustmentSection = ({
   };
 
   const handleOffsetChange = (value: number) => {
+    const roundedValue = Math.round(value);
+    setDraftOffset(roundedValue);
     updateAdjustment({
-      offsetMinutes: Math.round(value),
+      offsetMinutes: roundedValue,
     });
   };
 
@@ -83,14 +92,9 @@ const PrayerTimeAdjustmentSection = ({
   };
 
   const negativeProgress =
-    adjustment.offsetMinutes < 0
-      ? Math.abs(adjustment.offsetMinutes) / Math.abs(MIN_OFFSET_MINUTES)
-      : 0;
-
+    draftOffset < 0 ? Math.abs(draftOffset) / Math.abs(MIN_OFFSET_MINUTES) : 0;
   const positiveProgress =
-    adjustment.offsetMinutes > 0
-      ? adjustment.offsetMinutes / MAX_OFFSET_MINUTES
-      : 0;
+    draftOffset > 0 ? draftOffset / MAX_OFFSET_MINUTES : 0;
 
   return (
     <View className="gap-3">
@@ -150,7 +154,7 @@ const PrayerTimeAdjustmentSection = ({
         <View className="bg-card gap-5 rounded-xl px-4 py-5 shadow-md">
           <View className="items-center gap-1">
             <Text className="font-sans-bold text-foreground text-3xl">
-              {formatMinuteOffset(adjustment.offsetMinutes)}
+              {formatMinuteOffset(draftOffset)}
             </Text>
 
             <Text className="font-sans-medium text-muted-foreground text-sm">
@@ -183,14 +187,15 @@ const PrayerTimeAdjustmentSection = ({
             <View className="bg-border absolute left-1/2 h-3 w-px -translate-x-1/2" />
 
             <Slider
-              value={adjustment.offsetMinutes}
+              value={draftOffset}
               minimumValue={MIN_OFFSET_MINUTES}
               maximumValue={MAX_OFFSET_MINUTES}
               step={1}
               minimumTrackTintColor="transparent"
               maximumTrackTintColor="transparent"
               thumbTintColor={colors.primary}
-              onValueChange={handleOffsetChange}
+              onValueChange={(value) => setDraftOffset(Math.round(value))}
+              onSlidingComplete={handleOffsetChange}
               className="absolute inset-0"
             />
           </View>

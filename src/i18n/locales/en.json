@@ -6,6 +6,13 @@
     "mosques": "Mosques",
     "settings": "Settings"
   },
+  "notifications": {
+    "prayerTime": {
+      "title": "Sabr",
+      "atTime": "{{prayer}} time",
+      "minutesBefore": "{{prayer}} in {{duration}}"
+    }
+  },
   "prayers": {
     "fajr": "Fajr",
     "dawn": "Dawn",
@@ -52,14 +59,29 @@
       "isna": "ISNA",
       "egyptian": "Egyptian",
       "karachi": "Karachi",
-      "ummAlQura": "Umm al-Qura"
+      "ummAlQura": "Umm al-Qura",
+      "dubai": "Dubai",
+      "moonsightingCommittee": "Moonsighting Committee",
+      "kuwait": "Kuwait",
+      "qatar": "Qatar",
+      "singapore": "Singapore & Malaysia",
+      "tehran": "Tehran",
+      "turkey": "Turkey",
+      "custom": "Custom"
     },
     "full": {
       "mwl": "Muslim World League",
       "isna": "Islamic Society of North America",
-      "egyptian": "Egyptian General Authority",
+      "egyptian": "Egyptian General Authority of Survey",
       "karachi": "University of Islamic Sciences, Karachi",
-      "ummAlQura": "Umm al-Qura University"
+      "ummAlQura": "Umm al-Qura University, Makkah",
+      "dubai": "Dubai Islamic Affairs and Charitable Activities Department",
+      "moonsightingCommittee": "Moonsighting Committee",
+      "kuwait": "Ministry of Awqaf and Islamic Affairs, Kuwait",
+      "qatar": "Ministry of Awqaf and Islamic Affairs, Qatar",
+      "singapore": "MUIS (Singapore) & JAKIM (Malaysia)",
+      "tehran": "Institute of Geophysics, University of Tehran",
+      "turkey": "Presidency of Religious Affairs (Diyanet), Turkey"
     }
   },
   "asrMethods": {
@@ -80,6 +102,7 @@
     "locationError": {
       "permissionBlockedTitle": "Location permission is disabled",
       "unavailableTitle": "Location unavailable",
+      "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
       "tryAgain": "Try Again"
     },
@@ -149,8 +172,9 @@
       "message": "Please wait while we determine your current location."
     },
     "locationError": {
-      "permissionBlockedTitle": "Location unavailable",
-      "unavailableTitle": "We couldn't determine your current location.",
+      "permissionBlockedTitle": "Location permission is disabled",
+      "unavailableTitle": "Location unavailable",
+      "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
       "tryAgain": "Try Again"
     },
@@ -420,7 +444,8 @@
     },
     "directions": {
       "title": "Directions",
-      "error": "Unable to calculate a route."
+      "error": "Unable to calculate a route.",
+      "offline": "Unable to calculate a route while offline. Please check your internet connection and try again."
     }
   },
   "settings": {
