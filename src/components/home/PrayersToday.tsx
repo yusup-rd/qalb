@@ -84,7 +84,7 @@ const PrayersToday = ({
 
               const prayerLabel = tPrayer(prayer.name.toLowerCase());
 
-              if (adjustment.mode === "fixed") {
+              if (adjustment.mode === "fixed" && adjustment.fixedTime) {
                 return t("manualAdjustment.fixed", {
                   prayer: prayerLabel,
                   time: formatTime(parseTimeString(adjustment.fixedTime)),
