@@ -1,9 +1,6 @@
 import { requestNotificationPermissions } from "@/lib/notifications";
-
 import { usePrayerStore } from "@/store/prayerStore";
-
 import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
-
 import { useState } from "react";
 
 export function usePrayerTimeSettings() {
@@ -15,7 +12,6 @@ export function usePrayerTimeSettings() {
   } = usePrayerStore();
 
   const [visible, setVisible] = useState(false);
-
   const [selectedPrayer, setSelectedPrayer] = useState<
     Prayer | SolarEvent | null
   >(null);
@@ -34,17 +30,19 @@ export function usePrayerTimeSettings() {
       return;
     }
 
-    const currentSettings = prayerNotifications[selectedPrayer.name];
+    const prayerName = selectedPrayer.name;
 
     if (enabled) {
       const granted = await requestNotificationPermissions();
-
       if (!granted) {
         return;
       }
     }
 
-    setPrayerNotification(selectedPrayer.name, {
+    const currentSettings =
+      usePrayerStore.getState().prayerNotifications[prayerName];
+
+    setPrayerNotification(prayerName, {
       enabled,
       minutesBefore: currentSettings.minutesBefore,
     });
