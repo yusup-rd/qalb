@@ -71,6 +71,7 @@ export async function scheduleNotification({
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date,
+      channelId: NOTIFICATION_CHANNEL_ID,
     },
   });
 }
