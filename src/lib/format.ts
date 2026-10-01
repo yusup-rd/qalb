@@ -131,13 +131,13 @@ export function formatHijriDate(
   const match = withoutEra.match(/^(\d+)\s+(.+?)\s+(\d+)$/);
 
   if (!match) {
-    return `${withoutEra} ${i18n.t("hijri.era")}`;
+    return `${withoutEra} ${i18n.t("hijri.era", { lng: language })}`;
   }
 
   const [, day, month, year] = match;
   const capitalizedMonth = capitalizeFirst(month, intlLocale);
 
-  return `${day} ${capitalizedMonth} ${year} ${i18n.t("hijri.era")}`;
+  return `${day} ${capitalizedMonth} ${year} ${i18n.t("hijri.era", { lng: language })}`;
 }
 
 /**
