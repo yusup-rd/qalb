@@ -65,9 +65,10 @@ const PrayersToday = ({
     }
   });
 
-  const adjustedPrayers = prayers.filter(
-    (prayer) => prayerTimeAdjustments[prayer.name]?.mode !== "none",
-  );
+  const adjustedPrayers = prayers.filter((prayer) => {
+    const mode = prayerTimeAdjustments[prayer.name]?.mode;
+    return mode != null && mode !== "none";
+  });
 
   const infoMessage =
     adjustedPrayers.length === 0
