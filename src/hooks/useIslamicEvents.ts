@@ -213,8 +213,9 @@ export function useIslamicEvents(selectedDate: Date) {
 
         const monthEvents = results.flatMap((result) => result.events);
 
-        const updatedCache = {
+        const updatedCache: IslamicEventsCache = {
           ...cache,
+          ...memoryCache,
         };
 
         let cacheChanged = false;
