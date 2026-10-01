@@ -29,12 +29,10 @@ interface PrayerStore {
     method: CalculationMethodId,
     asrMethod: AsrMethod,
   ) => void;
-
   setPrayerNotification: (
     prayer: PrayerNotificationName,
     settings: PrayerNotificationSettings,
   ) => void;
-
   setPrayerTimeAdjustment: (
     prayer: PrayerName,
     adjustment: PrayerTimeAdjustment,
@@ -45,7 +43,6 @@ export const usePrayerStore = create<PrayerStore>()(
   persist(
     (set) => ({
       calculationMethod: "mwl",
-
       asrMethod: "standard",
 
       prayerNotifications: {
@@ -138,6 +135,23 @@ export const usePrayerStore = create<PrayerStore>()(
     {
       name: "@app/prayer",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<PrayerStore>;
+
+        return {
+          ...currentState,
+          ...persisted,
+          prayerNotifications: {
+            ...currentState.prayerNotifications,
+            ...persisted.prayerNotifications,
+          },
+          prayerTimeAdjustments: {
+            ...currentState.prayerTimeAdjustments,
+            ...persisted.prayerTimeAdjustments,
+          },
+        };
+      },
     },
   ),
 );
