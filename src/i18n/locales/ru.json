@@ -6,6 +6,13 @@
     "mosques": "Мечети",
     "settings": "Настройки"
   },
+  "notifications": {
+    "prayerTime": {
+      "title": "Sabr",
+      "atTime": "Время {{prayer}}",
+      "minutesBefore": "{{prayer}} через {{duration}}"
+    }
+  },
   "prayers": {
     "fajr": "Фаджр",
     "dawn": "Рассвет",

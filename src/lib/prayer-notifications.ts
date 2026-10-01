@@ -1,7 +1,8 @@
+import i18n from "@/i18n";
 import {
   cancelAllPrayerNotifications,
   hasNotificationPermissions,
-  schedulePrayerNotification,
+  scheduleNotification,
 } from "@/lib/notifications";
 import { calculatePrayerTimes } from "@/lib/prayer-calculations";
 import { applyPrayerTimeAdjustment } from "@/lib/prayer-time-adjustments";
@@ -10,6 +11,7 @@ import { usePrayerStore } from "@/store/prayerStore";
 import type { PrayerName, PrayerNotificationName } from "@/types/prayer";
 
 const NOTIFICATION_DAYS = 7;
+const PRAYER_NOTIFICATION_TYPE = "prayer-time";
 
 function getPrayerTime(
   name: PrayerName,
@@ -74,6 +76,34 @@ function getAdjustedPrayerTime(
   );
 }
 
+function getNotificationTime(prayerTime: Date, minutesBefore: number) {
+  return new Date(prayerTime.getTime() - minutesBefore * 60 * 1000);
+}
+
+function getPrayerNotificationContent(
+  prayerName: PrayerNotificationName,
+  minutesBefore: number,
+) {
+  const localizedPrayerName = i18n.t(`prayers.${prayerName.toLowerCase()}`);
+
+  const body =
+    minutesBefore === 0
+      ? i18n.t("notifications.prayerTime.atTime", {
+          prayer: localizedPrayerName,
+        })
+      : i18n.t("notifications.prayerTime.minutesBefore", {
+          prayer: localizedPrayerName,
+          duration: i18n.t("duration.minute", {
+            count: minutesBefore,
+          }),
+        });
+
+  return {
+    title: i18n.t("notifications.prayerTime.title"),
+    body,
+  };
+}
+
 async function syncPrayerNotificationsInternal() {
   const { latitude, longitude } = useLocationStore.getState();
   const {
@@ -119,10 +149,24 @@ async function syncPrayerNotificationsInternal() {
         prayerTimeAdjustments,
       );
 
-      await schedulePrayerNotification({
-        prayerName,
+      const notificationTime = getNotificationTime(
         prayerTime,
-        minutesBefore: settings.minutesBefore,
+        settings.minutesBefore,
+      );
+
+      const { title, body } = getPrayerNotificationContent(
+        prayerName,
+        settings.minutesBefore,
+      );
+
+      await scheduleNotification({
+        title,
+        body,
+        date: notificationTime,
+        data: {
+          type: PRAYER_NOTIFICATION_TYPE,
+          prayerName,
+        },
       });
     }
   }
