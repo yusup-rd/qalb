@@ -52,7 +52,8 @@
           "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to calculate accurate prayer times."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
