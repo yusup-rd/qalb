@@ -38,6 +38,12 @@ const PrayerTimeAdjustmentSection = ({
 
   const [androidPickerVisible, setAndroidPickerVisible] = useState(false);
   const [draftOffset, setDraftOffset] = useState(adjustment.offsetMinutes);
+  const [syncedOffset, setSyncedOffset] = useState(adjustment.offsetMinutes);
+
+  if (syncedOffset !== adjustment.offsetMinutes) {
+    setSyncedOffset(adjustment.offsetMinutes);
+    setDraftOffset(adjustment.offsetMinutes);
+  }
 
   const fixedTimeDate = parseTimeString(adjustment.fixedTime);
 
