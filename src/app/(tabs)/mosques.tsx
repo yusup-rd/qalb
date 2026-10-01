@@ -4,6 +4,7 @@ import MosquesList from "@/components/mosques/MosquesList";
 import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
 import { useRoute } from "@/hooks/useRoute";
+import NetInfo from "@react-native-community/netinfo";
 import { styled } from "nativewind";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,6 +45,13 @@ const Mosques = () => {
   };
 
   const handleDirectionsPress = async (mosque: (typeof mosques)[number]) => {
+    const { isConnected } = await NetInfo.fetch();
+
+    if (!isConnected) {
+      Alert.alert(t("title"), t("offline"));
+      return;
+    }
+
     setSelectedMosqueId(mosque.id);
     await requestRoute(mosque);
   };

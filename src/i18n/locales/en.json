@@ -442,7 +442,8 @@
     },
     "directions": {
       "title": "Directions",
-      "error": "Unable to calculate a route."
+      "error": "Unable to calculate a route.",
+      "offline": "Unable to calculate a route while offline. Please check your internet connection and try again."
     }
   },
   "settings": {
