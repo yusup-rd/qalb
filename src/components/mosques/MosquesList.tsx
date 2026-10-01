@@ -52,17 +52,25 @@ const MosquesList = ({
     });
   }, [selectedMosqueId, mosques]);
 
+  const retryRef = useRef(0);
   const handleScrollToIndexFailed = ({
     index,
+    averageItemLength,
   }: {
     index: number;
     highestMeasuredFrameIndex: number;
     averageItemLength: number;
   }) => {
     listRef.current?.scrollToOffset({
-      offset: Math.max(0, index * 100),
+      offset: Math.max(0, index * (averageItemLength || 100)),
       animated: false,
     });
+
+    if (retryRef.current >= 3) {
+      retryRef.current = 0;
+      return;
+    }
+    retryRef.current += 1;
 
     requestAnimationFrame(() => {
       listRef.current?.scrollToIndex({
