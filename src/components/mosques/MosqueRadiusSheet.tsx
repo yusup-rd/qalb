@@ -3,7 +3,7 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import Slider from "@react-native-community/slider";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 
@@ -24,12 +24,26 @@ const MosqueRadiusSheet = ({
   onRadiusChange,
 }: MosqueRadiusSheetProps) => {
   const { colors } = useTheme();
-
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "mosques.radius",
   });
 
   const [draftRadius, setDraftRadius] = useState(radiusKm);
+
+  const previousVisibleRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible) {
+      previousVisibleRef.current = false;
+      return;
+    }
+
+    if (!previousVisibleRef.current) {
+      setDraftRadius(radiusKm);
+    }
+
+    previousVisibleRef.current = true;
+  }, [visible, radiusKm]);
 
   const kilometerUnit = i18n.t("units.kilometer");
 
