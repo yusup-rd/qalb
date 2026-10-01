@@ -171,8 +171,8 @@
       "message": "Please wait while we determine your current location."
     },
     "locationError": {
-      "permissionBlockedTitle": "Location unavailable",
-      "unavailableTitle": "We couldn't determine your current location.",
+      "permissionBlockedTitle": "Location permission is disabled",
+      "unavailableTitle": "Location unavailable",
       "openSettings": "Open Settings",
       "tryAgain": "Try Again"
     },

@@ -104,7 +104,11 @@ const PrayerTimes = () => {
           />
         ) : !hasLocation || locationError ? (
           <ErrorCard
-            title={t("locationError.permissionBlockedTitle")}
+            title={
+              locationPermissionStatus === "blocked"
+                ? t("locationError.permissionBlockedTitle")
+                : t("locationError.unavailableTitle")
+            }
             message={locationError ?? t("locationError.unavailableTitle")}
             actionLabel={
               locationPermissionStatus === "blocked"
