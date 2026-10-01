@@ -47,7 +47,7 @@ const Mosques = () => {
   const handleDirectionsPress = async (mosque: (typeof mosques)[number]) => {
     const { isConnected } = await NetInfo.fetch();
 
-    if (!isConnected) {
+    if (isConnected === false) {
       Alert.alert(t("title"), t("offline"));
       return;
     }
