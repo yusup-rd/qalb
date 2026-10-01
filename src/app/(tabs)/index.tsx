@@ -8,11 +8,10 @@ import ErrorCard from "@/components/ui/ErrorCard";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PrayerTimeSettingsSheet from "@/components/ui/prayer-settings/PrayerTimeSettingsSheet";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { usePrayerTimeSettings } from "@/hooks/usePrayerTimeSettings";
 import { useLocationStore } from "@/store/locationStore";
-import { usePrayerStore } from "@/store/prayerStore";
-import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
 import { styled } from "nativewind";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AppState,
@@ -36,16 +35,16 @@ const Index = () => {
   const retryLocation = useLocationStore((state) => state.retryLocation);
 
   const {
-    prayerNotifications,
-    prayerTimeAdjustments,
-    setPrayerNotification,
-    setPrayerTimeAdjustment,
-  } = usePrayerStore();
-
-  const [prayerSettingsVisible, setPrayerSettingsVisible] = useState(false);
-  const [selectedPrayer, setSelectedPrayer] = useState<
-    Prayer | SolarEvent | null
-  >(null);
+    visible: prayerSettingsVisible,
+    selectedPrayer,
+    selectedPrayerNotification,
+    selectedPrayerAdjustment,
+    open: openPrayerSettings,
+    close: closePrayerSettings,
+    handleNotificationEnabledChange,
+    handleNotificationMinutesChange,
+    handleAdjustmentChange,
+  } = usePrayerTimeSettings();
 
   const previousAppState = useRef<AppStateStatus>(AppState.currentState);
 
@@ -68,45 +67,6 @@ const Index = () => {
       subscription.remove();
     };
   }, [locationPermissionStatus, retryLocation]);
-
-  const handlePrayerPress = (prayer: Prayer | SolarEvent) => {
-    setSelectedPrayer(prayer);
-    setPrayerSettingsVisible(true);
-  };
-
-  const handlePrayerSettingsClose = () => {
-    setPrayerSettingsVisible(false);
-  };
-
-  const handlePrayerNotificationEnabledChange = (enabled: boolean) => {
-    if (!selectedPrayer) {
-      return;
-    }
-
-    setPrayerNotification(selectedPrayer.name, {
-      enabled,
-      minutesBefore: prayerNotifications[selectedPrayer.name].minutesBefore,
-    });
-  };
-
-  const handlePrayerNotificationMinutesChange = (minutes: number) => {
-    if (!selectedPrayer) {
-      return;
-    }
-
-    setPrayerNotification(selectedPrayer.name, {
-      enabled: prayerNotifications[selectedPrayer.name].enabled,
-      minutesBefore: minutes,
-    });
-  };
-
-  const handlePrayerAdjustmentChange = (adjustment: PrayerTimeAdjustment) => {
-    if (!selectedPrayer || selectedPrayer.name === "Sunrise") {
-      return;
-    }
-
-    setPrayerTimeAdjustment(selectedPrayer.name, adjustment);
-  };
 
   const renderLocationContent = () => {
     if (locationLoading) {
@@ -164,20 +124,11 @@ const Index = () => {
           prayers={prayerTimes.prayers}
           sunriseEvent={prayerTimes.sunriseEvent}
           isSunriseCompleted={prayerTimes.isSunriseCompleted}
-          onPrayerPress={handlePrayerPress}
+          onPrayerPress={openPrayerSettings}
         />
       </>
     );
   };
-
-  const selectedPrayerNotification = selectedPrayer
-    ? prayerNotifications[selectedPrayer.name]
-    : null;
-
-  const selectedPrayerAdjustment =
-    selectedPrayer && selectedPrayer.name !== "Sunrise"
-      ? prayerTimeAdjustments[selectedPrayer.name]
-      : null;
 
   return (
     <>
@@ -200,10 +151,10 @@ const Index = () => {
         enabled={selectedPrayerNotification?.enabled ?? false}
         minutesBefore={selectedPrayerNotification?.minutesBefore ?? 10}
         adjustment={selectedPrayerAdjustment}
-        onEnabledChange={handlePrayerNotificationEnabledChange}
-        onMinutesBeforeChange={handlePrayerNotificationMinutesChange}
-        onAdjustmentChange={handlePrayerAdjustmentChange}
-        onClose={handlePrayerSettingsClose}
+        onEnabledChange={handleNotificationEnabledChange}
+        onMinutesBeforeChange={handleNotificationMinutesChange}
+        onAdjustmentChange={handleAdjustmentChange}
+        onClose={closePrayerSettings}
       />
     </>
   );

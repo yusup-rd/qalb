@@ -7,16 +7,11 @@ import ScheduledTimes from "@/components/prayer-times/scheduled-prayers/Schedule
 import ErrorCard from "@/components/ui/ErrorCard";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PrayerTimeSettingsSheet from "@/components/ui/prayer-settings/PrayerTimeSettingsSheet";
+import { usePrayerTimeSettings } from "@/hooks/usePrayerTimeSettings";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
-import type {
-  AsrMethod,
-  CalculationMethodId,
-  Prayer,
-  PrayerTimeAdjustment,
-  SolarEvent,
-} from "@/types/prayer";
+import type { AsrMethod, CalculationMethodId } from "@/types/prayer";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking, ScrollView } from "react-native";
@@ -27,24 +22,13 @@ const PrayerTimes = () => {
   });
 
   const [calculationSheetVisible, setCalculationSheetVisible] = useState(false);
-  const [prayerSettingsVisible, setPrayerSettingsVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedPrayer, setSelectedPrayer] = useState<
-    Prayer | SolarEvent | null
-  >(null);
   const [draftCalculationMethod, setDraftCalculationMethod] =
     useState<CalculationMethodId>("mwl");
   const [draftAsrMethod, setDraftAsrMethod] = useState<AsrMethod>("standard");
 
-  const {
-    calculationMethod,
-    asrMethod,
-    prayerNotifications,
-    prayerTimeAdjustments,
-    setCalculationSettings,
-    setPrayerNotification,
-    setPrayerTimeAdjustment,
-  } = usePrayerStore();
+  const { calculationMethod, asrMethod, setCalculationSettings } =
+    usePrayerStore();
 
   const {
     latitude,
@@ -56,6 +40,19 @@ const PrayerTimes = () => {
   } = useLocationStore();
 
   const prayerTimes = usePrayerTimes(selectedDate);
+
+  const {
+    visible: prayerSettingsVisible,
+    selectedPrayer,
+    selectedPrayerNotification,
+    selectedPrayerAdjustment,
+    open: openPrayerSettings,
+    close: closePrayerSettings,
+    handleNotificationEnabledChange,
+    handleNotificationMinutesChange,
+    handleAdjustmentChange,
+  } = usePrayerTimeSettings();
+
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const hasLocation = latitude != null && longitude != null;
 
@@ -73,45 +70,6 @@ const PrayerTimes = () => {
     setCalculationSheetVisible(false);
   };
 
-  const handlePrayerPress = (prayer: Prayer | SolarEvent) => {
-    setSelectedPrayer(prayer);
-    setPrayerSettingsVisible(true);
-  };
-
-  const handlePrayerSettingsClose = () => {
-    setPrayerSettingsVisible(false);
-  };
-
-  const handlePrayerNotificationEnabledChange = (enabled: boolean) => {
-    if (!selectedPrayer) {
-      return;
-    }
-
-    setPrayerNotification(selectedPrayer.name, {
-      enabled,
-      minutesBefore: prayerNotifications[selectedPrayer.name].minutesBefore,
-    });
-  };
-
-  const handlePrayerNotificationMinutesChange = (minutes: number) => {
-    if (!selectedPrayer) {
-      return;
-    }
-
-    setPrayerNotification(selectedPrayer.name, {
-      enabled: prayerNotifications[selectedPrayer.name].enabled,
-      minutesBefore: minutes,
-    });
-  };
-
-  const handlePrayerAdjustmentChange = (adjustment: PrayerTimeAdjustment) => {
-    if (!selectedPrayer || selectedPrayer.name === "Sunrise") {
-      return;
-    }
-
-    setPrayerTimeAdjustment(selectedPrayer.name, adjustment);
-  };
-
   const handleLocationAction = () => {
     if (locationPermissionStatus === "blocked") {
       void Linking.openSettings();
@@ -120,15 +78,6 @@ const PrayerTimes = () => {
 
     void retryLocation();
   };
-
-  const selectedPrayerNotification = selectedPrayer
-    ? prayerNotifications[selectedPrayer.name]
-    : null;
-
-  const selectedPrayerAdjustment =
-    selectedPrayer && selectedPrayer.name !== "Sunrise"
-      ? prayerTimeAdjustments[selectedPrayer.name]
-      : null;
 
   return (
     <>
@@ -170,7 +119,7 @@ const PrayerTimes = () => {
             prayers={prayerTimes.selectedPrayers}
             sunriseEvent={prayerTimes.selectedSunriseEvent}
             isToday={isToday}
-            onPrayerPress={handlePrayerPress}
+            onPrayerPress={openPrayerSettings}
           />
         ) : null}
 
@@ -215,10 +164,10 @@ const PrayerTimes = () => {
         enabled={selectedPrayerNotification?.enabled ?? false}
         minutesBefore={selectedPrayerNotification?.minutesBefore ?? 10}
         adjustment={selectedPrayerAdjustment}
-        onEnabledChange={handlePrayerNotificationEnabledChange}
-        onMinutesBeforeChange={handlePrayerNotificationMinutesChange}
-        onAdjustmentChange={handlePrayerAdjustmentChange}
-        onClose={handlePrayerSettingsClose}
+        onEnabledChange={handleNotificationEnabledChange}
+        onMinutesBeforeChange={handleNotificationMinutesChange}
+        onAdjustmentChange={handleAdjustmentChange}
+        onClose={closePrayerSettings}
       />
     </>
   );

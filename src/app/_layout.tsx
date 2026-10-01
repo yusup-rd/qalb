@@ -1,6 +1,8 @@
 import "@/global.css";
 import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
+import NotificationInitializer from "@/initializers/NotificationInitializer";
+import { setupNotificationHandler } from "@/lib/notifications";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -32,6 +34,10 @@ const RootLayout = () => {
     });
   }, []);
 
+  useEffect(() => {
+    setupNotificationHandler();
+  }, []);
+
   if (fontError) {
     throw fontError;
   }
@@ -43,6 +49,7 @@ const RootLayout = () => {
   return (
     <ThemeProvider>
       <LocationInitializer />
+      <NotificationInitializer />
 
       <Stack>
         <Stack.Screen
