@@ -109,7 +109,7 @@ const PrayerTimes = () => {
                 ? t("locationError.permissionBlockedTitle")
                 : t("locationError.unavailableTitle")
             }
-            message={locationError ?? t("locationError.unavailableTitle")}
+            message={locationError ?? t("locationError.unavailableMessage")}
             actionLabel={
               locationPermissionStatus === "blocked"
                 ? t("locationError.openSettings")

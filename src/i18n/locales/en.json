@@ -102,6 +102,7 @@
     "locationError": {
       "permissionBlockedTitle": "Location permission is disabled",
       "unavailableTitle": "Location unavailable",
+      "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
       "tryAgain": "Try Again"
     },
@@ -173,6 +174,7 @@
     "locationError": {
       "permissionBlockedTitle": "Location permission is disabled",
       "unavailableTitle": "Location unavailable",
+      "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
       "tryAgain": "Try Again"
     },

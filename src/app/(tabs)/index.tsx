@@ -93,13 +93,13 @@ const Index = () => {
       return (
         <ErrorCard
           title={
-            isBlocked
+            locationPermissionStatus === "blocked"
               ? t("locationError.permissionBlockedTitle")
               : t("locationError.unavailableTitle")
           }
-          message={locationError}
+          message={locationError ?? t("locationError.unavailableMessage")}
           actionLabel={
-            isBlocked
+            locationPermissionStatus === "blocked"
               ? t("locationError.openSettings")
               : t("locationError.tryAgain")
           }
