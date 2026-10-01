@@ -35,6 +35,7 @@ const MosquesList = ({
   const kilometerUnit = i18n.t("units.kilometer");
 
   const listRef = useRef<FlatList<NearbyMosque>>(null);
+  const retryRef = useRef(0);
 
   useEffect(() => {
     if (selectedMosqueId == null) return;
@@ -45,6 +46,8 @@ const MosquesList = ({
 
     if (mosqueIndex === -1) return;
 
+    retryRef.current = 0;
+
     listRef.current?.scrollToIndex({
       index: mosqueIndex,
       animated: true,
@@ -52,7 +55,6 @@ const MosquesList = ({
     });
   }, [selectedMosqueId, mosques]);
 
-  const retryRef = useRef(0);
   const handleScrollToIndexFailed = ({
     index,
     averageItemLength,
