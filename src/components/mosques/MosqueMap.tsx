@@ -164,20 +164,24 @@ const MosqueMap = ({
         />
       ) : null}
 
-      {mosques.map((mosque) => (
-        <Marker
-          key={mosque.id}
-          coordinate={{
-            latitude: mosque.latitude,
-            longitude: mosque.longitude,
-          }}
-          onPress={() => onSelectMosque(mosque.id)}
-          tracksViewChanges={false}
-          zIndex={mosque.id === selectedMosqueId ? 1000 : 0}
-        >
-          <MosqueMarker selected={mosque.id === selectedMosqueId} />
-        </Marker>
-      ))}
+      {mosques.map((mosque) => {
+        const selected = mosque.id === selectedMosqueId;
+
+        return (
+          <Marker
+            key={`${mosque.id}-${selected ? "selected" : "default"}`}
+            coordinate={{
+              latitude: mosque.latitude,
+              longitude: mosque.longitude,
+            }}
+            onPress={() => onSelectMosque(mosque.id)}
+            tracksViewChanges={false}
+            zIndex={selected ? 1000 : 0}
+          >
+            <MosqueMarker selected={selected} />
+          </Marker>
+        );
+      })}
     </MapView>
   );
 };
