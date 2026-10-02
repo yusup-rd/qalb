@@ -191,6 +191,10 @@ export function parseTimeString(time: string | null) {
   }
 
   const [hours, minutes] = time.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
   date.setHours(hours, minutes, 0, 0);
 
   return date;
