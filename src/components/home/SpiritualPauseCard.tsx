@@ -118,7 +118,11 @@ const SpiritualPauseCard = () => {
         accessibilityLabel={`${title}. ${phrases
           .map((phrase, index) => {
             const count = counts[index] ?? 0;
-            return `${phrase} ${count} of ${SPIRITUAL_PAUSE_PHRASE_TARGET}`;
+            return t("progressLabel", {
+              phrase,
+              count,
+              target: SPIRITUAL_PAUSE_PHRASE_TARGET,
+            });
           })
           .join(", ")}`}
         onPress={increment}

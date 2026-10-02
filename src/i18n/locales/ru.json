@@ -177,6 +177,7 @@
       "postPrayer": "Зикр после намаза",
       "evening": "Вечерние азкары",
       "night": "Ночной истигфар",
+      "progressLabel": "{{phrase}} — {{count}} из {{target}}",
       "reset": {
         "accessibilityLabel": "Сбросить",
         "title": "Сбросить прогресс?",

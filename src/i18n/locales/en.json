@@ -177,6 +177,7 @@
       "postPrayer": "Post-Prayer Dhikr",
       "evening": "Evening Adhkar",
       "night": "Night Istighfar",
+      "progressLabel": "{{phrase}} {{count}} of {{target}}",
       "reset": {
         "accessibilityLabel": "Reset",
         "title": "Reset progress?",
