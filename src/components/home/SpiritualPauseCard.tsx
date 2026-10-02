@@ -43,7 +43,7 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
         family: "fa",
         name: "cloud-sun",
       },
-      backgroundImage: require("@/assets/images/spiritual-pause-card/morning-adhkar.webp"),
+      backgroundImage: require("@/assets/images/spiritual-pause-card/morning.webp"),
     },
     postPrayer: {
       titleKey: "postPrayer",
@@ -52,7 +52,7 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
         family: "fa",
         name: "hands-praying",
       },
-      backgroundImage: require("@/assets/images/spiritual-pause-card/post-prayer-dhikr.webp"),
+      backgroundImage: require("@/assets/images/spiritual-pause-card/post-prayer.webp"),
     },
     evening: {
       titleKey: "evening",
@@ -61,7 +61,7 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
         family: "fa",
         name: "cloud-moon",
       },
-      backgroundImage: require("@/assets/images/spiritual-pause-card/evening-adhkar.webp"),
+      backgroundImage: require("@/assets/images/spiritual-pause-card/evening.webp"),
     },
     night: {
       titleKey: "night",
@@ -70,7 +70,7 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
         family: "ant",
         name: "moon",
       },
-      backgroundImage: require("@/assets/images/spiritual-pause-card/night-istighfar.webp"),
+      backgroundImage: require("@/assets/images/spiritual-pause-card/night.webp"),
     },
   };
 
