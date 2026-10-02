@@ -105,3 +105,17 @@ export function getMonthDays(date: Date) {
     return new Date(firstDay.getFullYear(), firstDay.getMonth(), dayNumber);
   });
 }
+
+/**
+ * Returns a YYYY-MM-DD key from a Date using the device's
+ * local calendar date.
+ *
+ * Intended for date-based identifiers and storage keys.
+ */
+export function getLocalDateKey(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}

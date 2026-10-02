@@ -26,6 +26,12 @@
     "isha": "Isha",
     "night": "Night"
   },
+  "dhikrs": {
+    "subhanAllah": "SubhanAllah",
+    "alhamdulillah": "Alhamdulillah",
+    "allahuAkbar": "Allahu Akbar",
+    "astaghfirullah": "Astaghfirullah"
+  },
   "duration": {
     "hour_one": "{{count}} hr",
     "hour_few": "{{count}} hrs",
@@ -163,6 +169,21 @@
         "title": "Tasbih",
         "description": "Count your dhikr",
         "badge": "33"
+      }
+    },
+    "spiritualPause": {
+      "label": "Spiritual Pause",
+      "morning": "Morning Dhikr",
+      "postPrayer": "After Prayer Dhikr",
+      "evening": "Evening Dhikr",
+      "night": "Night Istighfar",
+      "progressLabel": "{{phrase}} {{count}} of {{target}}",
+      "reset": {
+        "accessibilityLabel": "Reset",
+        "title": "Reset progress?",
+        "description": "Your progress for this Spiritual Pause will be reset.",
+        "cancel": "Cancel",
+        "confirm": "Reset"
       }
     }
   },

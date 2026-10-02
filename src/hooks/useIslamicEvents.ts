@@ -213,28 +213,31 @@ export function useIslamicEvents(selectedDate: Date) {
 
         const monthEvents = results.flatMap((result) => result.events);
 
-        const updatedCache: IslamicEventsCache = {
-          ...cache,
-          ...memoryCache,
-        };
+        if (results.some((result) => result.cachedMonth)) {
+          let cacheChanged = false;
+          const latestCache = await readCache();
+          const updatedCache: IslamicEventsCache = {
+            ...latestCache,
+          };
 
-        let cacheChanged = false;
+          for (const result of results) {
+            const current = result.cachedMonth;
 
-        for (const result of results) {
-          const previous = cache[result.key];
-          const current = result.cachedMonth;
+            if (!current) {
+              continue;
+            }
 
-          if (
-            current &&
-            (!previous || previous.fetchedAt !== current.fetchedAt)
-          ) {
-            updatedCache[result.key] = current;
-            cacheChanged = true;
+            const previous = latestCache[result.key];
+
+            if (!previous || previous.fetchedAt !== current.fetchedAt) {
+              updatedCache[result.key] = current;
+              cacheChanged = true;
+            }
           }
-        }
 
-        if (cacheChanged) {
-          await writeCache(updatedCache);
+          if (cacheChanged) {
+            await writeCache(updatedCache);
+          }
         }
 
         if (cancelled) {

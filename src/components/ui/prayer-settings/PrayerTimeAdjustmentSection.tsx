@@ -2,7 +2,7 @@ import { formatMinuteOffset, formatTime, parseTimeString } from "@/lib/format";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { PrayerTimeAdjustment } from "@/types/prayer";
 import DateTimePicker, {
-  type DateTimePickerChangeEvent,
+  type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import Slider from "@react-native-community/slider";
 import { clsx } from "clsx";
@@ -78,9 +78,11 @@ const PrayerTimeAdjustmentSection = ({
     });
   };
 
-  const handleFixedTimeChange = (event: DateTimePickerChangeEvent) => {
+  const handleFixedTimeChange = (event: DateTimePickerEvent) => {
     setAndroidPickerVisible(false);
-
+    if (event.type !== "set" || event.nativeEvent.timestamp == null) {
+      return;
+    }
     const selectedDate = new Date(event.nativeEvent.timestamp);
 
     updateAdjustment({
