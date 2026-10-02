@@ -21,18 +21,46 @@ interface SpiritualPauseStore {
   resetAll: () => void;
 }
 
+const getDateKey = (date: Date) => date.toISOString().slice(0, 10);
+
+const getValidSessionDates = () => {
+  const today = new Date();
+  const todayKey = getDateKey(today);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  return new Set([todayKey, getDateKey(yesterday)]);
+};
+
+const removeExpiredSessions = (
+  sessions: Record<string, SpiritualPauseProgress>,
+) => {
+  const validDates = getValidSessionDates();
+  const cleanedSessions = Object.fromEntries(
+    Object.entries(sessions).filter(([sessionId]) => {
+      const dateKey = sessionId.slice(0, 10);
+      return validDates.has(dateKey);
+    }),
+  );
+
+  return Object.keys(cleanedSessions).length === Object.keys(sessions).length
+    ? sessions
+    : cleanedSessions;
+};
+
 export const useSpiritualPauseStore = create<SpiritualPauseStore>()(
   persist(
     (set) => ({
       sessions: {},
       increment: (session, phraseIndex) =>
         set((state) => {
-          const current = state.sessions[session.sessionId] ?? EMPTY_PROGRESS;
+          const sessions = removeExpiredSessions(state.sessions);
+          const current = sessions[session.sessionId] ?? EMPTY_PROGRESS;
           const counts = [...current.counts];
           const currentCount = counts[phraseIndex] ?? 0;
 
           if (currentCount >= SPIRITUAL_PAUSE_PHRASE_TARGET) {
-            return state;
+            return sessions === state.sessions ? state : { sessions };
           }
 
           const nextCount = Math.min(
@@ -51,7 +79,7 @@ export const useSpiritualPauseStore = create<SpiritualPauseStore>()(
 
           return {
             sessions: {
-              ...state.sessions,
+              ...sessions,
               [session.sessionId]: {
                 counts,
                 completed,
@@ -80,6 +108,18 @@ export const useSpiritualPauseStore = create<SpiritualPauseStore>()(
       name: SPIRITUAL_PAUSE_STORAGE_KEY,
       storage: createJSONStorage(() => AsyncStorage),
       version: 1,
+      onRehydrateStorage: () => (state) => {
+        if (!state) {
+          return;
+        }
+        const sessions = removeExpiredSessions(state.sessions);
+
+        if (sessions !== state.sessions) {
+          useSpiritualPauseStore.setState({
+            sessions,
+          });
+        }
+      },
     },
   ),
 );
