@@ -1,3 +1,4 @@
+import { getLocalDateKey } from "@/lib/date";
 import type { Prayer, PrayerName } from "@/types/prayer";
 import type {
   SpiritualPauseSession,
@@ -18,14 +19,6 @@ interface GetSpiritualPauseSessionParams {
   now: Date;
 }
 
-function getDateKey(date: Date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
 function createSessionId(
   date: string,
   type: SpiritualPauseType,
@@ -38,7 +31,7 @@ function createSession(
   type: RoutineSpiritualPauseType,
   date: Date,
 ): SpiritualPauseSession {
-  const dateKey = getDateKey(date);
+  const dateKey = getLocalDateKey(date);
 
   return {
     type,
@@ -52,7 +45,7 @@ function createPostPrayerSession(
   prayer: PrayerName,
   date: Date,
 ): SpiritualPauseSession {
-  const dateKey = getDateKey(date);
+  const dateKey = getLocalDateKey(date);
 
   return {
     type: "postPrayer",
@@ -120,9 +113,6 @@ export function getSpiritualPauseSession({
   /*
    * Morning:
    * Fajr → Sunrise
-   *
-   * After the post-prayer priority window, Morning becomes
-   * the active routine.
    */
   if (nowTime >= fajr.time.getTime() && nowTime < sunriseTime) {
     return createSession("morning", fajr.time);
@@ -130,8 +120,6 @@ export function getSpiritualPauseSession({
 
   /*
    * Sunrise → Dhuhr
-   *
-   * No Spiritual Pause routine here.
    */
   if (nowTime >= sunriseTime && nowTime < dhuhr.time.getTime()) {
     return null;
@@ -139,8 +127,6 @@ export function getSpiritualPauseSession({
 
   /*
    * Dhuhr → Asr
-   *
-   * No time-based routine here.
    */
   if (nowTime >= dhuhr.time.getTime() && nowTime < asr.time.getTime()) {
     return null;
@@ -156,9 +142,6 @@ export function getSpiritualPauseSession({
 
   /*
    * Maghrib → Isha
-   *
-   * Evening remains the active routine after the
-   * post-prayer Maghrib window.
    */
   if (nowTime >= maghrib.time.getTime() && nowTime < isha.time.getTime()) {
     return createSession("evening", maghrib.time);
@@ -167,8 +150,6 @@ export function getSpiritualPauseSession({
   /*
    * Night:
    * Isha → next Fajr
-   *
-   * If today's Isha has already happened, use today's Isha.
    */
   if (nowTime >= isha.time.getTime()) {
     return createSession("night", isha.time);
@@ -176,10 +157,6 @@ export function getSpiritualPauseSession({
 
   /*
    * After midnight → today's Fajr
-   *
-   * Today's prayer list does not contain yesterday's Isha,
-   * but previousPrayer does. Keep the Night session associated
-   * with yesterday's Isha until today's Fajr begins.
    */
   if (
     previousPrayer?.name === "Isha" &&

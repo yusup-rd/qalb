@@ -1,4 +1,5 @@
 import { SPIRITUAL_PAUSE_PHRASE_TARGET } from "@/constants/spiritual-pause";
+import { getLocalDateKey } from "@/lib/date";
 import type {
   SpiritualPauseProgress,
   SpiritualPauseSession,
@@ -21,15 +22,13 @@ interface SpiritualPauseStore {
   resetAll: () => void;
 }
 
-const getDateKey = (date: Date) => date.toISOString().slice(0, 10);
-
 const getValidSessionDates = () => {
   const today = new Date();
-  const todayKey = getDateKey(today);
+  const todayKey = getLocalDateKey(today);
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  return new Set([todayKey, getDateKey(yesterday)]);
+  return new Set([todayKey, getLocalDateKey(yesterday)]);
 };
 
 const removeExpiredSessions = (
@@ -89,7 +88,9 @@ export const useSpiritualPauseStore = create<SpiritualPauseStore>()(
         }),
       reset: (sessionId) =>
         set((state) => {
-          const sessions = { ...state.sessions };
+          const sessions = {
+            ...state.sessions,
+          };
           delete sessions[sessionId];
 
           return {
