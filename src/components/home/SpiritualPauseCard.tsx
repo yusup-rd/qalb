@@ -9,6 +9,7 @@ import { BlurView } from "expo-blur";
 import { ImageBackground } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import type { ImageSourcePropType } from "react-native";
 import { Alert, Pressable, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
@@ -25,8 +26,10 @@ type SpiritualPauseIcon =
       name: AntIconName;
     };
 type SpiritualPauseConfig = {
-  title: string;
-  phrases: string[];
+  titleKey: "morning" | "postPrayer" | "evening" | "night";
+  phraseKeys: (
+    "subhanAllah" | "alhamdulillah" | "allahuAkbar" | "astaghfirullah"
+  )[];
   icon: SpiritualPauseIcon;
   backgroundImage: ImageSourcePropType;
 };
@@ -34,8 +37,8 @@ type SpiritualPauseConfig = {
 const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
   {
     morning: {
-      title: "Morning Adhkar",
-      phrases: ["SubhanAllah"],
+      titleKey: "morning",
+      phraseKeys: ["subhanAllah"],
       icon: {
         family: "fa",
         name: "cloud-sun",
@@ -43,8 +46,8 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
       backgroundImage: require("@/assets/images/spiritual-pause-card/morning-adhkar.webp"),
     },
     postPrayer: {
-      title: "Post-Prayer Dhikr",
-      phrases: ["SubhanAllah", "Alhamdulillah", "Allahu Akbar"],
+      titleKey: "postPrayer",
+      phraseKeys: ["subhanAllah", "alhamdulillah", "allahuAkbar"],
       icon: {
         family: "fa",
         name: "hands-praying",
@@ -52,8 +55,8 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
       backgroundImage: require("@/assets/images/spiritual-pause-card/post-prayer-dhikr.webp"),
     },
     evening: {
-      title: "Evening Adhkar",
-      phrases: ["SubhanAllah"],
+      titleKey: "evening",
+      phraseKeys: ["subhanAllah"],
       icon: {
         family: "fa",
         name: "cloud-moon",
@@ -61,8 +64,8 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
       backgroundImage: require("@/assets/images/spiritual-pause-card/evening-adhkar.webp"),
     },
     night: {
-      title: "Night Istighfar",
-      phrases: ["Astaghfirullah"],
+      titleKey: "night",
+      phraseKeys: ["astaghfirullah"],
       icon: {
         family: "ant",
         name: "moon",
@@ -72,31 +75,27 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
   };
 
 const SpiritualPauseCard = () => {
-  // TEST MODE: RESET ALL PROGRESS ON MOUNT
-  // const resetAll = useSpiritualPauseStore((state) => state.resetAll);
-  // useEffect(() => {
-  //   resetAll();
-  // }, [resetAll]);
-
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "home.spiritualPause",
+  });
+  const { t: tDhikrs } = useTranslation(undefined, {
+    keyPrefix: "dhikrs",
+  });
   const { session, counts, currentPhraseIndex, increment, reset } =
     useSpiritualPause();
 
   const handleReset = () => {
-    Alert.alert(
-      "Reset progress?",
-      "Your progress for this Spiritual Pause will be reset.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: reset,
-        },
-      ],
-    );
+    Alert.alert(t("reset.title"), t("reset.description"), [
+      {
+        text: t("reset.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("reset.confirm"),
+        style: "destructive",
+        onPress: reset,
+      },
+    ]);
   };
 
   if (!session) {
@@ -104,6 +103,8 @@ const SpiritualPauseCard = () => {
   }
 
   const config = spiritualPauseConfigs[session.type];
+  const title = t(config.titleKey);
+  const phrases = config.phraseKeys.map((key) => tDhikrs(key));
 
   return (
     <Animated.View
@@ -114,7 +115,7 @@ const SpiritualPauseCard = () => {
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${config.title}. ${config.phrases
+        accessibilityLabel={`${title}. ${phrases
           .map((phrase, index) => {
             const count = counts[index] ?? 0;
             return `${phrase} ${count} of ${SPIRITUAL_PAUSE_PHRASE_TARGET}`;
@@ -154,7 +155,7 @@ const SpiritualPauseCard = () => {
                   }}
                   className="items-center justify-center p-3"
                   accessibilityRole="button"
-                  accessibilityLabel="Reset"
+                  accessibilityLabel={t("reset.accessibilityLabel")}
                 >
                   <Fa
                     name="arrow-rotate-left"
@@ -170,7 +171,7 @@ const SpiritualPauseCard = () => {
                 className="items-center justify-center overflow-hidden rounded-lg p-2"
               >
                 <View className="flex-row items-center justify-center gap-3">
-                  {config.phrases.map((phrase, index) => {
+                  {phrases.map((phrase, index) => {
                     const count = counts[index] ?? 0;
                     const isActive = currentPhraseIndex === index;
                     const isCompleted = count >= SPIRITUAL_PAUSE_PHRASE_TARGET;
@@ -208,11 +209,11 @@ const SpiritualPauseCard = () => {
             <View className="flex-row items-end justify-between gap-4">
               <View className="shrink-0 gap-0.5">
                 <Text className="font-sans-semibold text-secondary text-xs uppercase">
-                  Spiritual Pause
+                  {t("label")}
                 </Text>
 
                 <Text className="font-sans-semibold text-sm text-white">
-                  {config.title}
+                  {title}
                 </Text>
               </View>
 
@@ -238,7 +239,7 @@ const SpiritualPauseCard = () => {
 
                   <View className="shrink">
                     <AutoScrollText className="text-primary-soft-foreground font-sans-semibold text-xs">
-                      {config.phrases
+                      {phrases
                         .map(
                           (phrase) =>
                             `${SPIRITUAL_PAUSE_PHRASE_TARGET}x ${phrase}`,

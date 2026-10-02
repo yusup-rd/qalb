@@ -26,6 +26,12 @@
     "isha": "Ишаа",
     "night": "Ночь"
   },
+  "dhikrs": {
+    "subhanAllah": "Субханаллах",
+    "alhamdulillah": "Альхамдулиллях",
+    "allahuAkbar": "Аллаху Акбар",
+    "astaghfirullah": "Астагфируллах"
+  },
   "duration": {
     "hour_one": "{{count}} ч",
     "hour_few": "{{count}} ч",
@@ -163,6 +169,20 @@
         "title": "Тасбих",
         "description": "Подсчёт зикра",
         "badge": "33"
+      }
+    },
+    "spiritualPause": {
+      "label": "Духовная пауза",
+      "morning": "Утренний зикр",
+      "postPrayer": "Зикр после намаза",
+      "evening": "Вечерний зикр",
+      "night": "Ночной истигфар",
+      "reset": {
+        "accessibilityLabel": "Сбросить",
+        "title": "Сбросить прогресс?",
+        "description": "Ваш прогресс этой духовной паузы будет сброшен.",
+        "cancel": "Отмена",
+        "confirm": "Сбросить"
       }
     }
   },
