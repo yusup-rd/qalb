@@ -1,0 +1,1 @@
+export const SPIRITUAL_PAUSE_PHRASE_TARGET = 33;
