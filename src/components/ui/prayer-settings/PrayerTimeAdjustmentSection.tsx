@@ -80,7 +80,7 @@ const PrayerTimeAdjustmentSection = ({
 
   const handleFixedTimeChange = (event: DateTimePickerEvent) => {
     setAndroidPickerVisible(false);
-    if (Platform.OS === "android" && event.type === "dismissed") {
+    if (event.type !== "set" || event.nativeEvent.timestamp == null) {
       return;
     }
     const selectedDate = new Date(event.nativeEvent.timestamp);
