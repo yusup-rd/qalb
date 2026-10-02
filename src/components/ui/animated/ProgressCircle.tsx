@@ -43,14 +43,14 @@ const ProgressCircle = ({
   const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = useSharedValue(Math.min(count / target, 1));
+  const progress = useSharedValue(target > 0 ? Math.min(count / target, 1) : 0);
   const scale = useSharedValue(1);
   const completionColorProgress = useSharedValue(
     completed && colorOnComplete ? 1 : 0,
   );
 
   useEffect(() => {
-    const nextProgress = Math.min(count / target, 1);
+    const nextProgress = target > 0 ? Math.min(count / target, 1) : 0;
     progress.value = withTiming(nextProgress, {
       duration: 180,
       easing: Easing.out(Easing.cubic),
