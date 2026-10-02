@@ -173,9 +173,9 @@
     },
     "spiritualPause": {
       "label": "Духовная пауза",
-      "morning": "Утренние азкары",
+      "morning": "Утренний зикр",
       "postPrayer": "Зикр после намаза",
-      "evening": "Вечерние азкары",
+      "evening": "Вечерний зикр",
       "night": "Ночной истигфар",
       "progressLabel": "{{phrase}} — {{count}} из {{target}}",
       "reset": {

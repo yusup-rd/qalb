@@ -173,9 +173,9 @@
     },
     "spiritualPause": {
       "label": "Spiritual Pause",
-      "morning": "Morning Adhkar",
-      "postPrayer": "Post-Prayer Dhikr",
-      "evening": "Evening Adhkar",
+      "morning": "Morning Dhikr",
+      "postPrayer": "After Prayer Dhikr",
+      "evening": "Evening Dhikr",
       "night": "Night Istighfar",
       "progressLabel": "{{phrase}} {{count}} of {{target}}",
       "reset": {
