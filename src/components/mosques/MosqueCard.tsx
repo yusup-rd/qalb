@@ -32,16 +32,21 @@ const MosqueCard = ({
     keyPrefix: "units",
   });
 
-  const distance = route
-    ? formatDistance(route.distanceMeters, i18n.language)
-    : formatDistance(
-        mosque.drivingDistanceMeters ?? mosque.distanceMeters,
-        i18n.language,
-      );
+  const distanceMeters = route
+    ? route.distanceMeters
+    : (mosque.drivingDistanceMeters ?? mosque.distanceMeters);
+
+  const distance = Number.isFinite(distanceMeters)
+    ? formatDistance(distanceMeters, i18n.language)
+    : null;
 
   const durationSeconds = route
     ? route.durationSeconds
     : mosque.durationSeconds;
+
+  const validDurationSeconds = Number.isFinite(durationSeconds)
+    ? durationSeconds
+    : null;
 
   return (
     <Pressable
@@ -100,13 +105,13 @@ const MosqueCard = ({
       </View>
 
       <View className="flex-row items-center gap-2">
-        {durationSeconds != null ? (
+        {validDurationSeconds !== null ? (
           <>
             <View className="flex-row items-center gap-1">
               <Fa name="car" size={12} className="text-muted-foreground" />
 
               <Text className="font-sans-medium text-muted-foreground text-sm">
-                {formatDuration(durationSeconds * 1000)}
+                {formatDuration(validDurationSeconds * 1000)}
               </Text>
             </View>
 
@@ -118,9 +123,11 @@ const MosqueCard = ({
           </Text>
         ) : null}
 
-        <Text className="font-sans-regular text-muted-foreground text-sm">
-          {distance.value} {tUnits(`${distance.unit}`)}
-        </Text>
+        {distance ? (
+          <Text className="font-sans-regular text-muted-foreground text-sm">
+            {distance.value} {tUnits(`${distance.unit}`)}
+          </Text>
+        ) : null}
       </View>
 
       <Pressable
