@@ -1,7 +1,8 @@
 import type { QuranChapter } from "@/types/quran";
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { Link } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
@@ -14,7 +15,9 @@ export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
       }}
       asChild
     >
-      <Pressable className="bg-card flex-row items-center gap-4 rounded-2xl p-4 shadow-md">
+      <SmoothPressable
+        className="bg-card flex-row items-center gap-4 rounded-2xl p-4 shadow-md"
+      >
         <View className="bg-primary-soft size-10 items-center justify-center rounded-full">
           <Text className="text-primary font-sans-bold">
             {chapter.chapterNumber}
@@ -31,7 +34,7 @@ export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
         <Text className="text-primary font-sans-regular writingDirection-rtl text-xl">
           {chapter.nameArabic}
         </Text>
-      </Pressable>
+      </SmoothPressable>
     </Link>
   );
 };

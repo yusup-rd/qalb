@@ -395,6 +395,7 @@
     "info": "Zakat is generally calculated at 2.5% of zakatable wealth once it reaches the Nisab threshold and the applicable Hawl period has passed. For personal religious circumstances, consult a qualified scholar."
   },
   "quran": {
+    "title": "Quran",
     "search": "Search Quran",
     "surahs": "Surahs",
     "ayahsTitle": "Ayahs",

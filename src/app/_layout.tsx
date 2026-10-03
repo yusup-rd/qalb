@@ -69,6 +69,7 @@ const RootLayout = () => {
             <Stack.Screen
               name="(tabs)"
               options={{
+                animation: "fade",
                 headerShown: false,
               }}
             />
@@ -99,6 +100,8 @@ const RootLayout = () => {
             <Stack.Screen
               name="quran/[chapterId]"
               options={{
+                animation: "fade",
+                gestureEnabled: false,
                 headerShown: false,
               }}
             />

@@ -5,7 +5,8 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Pressable } from "react-native";
+import { ActivityIndicator, Alert } from "react-native";
+import { SmoothPressable } from "../ui/animated/SmoothPressable";
 
 export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
   const { colors } = useTheme();
@@ -19,10 +20,12 @@ export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
   const playing = isActive && Boolean(status?.playing && !status.didJustFinish);
   const isLoading =
     requesting ||
-    (isActive && !playing && (!status || !status.isLoaded || status.isBuffering));
+    (isActive &&
+      !playing &&
+      (!status || !status.isLoaded || status.isBuffering));
 
   return (
-    <Pressable
+    <SmoothPressable
       accessibilityLabel={
         isLoading
           ? t("audioLoading")
@@ -62,6 +65,6 @@ export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
           color={colors.primary}
         />
       )}
-    </Pressable>
+    </SmoothPressable>
   );
 };
