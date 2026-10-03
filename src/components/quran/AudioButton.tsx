@@ -3,6 +3,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 import type { AyahAudio } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Pressable } from "react-native";
 
@@ -10,13 +11,15 @@ export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
   const { colors } = useTheme();
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
   const { activeUrl, status, play, pause } = useQuranAudio();
+  const [requesting, setRequesting] = useState(false);
 
   if (!audio?.url) return null;
 
   const isActive = activeUrl === audio.url;
   const playing = isActive && Boolean(status?.playing && !status.didJustFinish);
   const isLoading =
-    isActive && !playing && (!status || !status.isLoaded || status.isBuffering);
+    requesting ||
+    (isActive && !playing && (!status || !status.isLoaded || status.isBuffering));
 
   return (
     <Pressable
@@ -35,13 +38,19 @@ export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
           return;
         }
 
-        const { isConnected } = await NetInfo.fetch();
-        if (isConnected === false) {
-          Alert.alert(t("audioTitle"), t("audioOffline"));
-          return;
-        }
+        setRequesting(true);
 
-        await play(audio.url);
+        try {
+          const { isConnected } = await NetInfo.fetch();
+          if (isConnected === false) {
+            Alert.alert(t("audioTitle"), t("audioOffline"));
+            return;
+          }
+
+          await play(audio.url);
+        } finally {
+          setRequesting(false);
+        }
       }}
     >
       {isLoading ? (

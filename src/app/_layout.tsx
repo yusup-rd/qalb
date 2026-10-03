@@ -95,6 +95,13 @@ const RootLayout = () => {
                 presentation: "modal",
               }}
             />
+
+            <Stack.Screen
+              name="quran/[chapterId]"
+              options={{
+                headerShown: false,
+              }}
+            />
           </Stack>
         </QuranAudioProvider>
       </ThemeProvider>
