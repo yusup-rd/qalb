@@ -6,6 +6,24 @@
     "mosques": "Мечети",
     "settings": "Настройки"
   },
+  "quran": {
+    "search": "Поиск по Корану",
+    "surahs": "Суры",
+    "ayahsTitle": "Аяты",
+    "noResults": "Ничего не найдено.",
+    "databaseError": "Не удалось открыть базу данных Корана.",
+    "audioTitle": "Аудио недоступно",
+    "audioOffline": "Аудио аята нельзя загрузить без подключения к интернету. Проверьте подключение и попробуйте снова.",
+    "audioLoading": "Загрузка аудио аята",
+    "audioPlay": "Воспроизвести аят",
+    "audioPause": "Приостановить аят",
+    "noAyahs": "Аяты этой суры не найдены.",
+    "loadError": "Не удалось загрузить суру: {{message}}",
+    "ayahs_one": "{{count}} аят",
+    "ayahs_few": "{{count}} аята",
+    "ayahs_many": "{{count}} аятов",
+    "ayahs_other": "{{count}} аятов"
+  },
   "notifications": {
     "prayerTime": {
       "title": "Sabr",

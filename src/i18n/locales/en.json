@@ -6,6 +6,24 @@
     "mosques": "Mosques",
     "settings": "Settings"
   },
+  "quran": {
+    "search": "Search Quran",
+    "surahs": "Surahs",
+    "ayahsTitle": "Ayahs",
+    "noResults": "No Quran results found.",
+    "databaseError": "Quran database could not be opened.",
+    "audioTitle": "Audio unavailable",
+    "audioOffline": "Ayah audio cannot be loaded while offline. Please check your internet connection and try again.",
+    "audioLoading": "Loading ayah audio",
+    "audioPlay": "Play ayah",
+    "audioPause": "Pause ayah",
+    "noAyahs": "No ayahs found for this Surah.",
+    "loadError": "This Surah could not be loaded: {{message}}",
+    "ayahs_one": "{{count}} ayah",
+    "ayahs_few": "{{count}} ayahs",
+    "ayahs_many": "{{count}} ayahs",
+    "ayahs_other": "{{count}} ayahs"
+  },
   "notifications": {
     "prayerTime": {
       "title": "Sabr",
