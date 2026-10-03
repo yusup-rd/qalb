@@ -28,7 +28,7 @@ export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
             {t("ayahs", { count: chapter.versesCount })}
           </Text>
         </View>
-        <Text className="text-foreground font-sans-regular text-xl">
+        <Text className="text-primary font-sans-regular writingDirection-rtl text-xl">
           {chapter.nameArabic}
         </Text>
       </Pressable>

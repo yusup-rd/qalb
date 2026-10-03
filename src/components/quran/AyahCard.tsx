@@ -17,11 +17,11 @@ export const AyahCard = ({ verse }: { verse: QuranVerseWithContent }) => {
         </Text>
         <AudioButton audio={verse.audio} />
       </View>
-      <Text className="text-foreground font-sans-regular text-right text-2xl leading-10">
+      <Text className="text-primary font-sans-semibold writingDirection-rtl text-right text-2xl leading-10">
         {verse.textUthmani}
       </Text>
       {verse.transliteration ? (
-        <Text className="text-primary-soft-foreground font-sans-regular italic">
+        <Text className="text-secondary font-sans-regular italic">
           {verse.transliteration.text}
         </Text>
       ) : null}

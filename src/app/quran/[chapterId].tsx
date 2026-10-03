@@ -25,7 +25,7 @@ const QuranReader = () => {
       >
         {!loading && chapter ? (
           <View className="items-center gap-1">
-            <Text className="text-foreground font-sans-bold text-2xl">
+            <Text className="text-primary font-sans-bold writingDirection-rtl text-2xl">
               {chapter.nameArabic}
             </Text>
             <Text className="text-muted-foreground font-sans-regular">
