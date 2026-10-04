@@ -1,7 +1,7 @@
 import {
+  getAyahOfDay,
   getChapterById,
   getChapters,
-  getAyahOfDay,
   getVersesByChapterId,
   searchChapters,
   searchQuran,

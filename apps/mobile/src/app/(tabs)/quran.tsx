@@ -46,69 +46,70 @@ const Quran = () => {
     router.setParams({ query: nextQuery || undefined });
   };
 
-  const listItems: QuranListItem[] = error || searchError
-    ? [{ type: "message", id: "database-error", message: t("databaseError") }]
-    : query.trim()
-      ? searchLoading
-        ? [
-            ...Array.from({ length: 2 }, (_, index) => ({
+  const listItems: QuranListItem[] =
+    error || searchError
+      ? [{ type: "message", id: "database-error", message: t("databaseError") }]
+      : query.trim()
+        ? searchLoading
+          ? [
+              ...Array.from({ length: 2 }, (_, index) => ({
+                type: "surah-skeleton" as const,
+                id: `surah-skeleton-${index}`,
+              })),
+              ...Array.from({ length: 3 }, (_, index) => ({
+                type: "ayah-skeleton" as const,
+                id: `ayah-skeleton-${index}`,
+              })),
+            ]
+          : [
+              ...(matchedChapters.length > 0
+                ? [
+                    {
+                      type: "section" as const,
+                      id: "surahs-section",
+                      title: t("surahs"),
+                    },
+                    ...matchedChapters.map((chapter) => ({
+                      type: "surah" as const,
+                      id: `surah-${chapter.id}`,
+                      chapter,
+                    })),
+                  ]
+                : []),
+              ...(matchedVerses.length > 0
+                ? [
+                    {
+                      type: "section" as const,
+                      id: "ayahs-section",
+                      title: t("ayahsTitle"),
+                    },
+                    ...matchedVerses.map((verse) => ({
+                      type: "ayah" as const,
+                      id: `ayah-${verse.id}`,
+                      verse,
+                    })),
+                  ]
+                : []),
+              ...(matchedChapters.length === 0 && matchedVerses.length === 0
+                ? [
+                    {
+                      type: "message" as const,
+                      id: "no-results",
+                      message: t("noResults"),
+                    },
+                  ]
+                : []),
+            ]
+        : chaptersLoading
+          ? Array.from({ length: 6 }, (_, index) => ({
               type: "surah-skeleton" as const,
               id: `surah-skeleton-${index}`,
-            })),
-            ...Array.from({ length: 3 }, (_, index) => ({
-              type: "ayah-skeleton" as const,
-              id: `ayah-skeleton-${index}`,
-            })),
-          ]
-        : [
-            ...(matchedChapters.length > 0
-              ? [
-                  {
-                    type: "section" as const,
-                    id: "surahs-section",
-                    title: t("surahs"),
-                  },
-                  ...matchedChapters.map((chapter) => ({
-                    type: "surah" as const,
-                    id: `surah-${chapter.id}`,
-                    chapter,
-                  })),
-                ]
-              : []),
-            ...(matchedVerses.length > 0
-              ? [
-                  {
-                    type: "section" as const,
-                    id: "ayahs-section",
-                    title: t("ayahsTitle"),
-                  },
-                  ...matchedVerses.map((verse) => ({
-                    type: "ayah" as const,
-                    id: `ayah-${verse.id}`,
-                    verse,
-                  })),
-                ]
-              : []),
-            ...(matchedChapters.length === 0 && matchedVerses.length === 0
-              ? [
-                  {
-                    type: "message" as const,
-                    id: "no-results",
-                    message: t("noResults"),
-                  },
-                ]
-              : []),
-          ]
-      : chaptersLoading
-        ? Array.from({ length: 6 }, (_, index) => ({
-            type: "surah-skeleton" as const,
-            id: `surah-skeleton-${index}`,
-          }))
-        : chapters.map((chapter) => ({
-            type: "surah" as const,
-            id: `surah-${chapter.id}`,
-            chapter,
-          }));
+            }))
+          : chapters.map((chapter) => ({
+              type: "surah" as const,
+              id: `surah-${chapter.id}`,
+              chapter,
+            }));
 
   const renderItem = ({ item }: { item: QuranListItem }) => {
     switch (item.type) {
@@ -144,6 +145,9 @@ const Quran = () => {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews={true}
         keyboardDismissMode="on-drag"
         stickyHeaderIndices={[0]}
         ListHeaderComponent={
@@ -155,7 +159,7 @@ const Quran = () => {
               <Fa
                 name="magnifying-glass"
                 size={15}
-                color={colors.mutedForeground}
+                className="text-muted-foreground"
               />
               <TextInput
                 className="text-foreground font-sans-regular flex-1 py-3"

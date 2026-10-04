@@ -62,7 +62,12 @@ const RootLayout = () => {
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded || !languageLoaded || !rootLaidOut || splashHidden.current) {
+    if (
+      !fontsLoaded ||
+      !languageLoaded ||
+      !rootLaidOut ||
+      splashHidden.current
+    ) {
       return;
     }
 
