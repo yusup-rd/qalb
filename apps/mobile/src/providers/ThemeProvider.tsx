@@ -1,19 +1,19 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Appearance, Platform, useColorScheme } from "react-native";
-
 import {
   darkColors,
   lightColors,
   type ThemeColors,
   type ThemeMode,
 } from "@/constants/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Appearance, useColorScheme } from "react-native";
 
 const STORAGE_KEY = "@app/theme";
 
@@ -33,7 +33,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    AsyncStorage.getItem(STORAGE_KEY).then((value) => {
+    const loadTheme = async () => {
+      const value = await AsyncStorage.getItem(STORAGE_KEY);
+
       if (cancelled) {
         return;
       }
@@ -41,7 +43,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (value === "light" || value === "dark" || value === "system") {
         setModeState(value);
       }
-    });
+    };
+    void loadTheme();
 
     return () => {
       cancelled = true;
@@ -55,23 +58,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         : "light"
       : mode;
 
-  useEffect(() => {
-    if (Platform.OS !== "web") {
-      Appearance.setColorScheme(mode === "system" ? "unspecified" : mode);
-    }
-  }, [mode]);
-
-  const setMode = async (nextMode: ThemeMode) => {
+  const setMode = useCallback((nextMode: ThemeMode) => {
     setModeState(nextMode);
 
-    if (Platform.OS !== "web") {
-      Appearance.setColorScheme(
-        nextMode === "system" ? "unspecified" : nextMode,
-      );
-    }
+    Appearance.setColorScheme(nextMode === "system" ? "unspecified" : nextMode);
 
-    await AsyncStorage.setItem(STORAGE_KEY, nextMode);
-  };
+    void AsyncStorage.setItem(STORAGE_KEY, nextMode);
+  }, []);
 
   const colors: ThemeColors =
     resolvedMode === "dark" ? darkColors : lightColors;
@@ -83,7 +76,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setMode,
       colors,
     }),
-    [mode, resolvedMode, colors],
+    [mode, resolvedMode, setMode, colors],
   );
 
   return (
