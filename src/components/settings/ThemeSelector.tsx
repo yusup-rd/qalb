@@ -1,8 +1,9 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Ionicons as Io } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 const options = [
   {
@@ -36,7 +37,7 @@ const ThemeSelector = () => {
           const selected = mode === option.value;
 
           return (
-            <Pressable
+            <SmoothPressable
               key={option.value}
               onPress={() => setMode(option.value)}
               accessibilityRole="radio"
@@ -62,7 +63,7 @@ const ThemeSelector = () => {
               >
                 {t(option.value)}
               </Text>
-            </Pressable>
+            </SmoothPressable>
           );
         })}
       </View>

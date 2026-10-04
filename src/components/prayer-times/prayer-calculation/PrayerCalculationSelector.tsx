@@ -1,9 +1,10 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { calculationMethods } from "@/constants/prayer-calculation";
 import { useLocationStore } from "@/store/locationStore";
 import type { AsrMethod, CalculationMethodId } from "@/types/prayer";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface PrayerCalculationSelectorProps {
   calculationMethod: CalculationMethodId;
@@ -40,9 +41,9 @@ const PrayerCalculationSelector = ({
   const asrLabel = tAsr(asrMethod);
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={onPress}
-      className="bg-card active:bg-muted rounded-2xl px-4 py-3.5 shadow-md"
+      className="bg-card rounded-2xl px-4 py-3.5 shadow-md"
     >
       <View className="flex-row items-center gap-2">
         <Fa name="location-dot" size={12} className="text-primary" />
@@ -85,7 +86,7 @@ const PrayerCalculationSelector = ({
           </Text>
         </View>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

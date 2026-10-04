@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { addDays, getMonthDays, isSameDay, startOfWeek } from "@/lib/date";
 import { formatWeekday } from "@/lib/format";
 import {
@@ -5,7 +6,7 @@ import {
   type IslamicEvent,
 } from "@/lib/islamic-events";
 import { clsx } from "clsx";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface CalendarMonthGridProps {
   month: Date;
@@ -48,7 +49,7 @@ const CalendarMonthGrid = ({
           const events = getIslamicEventsForDate(date, islamicEvents);
 
           return (
-            <Pressable
+            <SmoothPressable
               key={date.toISOString()}
               onPress={() => onSelectDate(date)}
               className="w-[14.285%] p-1"
@@ -73,7 +74,7 @@ const CalendarMonthGrid = ({
                   <View className="bg-secondary absolute bottom-1 size-1.5 rounded-full" />
                 )}
               </View>
-            </Pressable>
+            </SmoothPressable>
           );
         })}
       </View>

@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { formatMinuteOffset, formatTime, parseTimeString } from "@/lib/format";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { PrayerTimeAdjustment } from "@/types/prayer";
@@ -8,7 +9,7 @@ import Slider from "@react-native-community/slider";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 
 interface PrayerTimeAdjustmentSectionProps {
   adjustment: PrayerTimeAdjustment;
@@ -109,7 +110,7 @@ const PrayerTimeAdjustmentSection = ({
           const selected = adjustment.mode === mode;
 
           return (
-            <Pressable
+            <SmoothPressable
               key={mode}
               onPress={() => updateAdjustment({ mode })}
               className={clsx(
@@ -147,7 +148,7 @@ const PrayerTimeAdjustmentSection = ({
                   <View className="bg-primary-foreground size-2 rounded-full" />
                 )}
               </View>
-            </Pressable>
+            </SmoothPressable>
           );
         })}
       </View>
@@ -218,14 +219,14 @@ const PrayerTimeAdjustmentSection = ({
         <View className="bg-card gap-4 rounded-xl px-4 py-5 shadow-md">
           <View className="items-center gap-1">
             {Platform.OS === "android" ? (
-              <Pressable
+              <SmoothPressable
                 onPress={() => setAndroidPickerVisible(true)}
                 accessibilityRole="button"
               >
                 <Text className="font-sans-bold text-foreground text-3xl">
                   {formatTime(fixedTimeDate)}
                 </Text>
-              </Pressable>
+              </SmoothPressable>
             ) : (
               <Text className="font-sans-bold text-foreground text-3xl">
                 {formatTime(fixedTimeDate)}

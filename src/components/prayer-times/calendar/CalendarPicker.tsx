@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import AutoScrollText from "@/components/ui/animated/AutoScrollText";
 import { useIslamicEvents } from "@/hooks/useIslamicEvents";
 import { addDays, isSameDay, startOfWeek } from "@/lib/date";
@@ -7,7 +8,7 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import CalendarSheet from "./CalendarSheet";
 
 interface CalendarPickerProps {
@@ -55,14 +56,14 @@ const CalendarPicker = ({
     <>
       <View className="bg-card gap-2 rounded-xl p-4 shadow-md">
         <View className="flex-row items-center gap-2">
-          <Pressable
+          <SmoothPressable
             onPress={goToPreviousDay}
             accessibilityRole="button"
             accessibilityLabel={t("previousDay")}
             className="bg-muted size-8 shrink-0 items-center justify-center rounded-full"
           >
             <Fa name="chevron-left" size={10} className="text-foreground" />
-          </Pressable>
+          </SmoothPressable>
 
           <View className="min-w-0 flex-1">
             <Text className="text-foreground font-sans-semibold text-lg">
@@ -77,23 +78,23 @@ const CalendarPicker = ({
             </AutoScrollText>
           </View>
 
-          <Pressable
+          <SmoothPressable
             onPress={() => setSheetVisible(true)}
             accessibilityRole="button"
             accessibilityLabel={t("openCalendar")}
             className="bg-muted size-8 shrink-0 items-center justify-center rounded-full"
           >
             <Fa name="calendar-days" size={13} className="text-foreground" />
-          </Pressable>
+          </SmoothPressable>
 
-          <Pressable
+          <SmoothPressable
             onPress={goToNextDay}
             accessibilityRole="button"
             accessibilityLabel={t("nextDay")}
             className="bg-muted size-8 shrink-0 items-center justify-center rounded-full"
           >
             <Fa name="chevron-right" size={10} className="text-foreground" />
-          </Pressable>
+          </SmoothPressable>
         </View>
 
         <View className="flex-row gap-1">
@@ -102,7 +103,7 @@ const CalendarPicker = ({
             const events = getIslamicEventsForDate(date, islamicEvents);
 
             return (
-              <Pressable
+              <SmoothPressable
                 key={date.toISOString()}
                 onPress={() => selectDate(date)}
                 className={clsx(
@@ -133,7 +134,7 @@ const CalendarPicker = ({
                 {events.length > 0 && (
                   <View className="bg-secondary mt-1 size-1 rounded-full" />
                 )}
-              </Pressable>
+              </SmoothPressable>
             );
           })}
         </View>

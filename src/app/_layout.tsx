@@ -3,9 +3,11 @@ import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
 import NotificationInitializer from "@/initializers/NotificationInitializer";
 import { setupNotificationHandler } from "@/lib/notifications";
+import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import { SQLiteProvider } from "expo-sqlite";
 import { useEffect, useState } from "react";
 
 const RootLayout = () => {
@@ -29,9 +31,16 @@ const RootLayout = () => {
   });
 
   useEffect(() => {
+    let cancelled = false;
     initializeLanguage().finally(() => {
-      setLanguageLoaded(true);
+      if (!cancelled) {
+        setLanguageLoaded(true);
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -47,42 +56,59 @@ const RootLayout = () => {
   }
 
   return (
-    <ThemeProvider>
-      <LocationInitializer />
-      <NotificationInitializer />
+    <SQLiteProvider
+      databaseName="quran-v2.db"
+      assetSource={{ assetId: require("@/assets/database/quran.db") }}
+    >
+      <ThemeProvider>
+        <QuranAudioProvider>
+          <LocationInitializer />
+          <NotificationInitializer />
 
-      <Stack>
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
+          <Stack>
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                animation: "fade",
+                headerShown: false,
+              }}
+            />
 
-        <Stack.Screen
-          name="prayer-times"
-          options={{
-            presentation: "modal",
-            headerShown: false,
-          }}
-        />
+            <Stack.Screen
+              name="prayer-times"
+              options={{
+                presentation: "modal",
+                headerShown: false,
+              }}
+            />
 
-        <Stack.Screen
-          name="zakat"
-          options={{
-            presentation: "modal",
-            headerShown: false,
-          }}
-        />
+            <Stack.Screen
+              name="zakat"
+              options={{
+                presentation: "modal",
+                headerShown: false,
+              }}
+            />
 
-        <Stack.Screen
-          name="tasbih"
-          options={{
-            presentation: "modal",
-          }}
-        />
-      </Stack>
-    </ThemeProvider>
+            <Stack.Screen
+              name="tasbih"
+              options={{
+                presentation: "modal",
+              }}
+            />
+
+            <Stack.Screen
+              name="quran/[chapterId]"
+              options={{
+                animation: "fade",
+                gestureEnabled: false,
+                headerShown: false,
+              }}
+            />
+          </Stack>
+        </QuranAudioProvider>
+      </ThemeProvider>
+    </SQLiteProvider>
   );
 };
 

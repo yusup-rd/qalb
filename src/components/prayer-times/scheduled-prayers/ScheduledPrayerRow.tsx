@@ -1,9 +1,10 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { usePrayerStore } from "@/store/prayerStore";
 import type { Prayer, SolarEvent } from "@/types/prayer";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface ScheduledPrayerRowProps {
   prayer: Prayer | SolarEvent;
@@ -58,12 +59,12 @@ const ScheduledPrayerRow = ({
       });
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       className={clsx(
-        "active:bg-muted flex-row items-center justify-between px-4 py-3.5",
+        "flex-row items-center justify-between px-4 py-3.5",
         showBorder && "border-border border-b",
       )}
     >
@@ -132,7 +133,7 @@ const ScheduledPrayerRow = ({
           className="text-muted-foreground"
         />
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

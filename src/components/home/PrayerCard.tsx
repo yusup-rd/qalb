@@ -1,9 +1,10 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { usePrayerStore } from "@/store/prayerStore";
 import type { Prayer, SolarEvent } from "@/types/prayer";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface PrayerCardProps {
   prayer: Prayer | SolarEvent;
@@ -35,9 +36,9 @@ const PrayerCard = ({
     : prayer.status === "completed";
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={() => onPress(prayer)}
-      className="bg-card flex-row items-center justify-between gap-2 rounded-xl p-3.5 shadow-md active:opacity-70"
+      className="bg-card flex-row items-center justify-between gap-2 rounded-xl p-3.5 shadow-md"
     >
       <View className="flex-row items-center gap-3">
         <View
@@ -137,7 +138,7 @@ const PrayerCard = ({
           )}
         </View>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

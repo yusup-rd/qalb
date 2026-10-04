@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import TasbihArtwork from "@/components/tasbih/artwork/TasbihArtwork";
 import TasbihCounter from "@/components/tasbih/counter/TasbihCounter";
 import { BEAD_COUNT } from "@/constants/tasbih";
@@ -7,7 +8,7 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, View } from "react-native";
+import { Alert, View } from "react-native";
 
 const Tasbih = () => {
   const { colors } = useTheme();
@@ -62,13 +63,13 @@ const Tasbih = () => {
           headerTitle: "",
           headerShadowVisible: false,
           headerRight: () => (
-            <Pressable onPress={handleReset} hitSlop={12}>
+            <SmoothPressable onPress={handleReset} hitSlop={12}>
               <Fa
                 name="arrow-rotate-left"
                 size={17}
                 color={colors.foreground}
               />
-            </Pressable>
+            </SmoothPressable>
           ),
         }}
       />

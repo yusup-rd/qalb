@@ -32,11 +32,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>("system");
 
   useEffect(() => {
+    let cancelled = false;
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
+      if (cancelled) {
+        return;
+      }
+
       if (value === "light" || value === "dark" || value === "system") {
         setModeState(value);
       }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const resolvedMode: "light" | "dark" =

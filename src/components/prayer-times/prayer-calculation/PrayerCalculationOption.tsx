@@ -1,6 +1,7 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface PrayerCalculationOptionProps {
   title: string;
@@ -16,7 +17,7 @@ const PrayerCalculationOption = ({
   onPress,
 }: PrayerCalculationOptionProps) => {
   return (
-    <Pressable
+    <SmoothPressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
@@ -52,7 +53,7 @@ const PrayerCalculationOption = ({
           <Fa name="check" size={10} className="text-primary-foreground" />
         )}
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

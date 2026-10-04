@@ -138,6 +138,10 @@
       "nextIn": "Next in {{time}}",
       "settingsAccessibilityLabel": "Prayer settings. Asr: {{asrLabel}}, Method: {{calculationMethodLabel}}"
     },
+    "ayahOfDay": {
+      "title": "Ayah of the Day",
+      "reflect": "Reflect"
+    },
     "quickAccess": {
       "quran": {
         "title": "Quran",
@@ -393,6 +397,29 @@
     },
     "reset": "Reset",
     "info": "Zakat is generally calculated at 2.5% of zakatable wealth once it reaches the Nisab threshold and the applicable Hawl period has passed. For personal religious circumstances, consult a qualified scholar."
+  },
+  "quran": {
+    "title": "Quran",
+    "search": "Search Quran",
+    "surahs": "Surahs",
+    "ayahsTitle": "Ayahs",
+    "noResults": "No Quran results found.",
+    "databaseError": "Quran database could not be opened.",
+    "audioTitle": "Audio unavailable",
+    "audioOffline": "Ayah audio cannot be loaded while offline. Please check your internet connection and try again.",
+    "audioLoading": "Loading ayah audio",
+    "audioPlay": "Play ayah",
+    "audioPause": "Pause ayah",
+    "allSurahs": "All Surahs",
+    "nextSurah": "Next Surah",
+    "previousSurah": "Previous Surah",
+    "listenSurah": "Listen Surah",
+    "noAyahs": "No ayahs found for this Surah.",
+    "loadError": "This Surah could not be loaded: {{message}}",
+    "ayahs_one": "{{count}} ayah",
+    "ayahs_few": "{{count}} ayahs",
+    "ayahs_many": "{{count}} ayahs",
+    "ayahs_other": "{{count}} ayahs"
   },
   "qibla": {
     "location": {

@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import TasbihBeads from "@/components/tasbih/artwork/TasbihBeads";
 import TasbihCord from "@/components/tasbih/artwork/TasbihCord";
 import TasbihImame from "@/components/tasbih/artwork/TasbihImame";
@@ -16,7 +17,7 @@ import {
   VERTICAL_PADDING,
 } from "@/constants/tasbih";
 import { useMemo, useRef, useState } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import {
   Easing,
   useSharedValue,
@@ -187,7 +188,7 @@ const TasbihArtwork = ({ initialCount, onTap }: TasbihArtworkProps) => {
         height: artworkHeight,
       }}
     >
-      <Pressable
+      <SmoothPressable
         onPress={handlePress}
         style={{
           width: artworkWidth,
@@ -226,7 +227,7 @@ const TasbihArtwork = ({ initialCount, onTap }: TasbihArtworkProps) => {
             <TasbihImame />
           </View>
         </View>
-      </Pressable>
+      </SmoothPressable>
     </View>
   );
 };

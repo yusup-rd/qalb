@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import InfoSection from "@/components/ui/InfoSection";
 import ZakatInput from "@/components/zakat/form/ZakatInput";
 import ZakatSection from "@/components/zakat/form/ZakatSection";
@@ -7,7 +8,7 @@ import useZakatMarketPrices from "@/hooks/useZakatMarketPrices";
 import { calculateZakatSummary } from "@/lib/zakat-calculations";
 import { useZakatStore } from "@/store/zakatStore";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 
 const Zakat = () => {
   const { t } = useTranslation(undefined, {
@@ -168,14 +169,14 @@ const Zakat = () => {
       {summary ? <ZakatResultCard summary={summary} /> : null}
 
       {/* Reset */}
-      <Pressable
+      <SmoothPressable
         onPress={reset}
-        className="border-border bg-card active:bg-muted items-center rounded-2xl border px-5 py-4"
+        className="border-border bg-card items-center rounded-2xl border px-5 py-4"
       >
         <Text className="font-sans-semibold text-foreground text-base">
           {t("reset")}
         </Text>
-      </Pressable>
+      </SmoothPressable>
 
       {/* Info */}
       <InfoSection message={t("info")} />

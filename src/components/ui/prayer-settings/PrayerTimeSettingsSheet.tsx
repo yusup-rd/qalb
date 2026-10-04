@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
@@ -5,7 +6,7 @@ import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import PrayerNotificationSection from "./PrayerNotificationSection";
 import PrayerTimeAdjustmentSection from "./PrayerTimeAdjustmentSection";
 
@@ -148,9 +149,9 @@ const PrayerTimeSettingsSheet = ({
                   onChange={onAdjustmentChange}
                 />
 
-                <Pressable
+                <SmoothPressable
                   onPress={handleResetToAdhan}
-                  className="flex-row items-center justify-center gap-2 py-2 active:opacity-70"
+                  className="flex-row items-center justify-center gap-2 py-2"
                   accessibilityRole="button"
                   accessibilityLabel={tAdjustment("resetToAdhan.confirm")}
                 >
@@ -163,7 +164,7 @@ const PrayerTimeSettingsSheet = ({
                   <Text className="font-sans-semibold text-primary text-sm">
                     {tAdjustment("resetToAdhan.button")}
                   </Text>
-                </Pressable>
+                </SmoothPressable>
               </>
             )}
           </ScrollView>

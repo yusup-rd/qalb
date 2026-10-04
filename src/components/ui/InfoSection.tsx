@@ -1,6 +1,7 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -142,7 +143,7 @@ const InfoSectionContent = ({
   }
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={toggleExpanded}
       accessibilityRole="button"
       accessibilityState={{ expanded: isExpanded }}
@@ -188,7 +189,7 @@ const InfoSectionContent = ({
           <Fa name="chevron-down" size={12} className="text-muted-foreground" />
         </Animated.View>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

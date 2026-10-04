@@ -1,11 +1,13 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
+import { useLastOpenedSurah } from "@/hooks/useLastOpenedSurah";
 import { formatDistance } from "@/lib/format";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { Href, router } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface QuickAccessButtonProps {
   type: "quran" | "mosques" | "prayer" | "zakat" | "tasbih";
@@ -97,8 +99,8 @@ const MosqueQuickAccessButton = () => {
     : "—";
 
   return (
-    <Pressable
-      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+    <SmoothPressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md"
       onPress={() => router.push("/mosques")}
       accessibilityLabel={t("mosques.title")}
     >
@@ -137,18 +139,19 @@ const MosqueQuickAccessButton = () => {
           })}
         </Text>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 
-const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+const QuickAccessCard = ({
+  type,
+  lastOpenedSurah = null,
+}: QuickAccessButtonProps & {
+  lastOpenedSurah?: ReturnType<typeof useLastOpenedSurah>;
+}) => {
   const { t } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
-
-  if (type === "mosques") {
-    return <MosqueQuickAccessButton />;
-  }
 
   const item = quickAccessConfig[type];
 
@@ -168,14 +171,11 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   const getDescription = () => {
     switch (type) {
       case "quran":
-        // TODO: Replace with Quran reading tracker state.
-        // If user has no reading history:
-        // show "Read Quran". - (.default)
-        // If user has progress:
-        // show "Read Surah {{surahName}}" with the saved surah. - (.continue)
-        return t("quran.description.continue", {
-          surahName: "Al-Kahf",
-        });
+        return lastOpenedSurah
+          ? t("quran.description.continue", {
+              surahName: lastOpenedSurah.nameSimple,
+            })
+          : t("quran.description.default");
       case "prayer":
         return t("prayerTimes.description");
       case "zakat":
@@ -186,12 +186,19 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   };
 
   const handlePress = () => {
+    if (type === "quran" && lastOpenedSurah) {
+      router.push({
+        pathname: "/quran/[chapterId]",
+        params: { chapterId: String(lastOpenedSurah.id) },
+      });
+      return;
+    }
     router.push(item.route);
   };
 
   return (
-    <Pressable
-      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+    <SmoothPressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md"
       onPress={handlePress}
       accessibilityLabel={t(item.titleKey)}
     >
@@ -239,8 +246,23 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
           {getDescription()}
         </Text>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
+};
+
+const QuranQuickAccessButton = () => {
+  const lastOpenedSurah = useLastOpenedSurah();
+  return <QuickAccessCard type="quran" lastOpenedSurah={lastOpenedSurah} />;
+};
+
+const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+  if (type === "mosques") {
+    return <MosqueQuickAccessButton />;
+  }
+  if (type === "quran") {
+    return <QuranQuickAccessButton />;
+  }
+  return <QuickAccessCard type={type} />;
 };
 
 export default QuickAccessButton;
