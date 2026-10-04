@@ -7,11 +7,21 @@ import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { SQLiteProvider } from "expo-sqlite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { View } from "react-native";
+
+void SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  duration: 250,
+  fade: true,
+});
 
 const RootLayout = () => {
   const [languageLoaded, setLanguageLoaded] = useState(false);
+  const [rootLaidOut, setRootLaidOut] = useState(false);
+  const splashHidden = useRef(false);
 
   const [fontsLoaded, fontError] = useFonts({
     "sans-regular": require("@/assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -47,6 +57,22 @@ const RootLayout = () => {
     setupNotificationHandler();
   }, []);
 
+  const handleRootLayout = useCallback(() => {
+    setRootLaidOut(true);
+  }, []);
+
+  useEffect(() => {
+    if (!fontsLoaded || !languageLoaded || !rootLaidOut || splashHidden.current) {
+      return;
+    }
+
+    splashHidden.current = true;
+    void SplashScreen.hideAsync().catch((error: unknown) => {
+      splashHidden.current = false;
+      console.warn("Failed to hide splash screen", error);
+    });
+  }, [fontsLoaded, languageLoaded, rootLaidOut]);
+
   if (fontError) {
     throw fontError;
   }
@@ -62,50 +88,52 @@ const RootLayout = () => {
     >
       <ThemeProvider>
         <QuranAudioProvider>
-          <LocationInitializer />
-          <NotificationInitializer />
+          <View className="flex-1" onLayout={handleRootLayout}>
+            <LocationInitializer />
+            <NotificationInitializer />
 
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                animation: "fade",
-                headerShown: false,
-              }}
-            />
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  animation: "fade",
+                  headerShown: false,
+                }}
+              />
 
-            <Stack.Screen
-              name="prayer-times"
-              options={{
-                presentation: "modal",
-                headerShown: false,
-              }}
-            />
+              <Stack.Screen
+                name="prayer-times"
+                options={{
+                  presentation: "modal",
+                  headerShown: false,
+                }}
+              />
 
-            <Stack.Screen
-              name="zakat"
-              options={{
-                presentation: "modal",
-                headerShown: false,
-              }}
-            />
+              <Stack.Screen
+                name="zakat"
+                options={{
+                  presentation: "modal",
+                  headerShown: false,
+                }}
+              />
 
-            <Stack.Screen
-              name="tasbih"
-              options={{
-                presentation: "modal",
-              }}
-            />
+              <Stack.Screen
+                name="tasbih"
+                options={{
+                  presentation: "modal",
+                }}
+              />
 
-            <Stack.Screen
-              name="quran/[chapterId]"
-              options={{
-                animation: "fade",
-                gestureEnabled: false,
-                headerShown: false,
-              }}
-            />
-          </Stack>
+              <Stack.Screen
+                name="quran/[chapterId]"
+                options={{
+                  animation: "fade",
+                  gestureEnabled: false,
+                  headerShown: false,
+                }}
+              />
+            </Stack>
+          </View>
         </QuranAudioProvider>
       </ThemeProvider>
     </SQLiteProvider>

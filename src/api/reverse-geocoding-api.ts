@@ -19,7 +19,7 @@ interface NominatimResponse {
 // TODO: Move reverse-geocoding requests behind the NestJS API.
 //
 // Direct Nominatim requests from the mobile app are not globally rate-limited
-// across Sabr installations. The backend should provide shared caching and
+// across app installations. The backend should provide shared caching and
 // global rate limiting before forwarding requests to Nominatim.
 export async function reverseGeocodeWithAPI(
   latitude: number,
@@ -41,7 +41,7 @@ export async function reverseGeocodeWithAPI(
     const response = await fetch(url.toString(), {
       headers: {
         // Required by Nominatim's usage policy to identify the app.
-        "User-Agent": "Sabr/1.0 (prayer times app)",
+        "User-Agent": "Qalb/1.0 (prayer times app)",
       },
       signal: controller.signal,
     });

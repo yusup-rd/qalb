@@ -8,7 +8,7 @@
   },
   "notifications": {
     "prayerTime": {
-      "title": "Sabr",
+      "title": "Qalb",
       "atTime": "{{prayer}} time",
       "minutesBefore": "{{prayer}} in {{duration}}"
     }
