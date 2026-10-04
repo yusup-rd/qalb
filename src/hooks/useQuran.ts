@@ -89,10 +89,13 @@ export const useQuranChapter = (chapterId: number) => {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setChapter(null);
-    setVerses([]);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      setChapter(null);
+      setVerses([]);
+    });
     Promise.all([
       getChapterById(db, chapterId),
       getVersesByChapterId(db, chapterId),
@@ -129,7 +132,9 @@ export const useQuranSearch = (query: string) => {
   useEffect(() => {
     const trimmedQuery = query.trim();
     let cancelled = false;
-    setError(null);
+    queueMicrotask(() => {
+      if (!cancelled) setError(null);
+    });
     const timeoutId = setTimeout(
       () => {
         if (cancelled) {

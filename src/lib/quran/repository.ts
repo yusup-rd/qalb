@@ -272,19 +272,74 @@ const hydrateSearchMatches = async (
   db: SQLiteDatabase,
   matches: QuranVerse[],
 ) => {
-  const versesByChapter = new Map<number, QuranVerseWithContent[]>();
-  const hydrated: QuranVerseWithContent[] = [];
+  if (matches.length === 0) return [];
 
-  for (const match of matches) {
-    let chapterVerses = versesByChapter.get(match.chapterId);
-    if (!chapterVerses) {
-      chapterVerses = await getVersesByChapterId(db, match.chapterId);
-      versesByChapter.set(match.chapterId, chapterVerses);
-    }
+  const ids = matches.map((match) => match.id);
+  const placeholders = ids.map(() => "?").join(", ");
+  const [translations, transliterations, audio] = await Promise.all([
+    db.getAllAsync<{
+      verseId: number;
+      language: "en" | "ru";
+      resourceId: number;
+      text: string;
+      footNotes: string | null;
+    }>(
+      `SELECT verse_id AS verseId, language, resource_id AS resourceId,
+        text, foot_notes AS footNotes
+       FROM translations WHERE verse_id IN (${placeholders})`,
+      ...ids,
+    ),
+    db.getAllAsync<{
+      verseId: number;
+      resourceId: number;
+      text: string;
+    }>(
+      `SELECT verse_id AS verseId, resource_id AS resourceId, text
+       FROM transliterations WHERE verse_id IN (${placeholders})`,
+      ...ids,
+    ),
+    db.getAllAsync<{
+      verseId: number;
+      reciterId: number;
+      url: string;
+      duration: number | null;
+      format: string | null;
+      mimeType: string | null;
+      segmentsJson: string | null;
+      updatedAt: string | null;
+    }>(
+      `SELECT verse_id AS verseId, reciter_id AS reciterId, url,
+        duration, format, mime_type AS mimeType,
+        segments_json AS segmentsJson, updated_at AS updatedAt
+       FROM ayah_audio WHERE verse_id IN (${placeholders})`,
+      ...ids,
+    ),
+  ]);
 
-    const verse = chapterVerses.find((item) => item.id === match.id);
-    if (verse) hydrated.push(verse);
+  const translationsByVerse = new Map<number, typeof translations>();
+  for (const translation of translations) {
+    const existing = translationsByVerse.get(translation.verseId) ?? [];
+    existing.push(translation);
+    translationsByVerse.set(translation.verseId, existing);
   }
+  const transliterationsByVerse = new Map(
+    transliterations.map((item) => [item.verseId, item]),
+  );
+  const audioByVerse = new Map(
+    audio.map((item) => [item.verseId, item]),
+  );
 
-  return hydrated;
+  return matches.map((verse) => ({
+    ...verse,
+    english:
+      translationsByVerse
+        .get(verse.id)
+        ?.find((item) => item.language === "en") ?? null,
+    russian:
+      translationsByVerse
+        .get(verse.id)
+        ?.find((item) => item.language === "ru") ?? null,
+    transliteration: transliterationsByVerse.get(verse.id) ?? null,
+    audio: audioByVerse.get(verse.id) ?? null,
+  }));
 };

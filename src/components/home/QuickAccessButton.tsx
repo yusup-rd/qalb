@@ -143,15 +143,15 @@ const MosqueQuickAccessButton = () => {
   );
 };
 
-const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+const QuickAccessCard = ({
+  type,
+  lastOpenedSurah = null,
+}: QuickAccessButtonProps & {
+  lastOpenedSurah?: ReturnType<typeof useLastOpenedSurah>;
+}) => {
   const { t } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
-  const lastOpenedSurah = useLastOpenedSurah();
-
-  if (type === "mosques") {
-    return <MosqueQuickAccessButton />;
-  }
 
   const item = quickAccessConfig[type];
 
@@ -248,6 +248,21 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
       </View>
     </SmoothPressable>
   );
+};
+
+const QuranQuickAccessButton = () => {
+  const lastOpenedSurah = useLastOpenedSurah();
+  return <QuickAccessCard type="quran" lastOpenedSurah={lastOpenedSurah} />;
+};
+
+const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
+  if (type === "mosques") {
+    return <MosqueQuickAccessButton />;
+  }
+  if (type === "quran") {
+    return <QuranQuickAccessButton />;
+  }
+  return <QuickAccessCard type={type} />;
 };
 
 export default QuickAccessButton;
