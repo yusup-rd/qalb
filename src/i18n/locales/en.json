@@ -138,6 +138,10 @@
       "nextIn": "Next in {{time}}",
       "settingsAccessibilityLabel": "Prayer settings. Asr: {{asrLabel}}, Method: {{calculationMethodLabel}}"
     },
+    "ayahOfDay": {
+      "title": "Ayah of the Day",
+      "reflect": "Reflect"
+    },
     "quickAccess": {
       "quran": {
         "title": "Quran",

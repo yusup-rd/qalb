@@ -6,8 +6,9 @@ import { useQuranChapters, useQuranSearch } from "@/hooks/useQuran";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { QuranChapter, QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { styled } from "nativewind";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
@@ -25,13 +26,26 @@ type QuranListItem =
 const Quran = () => {
   const { colors } = useTheme();
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
+  const params = useLocalSearchParams<{ query?: string }>();
+  const router = useRouter();
   const { chapters, error, loading: chaptersLoading } = useQuranChapters();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(params.query ?? "");
   const {
     chapters: matchedChapters,
     verses: matchedVerses,
     loading: searchLoading,
   } = useQuranSearch(query);
+
+  useEffect(() => {
+    if (typeof params.query === "string") {
+      queueMicrotask(() => setQuery(params.query ?? ""));
+    }
+  }, [params.query]);
+
+  const handleQueryChange = (nextQuery: string) => {
+    setQuery(nextQuery);
+    router.setParams({ query: nextQuery || undefined });
+  };
 
   const listItems: QuranListItem[] = error
     ? [{ type: "message", id: "database-error", message: t("databaseError") }]
@@ -131,6 +145,7 @@ const Quran = () => {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         stickyHeaderIndices={[0]}
         ListHeaderComponent={
           <View className="bg-background -mx-5 gap-3 px-5 pb-4">
@@ -148,7 +163,7 @@ const Quran = () => {
                 placeholder={t("search")}
                 placeholderTextColor={colors.mutedForeground}
                 value={query}
-                onChangeText={setQuery}
+                onChangeText={handleQueryChange}
               />
             </View>
           </View>

@@ -1,6 +1,7 @@
 import {
   getChapterById,
   getChapters,
+  getAyahOfDay,
   getVersesByChapterId,
   searchChapters,
   searchQuran,
@@ -8,6 +9,11 @@ import {
 import type { QuranChapter, QuranVerseWithContent } from "@/types/quran";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useState } from "react";
+
+export type AyahOfDay = {
+  verse: QuranVerseWithContent;
+  chapter: QuranChapter;
+};
 
 export const useQuranChapters = () => {
   const db = useSQLiteContext();
@@ -32,6 +38,46 @@ export const useQuranChapters = () => {
   }, [db]);
 
   return { chapters, error, loading: !chapters.length && !error };
+};
+
+export const useAyahOfDay = () => {
+  const db = useSQLiteContext();
+  const [ayah, setAyah] = useState<AyahOfDay | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const today = new Date();
+    const dayNumber = Math.floor(
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) /
+        86_400_000,
+    );
+    let cancelled = false;
+
+    getAyahOfDay(db, dayNumber)
+      .then((nextAyah) => {
+        if (cancelled) return;
+        if (!nextAyah) return;
+        return getChapterById(db, nextAyah.chapterId).then((chapter) => {
+          if (!cancelled && chapter) {
+            setAyah({ verse: nextAyah, chapter });
+          }
+        });
+      })
+      .catch((nextError: unknown) => {
+        if (!cancelled) {
+          console.warn("Failed to load Ayah of the Day", nextError);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [db]);
+
+  return { ayah, loading };
 };
 
 export const useQuranChapter = (chapterId: number) => {

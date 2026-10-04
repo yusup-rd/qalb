@@ -1,6 +1,7 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
+import { useLastOpenedSurah } from "@/hooks/useLastOpenedSurah";
 import { formatDistance } from "@/lib/format";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
@@ -146,6 +147,7 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   const { t } = useTranslation(undefined, {
     keyPrefix: "home.quickAccess",
   });
+  const lastOpenedSurah = useLastOpenedSurah();
 
   if (type === "mosques") {
     return <MosqueQuickAccessButton />;
@@ -169,14 +171,11 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   const getDescription = () => {
     switch (type) {
       case "quran":
-        // TODO: Replace with Quran reading tracker state.
-        // If user has no reading history:
-        // show "Read Quran". - (.default)
-        // If user has progress:
-        // show "Read Surah {{surahName}}" with the saved surah. - (.continue)
-        return t("quran.description.continue", {
-          surahName: "Al-Kahf",
-        });
+        return lastOpenedSurah
+          ? t("quran.description.continue", {
+              surahName: lastOpenedSurah.nameSimple,
+            })
+          : t("quran.description.default");
       case "prayer":
         return t("prayerTimes.description");
       case "zakat":
@@ -187,6 +186,13 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   };
 
   const handlePress = () => {
+    if (type === "quran" && lastOpenedSurah) {
+      router.push({
+        pathname: "/quran/[chapterId]",
+        params: { chapterId: String(lastOpenedSurah.id) },
+      });
+      return;
+    }
     router.push(item.route);
   };
 

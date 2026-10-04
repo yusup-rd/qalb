@@ -3,12 +3,13 @@ import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { useQuranChapter } from "@/hooks/useQuran";
 import { useQuranAudio } from "@/providers/QuranAudioProvider";
+import { saveLastOpenedSurah } from "@/lib/quran-reading";
 import type { QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { styled } from "nativewind";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, FlatList, Text, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
@@ -32,6 +33,9 @@ const QuranReader = () => {
     verse.audio?.url ? [verse.audio.url] : [],
   );
   const isListening = queueActive && Boolean(status?.playing);
+  useEffect(() => {
+    if (chapter) saveLastOpenedSurah(chapter);
+  }, [chapter]);
   const items: ReaderItem[] = error
     ? [
         {

@@ -79,6 +79,75 @@ const mapVerse = (row: VerseRow): QuranVerse => ({
   textUthmani: row.text_uthmani,
 });
 
+export const getAyahOfDay = async (
+  db: SQLiteDatabase,
+  dayNumber: number,
+): Promise<QuranVerseWithContent | null> => {
+  const countRow = await db.getFirstAsync<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM verses",
+  );
+  const count = countRow?.count ?? 0;
+  if (count === 0) return null;
+
+  const offset = Math.abs((dayNumber * 2654435761) % count);
+  const verse = await db.getFirstAsync<VerseRow>(
+    "SELECT * FROM verses ORDER BY id LIMIT 1 OFFSET ?",
+    offset,
+  );
+  if (!verse) return null;
+
+  const [translations, transliteration, audio] = await Promise.all([
+    db.getAllAsync<{
+      verseId: number;
+      language: "en" | "ru";
+      resourceId: number;
+      text: string;
+      footNotes: string | null;
+    }>(
+      `SELECT verse_id AS verseId, language, resource_id AS resourceId,
+        text, foot_notes AS footNotes
+       FROM translations WHERE verse_id = ?`,
+      verse.id,
+    ),
+    db.getFirstAsync<{
+      verseId: number;
+      resourceId: number;
+      text: string;
+    }>(
+      `SELECT verse_id AS verseId, resource_id AS resourceId, text
+       FROM transliterations WHERE verse_id = ?`,
+      verse.id,
+    ),
+    db.getFirstAsync<{
+      verseId: number;
+      reciterId: number;
+      url: string;
+      duration: number | null;
+      format: string | null;
+      mimeType: string | null;
+      segmentsJson: string | null;
+      updatedAt: string | null;
+    }>(
+      `SELECT verse_id AS verseId, reciter_id AS reciterId, url,
+        duration, format, mime_type AS mimeType,
+        segments_json AS segmentsJson, updated_at AS updatedAt
+       FROM ayah_audio WHERE verse_id = ? LIMIT 1`,
+      verse.id,
+    ),
+  ]);
+
+  const mappedVerse = mapVerse(verse);
+  return {
+    ...mappedVerse,
+    english:
+      translations.find((item) => item.language === "en") ?? null,
+    russian:
+      translations.find((item) => item.language === "ru") ?? null,
+    transliteration,
+    audio,
+  };
+};
+
 export const getVersesByChapterId = async (
   db: SQLiteDatabase,
   chapterId: number,

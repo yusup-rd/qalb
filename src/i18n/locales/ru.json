@@ -138,6 +138,10 @@
       "nextIn": "Следующий через {{time}}",
       "settingsAccessibilityLabel": "Настройки времени молитв. Аср: {{asrLabel}}, метод: {{calculationMethodLabel}}"
     },
+    "ayahOfDay": {
+      "title": "Аят дня",
+      "reflect": "Осмыслить"
+    },
     "quickAccess": {
       "quran": {
         "title": "Коран",

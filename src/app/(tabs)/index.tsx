@@ -9,6 +9,7 @@ import LoadingCard from "@/components/ui/LoadingCard";
 import PrayerTimeSettingsSheet from "@/components/ui/prayer-settings/PrayerTimeSettingsSheet";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { usePrayerTimeSettings } from "@/hooks/usePrayerTimeSettings";
+import { useAyahOfDay } from "@/hooks/useQuran";
 import { useLocationStore } from "@/store/locationStore";
 import { styled } from "nativewind";
 import { useEffect, useRef } from "react";
@@ -27,6 +28,7 @@ const Index = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "home" });
 
   const prayerTimes = usePrayerTimes();
+  const { ayah: ayahOfDay } = useAyahOfDay();
   const locationLoading = useLocationStore((state) => state.locationLoading);
   const locationError = useLocationStore((state) => state.locationError);
   const locationPermissionStatus = useLocationStore(
@@ -141,7 +143,7 @@ const Index = () => {
           {renderLocationContent()}
           <QuickAccess />
           <SpiritualPauseCard />
-          <AyahCard />
+          <AyahCard ayah={ayahOfDay} />
         </ScrollView>
       </SafeAreaView>
 
