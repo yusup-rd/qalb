@@ -77,24 +77,41 @@ export function QuranAudioProvider({
     };
   }, []);
 
-  const play = useCallback(async (url: string) => {
-    const player = playerRef.current;
-    if (!player) {
-      return;
-    }
+  const play = useCallback(
+    async (url: string) => {
+      const player = playerRef.current;
+      if (!player) {
+        return;
+      }
 
-    queueRef.current = [];
-    queueIndexRef.current = -1;
-    setQueueActive(false);
-    setActiveUrl(url);
-    player.replace(url);
-    await player.seekTo(0);
-    player.play();
-  }, []);
+      if (activeUrl === url) {
+        player.play();
+        return;
+      }
+
+      queueRef.current = [];
+      queueIndexRef.current = -1;
+      setQueueActive(false);
+      setActiveUrl(url);
+      player.replace(url);
+      await player.seekTo(0);
+      player.play();
+    },
+    [activeUrl],
+  );
 
   const playQueue = useCallback(async (urls: string[]) => {
     const player = playerRef.current;
     if (!player || urls.length === 0) {
+      return;
+    }
+
+    if (
+      queueIndexRef.current >= 0 &&
+      urls.length === queueRef.current.length &&
+      urls.every((url, index) => url === queueRef.current[index])
+    ) {
+      player.play();
       return;
     }
 
@@ -113,11 +130,7 @@ export function QuranAudioProvider({
       return;
     }
 
-    queueRef.current = [];
-    queueIndexRef.current = -1;
-    setQueueActive(false);
     player.pause();
-    await player.seekTo(0);
   }, []);
 
   return (

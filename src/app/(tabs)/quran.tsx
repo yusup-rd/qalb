@@ -34,12 +34,11 @@ const Quran = () => {
     chapters: matchedChapters,
     verses: matchedVerses,
     loading: searchLoading,
+    error: searchError,
   } = useQuranSearch(query);
 
   useEffect(() => {
-    if (typeof params.query === "string") {
-      queueMicrotask(() => setQuery(params.query ?? ""));
-    }
+    queueMicrotask(() => setQuery(params.query ?? ""));
   }, [params.query]);
 
   const handleQueryChange = (nextQuery: string) => {
@@ -47,7 +46,7 @@ const Quran = () => {
     router.setParams({ query: nextQuery || undefined });
   };
 
-  const listItems: QuranListItem[] = error
+  const listItems: QuranListItem[] = error || searchError
     ? [{ type: "message", id: "database-error", message: t("databaseError") }]
     : query.trim()
       ? searchLoading

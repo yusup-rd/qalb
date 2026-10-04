@@ -89,6 +89,10 @@ export const useQuranChapter = (chapterId: number) => {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setChapter(null);
+    setVerses([]);
     Promise.all([
       getChapterById(db, chapterId),
       getVersesByChapterId(db, chapterId),
@@ -120,10 +124,12 @@ export const useQuranSearch = (query: string) => {
   const [results, setResults] = useState<QuranVerseWithContent[]>([]);
   const [chapters, setChapters] = useState<QuranChapter[]>([]);
   const [resolvedQuery, setResolvedQuery] = useState("");
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const trimmedQuery = query.trim();
     let cancelled = false;
+    setError(null);
     const timeoutId = setTimeout(
       () => {
         if (cancelled) {
@@ -147,8 +153,9 @@ export const useQuranSearch = (query: string) => {
             setResults(matchedVerses);
             setResolvedQuery(trimmedQuery);
           })
-          .catch(() => {
+          .catch((nextError) => {
             if (cancelled) return;
+            setError(nextError);
             setChapters([]);
             setResults([]);
             setResolvedQuery(trimmedQuery);
@@ -166,6 +173,7 @@ export const useQuranSearch = (query: string) => {
   return {
     chapters,
     verses: results,
+    error,
     loading: query.trim() !== resolvedQuery,
   };
 };
