@@ -24,9 +24,9 @@ export interface IslamicEvent {
 }
 
 /**
- * Maps normalized provider event names to Sabr's stable event IDs.
+ * Maps normalized provider event names to app's stable event IDs.
  *
- * Only events that have a dedicated Sabr translation need to be
+ * Only events that have a dedicated app translation need to be
  * included here. Unknown provider events remain visible using
  * their original provider name.
  */
@@ -117,7 +117,7 @@ function formatHijriDate(date: {
 
 /**
  * Converts an Islamic events API calendar into
- * Sabr's normalized Islamic event model.
+ * App's normalized Islamic event model.
  */
 function normalizeIslamicEvents(days: IslamicEventsApiDay[]): IslamicEvent[] {
   return days.flatMap(normalizeApiDay);

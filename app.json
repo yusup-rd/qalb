@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Sabr",
-    "slug": "Sabr",
+    "name": "Qalb",
+    "slug": "qalb",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app/icon.png",
-    "scheme": "sabr",
+    "scheme": "qalb",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/app/icon.png"
