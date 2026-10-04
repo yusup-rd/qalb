@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { DEFAULT_MOSQUE_RADIUS_KM } from "@/constants/mosques";
 import { useNearbyMosques } from "@/hooks/useNearbyMosques";
 import { formatDistance } from "@/lib/format";
@@ -5,7 +6,7 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { Href, router } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface QuickAccessButtonProps {
   type: "quran" | "mosques" | "prayer" | "zakat" | "tasbih";
@@ -97,8 +98,8 @@ const MosqueQuickAccessButton = () => {
     : "—";
 
   return (
-    <Pressable
-      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+    <SmoothPressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md"
       onPress={() => router.push("/mosques")}
       accessibilityLabel={t("mosques.title")}
     >
@@ -137,7 +138,7 @@ const MosqueQuickAccessButton = () => {
           })}
         </Text>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 
@@ -190,8 +191,8 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
   };
 
   return (
-    <Pressable
-      className="bg-card gap-3 rounded-xl p-4 shadow-md active:opacity-75"
+    <SmoothPressable
+      className="bg-card gap-3 rounded-xl p-4 shadow-md"
       onPress={handlePress}
       accessibilityLabel={t(item.titleKey)}
     >
@@ -239,7 +240,7 @@ const QuickAccessButton = ({ type }: QuickAccessButtonProps) => {
           {getDescription()}
         </Text>
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

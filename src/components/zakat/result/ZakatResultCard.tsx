@@ -1,10 +1,11 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { formatAmount } from "@/lib/format";
 import type { ZakatSummary } from "@/types/zakat";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Share, Text, View } from "react-native";
+import { Share, Text, View } from "react-native";
 import ZakatSummaryRow from "./ZakatSummaryRow";
 
 interface ZakatResultCardProps {
@@ -96,12 +97,12 @@ const ZakatResultCard = ({ summary }: ZakatResultCardProps) => {
         </Text>
 
         <View className="mt-4 flex-row gap-3">
-          <Pressable
+          <SmoothPressable
             onPress={handleCopy}
             accessibilityRole="button"
             accessibilityLabel={t("copyAccessibilityLabel")}
             accessibilityHint={t("copyAccessibilityHint")}
-            className="border-border bg-background flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3 active:opacity-70"
+            className="border-border bg-background flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3"
           >
             <Fa
               name={isCopied ? "check" : "copy"}
@@ -112,14 +113,14 @@ const ZakatResultCard = ({ summary }: ZakatResultCardProps) => {
             <Text className="font-sans-semibold text-foreground text-sm">
               {isCopied ? t("copied") : t("copyZakat")}
             </Text>
-          </Pressable>
+          </SmoothPressable>
 
-          <Pressable
+          <SmoothPressable
             onPress={handleShare}
             accessibilityRole="button"
             accessibilityLabel={t("shareAccessibilityLabel")}
             accessibilityHint={t("shareAccessibilityHint")}
-            className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl px-4 py-3 active:opacity-70"
+            className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl px-4 py-3"
           >
             <Fa
               name="share-nodes"
@@ -130,7 +131,7 @@ const ZakatResultCard = ({ summary }: ZakatResultCardProps) => {
             <Text className="font-sans-semibold text-primary-foreground text-sm">
               {t("shareZakat")}
             </Text>
-          </Pressable>
+          </SmoothPressable>
         </View>
       </View>
     </View>

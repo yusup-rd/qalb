@@ -1,9 +1,10 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
 
 interface MosquesListProps {
@@ -103,7 +104,7 @@ const MosquesList = ({
               </Text>
             </View>
 
-            <Pressable
+            <SmoothPressable
               accessibilityRole="button"
               accessibilityLabel={t("changeRadius")}
               onPress={onRadiusPress}
@@ -121,7 +122,7 @@ const MosquesList = ({
                 size={10}
                 className="text-muted-foreground"
               />
-            </Pressable>
+            </SmoothPressable>
           </View>
         </View>
       }

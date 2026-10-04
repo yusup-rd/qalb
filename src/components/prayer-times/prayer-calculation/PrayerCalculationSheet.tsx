@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { asrMethods, calculationMethods } from "@/constants/prayer-calculation";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { AsrMethod, CalculationMethodId } from "@/types/prayer";
@@ -5,7 +6,7 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import PrayerCalculationOption from "./PrayerCalculationOption";
 
 interface PrayerCalculationSheetProps {
@@ -115,23 +116,23 @@ const PrayerCalculationSheet = ({
             </View>
 
             <View className="flex-row gap-3">
-              <Pressable
+              <SmoothPressable
                 onPress={onClose}
                 className="bg-muted flex-1 items-center rounded-xl py-3.5"
               >
                 <Text className="text-foreground font-sans-semibold text-sm">
                   {t("actions.cancel")}
                 </Text>
-              </Pressable>
+              </SmoothPressable>
 
-              <Pressable
+              <SmoothPressable
                 onPress={handleSave}
                 className="bg-primary flex-1 items-center rounded-xl py-3.5"
               >
                 <Text className="text-primary-foreground font-sans-semibold text-sm">
                   {t("actions.apply")}
                 </Text>
-              </Pressable>
+              </SmoothPressable>
             </View>
           </ScrollView>
         </RNHostView>

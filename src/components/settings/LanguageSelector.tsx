@@ -1,7 +1,8 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import i18n from "@/i18n";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface LanguageSelectorProps {
   onPress: () => void;
@@ -15,11 +16,11 @@ const LanguageSelector = ({ onPress }: LanguageSelectorProps) => {
   const languageKey = i18n.language === "ru" ? "russian" : "english";
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={t("language")}
-      className="active:bg-muted overflow-hidden rounded-xl"
+      className="overflow-hidden rounded-xl"
     >
       <View className="flex-row items-center justify-between px-3 py-3">
         <View className="min-w-0 flex-1 flex-row items-center gap-3">
@@ -47,7 +48,7 @@ const LanguageSelector = ({ onPress }: LanguageSelectorProps) => {
 
         <Fa name="chevron-right" size={14} className="text-muted-foreground" />
       </View>
-    </Pressable>
+    </SmoothPressable>
   );
 };
 

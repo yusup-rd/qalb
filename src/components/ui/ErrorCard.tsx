@@ -1,5 +1,6 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface ErrorCardProps {
   title: string;
@@ -29,15 +30,15 @@ const ErrorCard = ({
         </View>
       </View>
 
-      <Pressable
+      <SmoothPressable
         onPress={onActionPress}
-        className="bg-primary mt-4 items-center rounded-lg px-4 py-3 active:opacity-80"
+        className="bg-primary mt-4 items-center rounded-lg px-4 py-3"
         accessibilityLabel={actionLabel}
       >
         <Text className="font-sans-semibold text-primary-foreground text-sm">
           {actionLabel}
         </Text>
-      </Pressable>
+      </SmoothPressable>
     </View>
   );
 };

@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { changeLanguage } from "@/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
@@ -6,7 +7,7 @@ import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface LanguageSheetProps {
   visible: boolean;
@@ -96,7 +97,7 @@ const LanguageSheet = ({
                 const selected = selectedLanguage === language.code;
 
                 return (
-                  <Pressable
+                  <SmoothPressable
                     key={language.code}
                     onPress={() => handleSelect(language.code)}
                     accessibilityRole="radio"
@@ -133,7 +134,7 @@ const LanguageSheet = ({
                         <View className="bg-primary-foreground size-2 rounded-full" />
                       )}
                     </View>
-                  </Pressable>
+                  </SmoothPressable>
                 );
               })}
             </View>

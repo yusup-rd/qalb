@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { calculationMethods } from "@/constants/prayer-calculation";
 import { formatTime, parseTimeString } from "@/lib/format";
 import { usePrayerStore } from "@/store/prayerStore";
@@ -5,7 +6,7 @@ import type { Prayer, SolarEvent } from "@/types/prayer";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import InfoSection from "../ui/InfoSection";
 import PrayerCard from "./PrayerCard";
 
@@ -116,9 +117,9 @@ const PrayersToday = ({
           {t("title")}
         </Text>
 
-        <Pressable
+        <SmoothPressable
           onPress={handleSettingsPress}
-          className="flex-row items-center gap-1.5 rounded-md p-1 active:opacity-75"
+          className="flex-row items-center gap-1.5 rounded-md p-1"
           accessibilityLabel={t("settingsAccessibilityLabel", {
             asrLabel,
             calculationMethodLabel,
@@ -129,7 +130,7 @@ const PrayersToday = ({
           </Text>
 
           <Fa name="sliders" size={13} className="text-muted-foreground" />
-        </Pressable>
+        </SmoothPressable>
       </View>
 
       <InfoSection message={infoMessage} collapsible />

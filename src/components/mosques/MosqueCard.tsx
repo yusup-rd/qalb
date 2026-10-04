@@ -1,10 +1,11 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { formatDistance, formatDuration } from "@/lib/format";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
 interface MosqueCardProps {
   mosque: NearbyMosque;
@@ -49,7 +50,7 @@ const MosqueCard = ({
     : null;
 
   return (
-    <Pressable
+    <SmoothPressable
       onPress={onPress}
       className={clsx(
         "gap-2 rounded-xl border p-4",
@@ -130,11 +131,11 @@ const MosqueCard = ({
         ) : null}
       </View>
 
-      <Pressable
+      <SmoothPressable
         onPress={onDirectionsPress}
         disabled={routeLoading}
         className={clsx(
-          "flex-row items-center justify-center gap-2 rounded-lg px-4 py-3 active:opacity-80",
+          "flex-row items-center justify-center gap-2 rounded-lg px-4 py-3",
           selected ? "bg-primary" : "bg-muted",
           routeLoading && "opacity-70",
         )}
@@ -157,8 +158,8 @@ const MosqueCard = ({
         >
           {routeLoading ? t("loading") : t("directions")}
         </Text>
-      </Pressable>
-    </Pressable>
+      </SmoothPressable>
+    </SmoothPressable>
   );
 };
 

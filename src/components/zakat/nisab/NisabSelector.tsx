@@ -1,7 +1,8 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { formatAmount } from "@/lib/format";
 import type { ZakatNisabStandard } from "@/types/zakat";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface NisabSelectorProps {
   value: ZakatNisabStandard;
@@ -17,7 +18,7 @@ const NisabSelector = ({ value, onChange, amount }: NisabSelectorProps) => {
   return (
     <View className="gap-3">
       <View className="flex-row gap-3">
-        <Pressable
+        <SmoothPressable
           onPress={() => onChange("silver")}
           accessibilityRole="radio"
           accessibilityState={{ checked: value === "silver" }}
@@ -34,9 +35,9 @@ const NisabSelector = ({ value, onChange, amount }: NisabSelectorProps) => {
           <Text className="font-sans-regular text-muted-foreground mt-1 text-sm">
             {t("silverAmount")}
           </Text>
-        </Pressable>
+        </SmoothPressable>
 
-        <Pressable
+        <SmoothPressable
           onPress={() => onChange("gold")}
           accessibilityRole="radio"
           accessibilityState={{ checked: value === "gold" }}
@@ -53,7 +54,7 @@ const NisabSelector = ({ value, onChange, amount }: NisabSelectorProps) => {
           <Text className="font-sans-regular text-muted-foreground mt-1 text-sm">
             {t("goldAmount")}
           </Text>
-        </Pressable>
+        </SmoothPressable>
       </View>
 
       <View className="bg-muted rounded-xl p-4">

@@ -1,3 +1,4 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { useIslamicEvents } from "@/hooks/useIslamicEvents";
 import { nextMonth, previousMonth } from "@/lib/date";
 import { formatHijriDate, formatMonthYear } from "@/lib/format";
@@ -9,7 +10,7 @@ import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import CalendarMonthGrid from "./CalendarMonthGrid";
 
 interface CalendarSheetProps {
@@ -104,16 +105,16 @@ const CalendarSheet = ({
             </View>
 
             <View className="flex-row items-center justify-between">
-              <Pressable
+              <SmoothPressable
                 onPress={goToPreviousMonth}
                 accessibilityRole="button"
                 accessibilityLabel={t("previousMonth")}
                 className="bg-muted size-9 items-center justify-center rounded-full"
               >
                 <Fa name="chevron-left" size={10} className="text-foreground" />
-              </Pressable>
+              </SmoothPressable>
 
-              <Pressable
+              <SmoothPressable
                 onPress={goToToday}
                 accessibilityRole="button"
                 accessibilityLabel={t("today")}
@@ -122,9 +123,9 @@ const CalendarSheet = ({
                 <Text className="text-secondary-soft-foreground font-sans-semibold text-xs">
                   {t("today")}
                 </Text>
-              </Pressable>
+              </SmoothPressable>
 
-              <Pressable
+              <SmoothPressable
                 onPress={goToNextMonth}
                 accessibilityRole="button"
                 accessibilityLabel={t("nextMonth")}
@@ -135,7 +136,7 @@ const CalendarSheet = ({
                   size={10}
                   className="text-foreground"
                 />
-              </Pressable>
+              </SmoothPressable>
             </View>
 
             <CalendarMonthGrid

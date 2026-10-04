@@ -1,9 +1,10 @@
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import InfoSection from "@/components/ui/InfoSection";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import { Pressable, Switch, Text, View } from "react-native";
+import { Switch, Text, View } from "react-native";
 
 interface PrayerNotificationSectionProps {
   enabled: boolean;
@@ -92,7 +93,7 @@ const PrayerNotificationSection = ({
                 : t(`remindTimes.${key}`);
 
             return (
-              <Pressable
+              <SmoothPressable
                 key={minutes}
                 disabled={!enabled}
                 onPress={() => onMinutesBeforeChange(minutes)}
@@ -123,7 +124,7 @@ const PrayerNotificationSection = ({
                     <View className="bg-primary-foreground size-2 rounded-full" />
                   )}
                 </View>
-              </Pressable>
+              </SmoothPressable>
             );
           })}
         </View>
