@@ -1,4 +1,2 @@
-export interface LocationAddress {
-  city: string | null;
-  country: string | null;
-}
+export type { LocationAddress } from "@qalb/shared";
+

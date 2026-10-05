@@ -78,7 +78,6 @@ const useQiblaCompass = ({
 
   const { heading, accuracy, hasSensor, permissionStatus } = useDeviceHeading({
     onHeading: handleHeading,
-    enabled: isFocused,
   });
 
   const qibla = useQiblaBearing();
@@ -121,7 +120,7 @@ const useQiblaCompass = ({
     return () => clearTimeout(timeout);
   }, [accuracy]);
 
-  const onFrame = useCallback(
+  const frameCallback = useCallback(
     (frame: { timeSincePreviousFrame: number | null }) => {
       "worklet";
 
@@ -153,15 +152,7 @@ const useQiblaCompass = ({
     [initialized, rotation, targetRotation, velocity],
   );
 
-  const frameCallback = useFrameCallback(onFrame, false);
-
-  useEffect(() => {
-    frameCallback.setActive(isFocused);
-
-    return () => {
-      frameCallback.setActive(false);
-    };
-  }, [frameCallback, isFocused]);
+  useFrameCallback(frameCallback);
 
   return {
     heading,

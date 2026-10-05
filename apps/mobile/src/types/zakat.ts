@@ -20,11 +20,7 @@ export interface ZakatFormData {
   wagesDue: number;
 }
 
-export interface ZakatMarketPrices {
-  goldPerGram: number;
-  silverPerGram: number;
-  updatedAt: string;
-}
+export type { ZakatMarketPrices } from "@qalb/shared";
 
 export interface ZakatSummary {
   totalAssets: number;

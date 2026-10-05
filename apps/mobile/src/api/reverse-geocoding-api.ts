@@ -1,76 +1,24 @@
-import type { LocationAddress } from "@/types/location";
+import type { LocationAddress } from "@qalb/shared";
+import { apiRequest } from "./client";
+import { requestCached } from "./client-cache";
 
-const REVERSE_GEOCODING_ENDPOINT =
-  "https://nominatim.openstreetmap.org/reverse";
+const GEOCODE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-interface NominatimAddress {
-  city?: string;
-  town?: string;
-  village?: string;
-  county?: string;
-  state?: string;
-  country?: string;
-}
-
-interface NominatimResponse {
-  address?: NominatimAddress;
-}
-
-// TODO: Move reverse-geocoding requests behind the NestJS API.
-//
-// Direct Nominatim requests from the mobile app are not globally rate-limited
-// across app installations. The backend should provide shared caching and
-// global rate limiting before forwarding requests to Nominatim.
-export async function reverseGeocodeWithAPI(
+export const reverseGeocodeWithAPI = (
   latitude: number,
   longitude: number,
   language: string,
-): Promise<LocationAddress> {
-  const url = new URL(REVERSE_GEOCODING_ENDPOINT);
-
-  url.searchParams.set("lat", latitude.toString());
-  url.searchParams.set("lon", longitude.toString());
-  url.searchParams.set("format", "json");
-  url.searchParams.set("zoom", "10");
-  url.searchParams.set("accept-language", language);
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        // Required by Nominatim's usage policy to identify the app.
-        "User-Agent": "Qalb/1.0 (prayer times app)",
-      },
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Nominatim request failed: ${response.status}`);
-    }
-
-    const data: NominatimResponse = await response.json();
-    const address = data.address;
-
-    if (!address) {
-      return {
-        city: null,
-        country: null,
-      };
-    }
-
-    return {
-      city:
-        address.city ??
-        address.town ??
-        address.village ??
-        address.county ??
-        address.state ??
-        null,
-      country: address.country ?? null,
-    };
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+): Promise<LocationAddress> => {
+  const params = new URLSearchParams({
+    lat: String(latitude),
+    lon: String(longitude),
+    language,
+  });
+  const key = `geocode:${latitude.toFixed(4)}:${longitude.toFixed(4)}:${language.toLowerCase()}`;
+  return requestCached(
+    key,
+    GEOCODE_CACHE_TTL_MS,
+    () => apiRequest<LocationAddress>(`/api/reverse-geocoding?${params}`),
+    { allowStaleOnError: true },
+  );
+};

@@ -1,143 +1,46 @@
-import type { Route, RouteMetrics } from "@/types/routing";
+import type { Route, RouteMetrics } from "@qalb/shared";
+import { apiRequest } from "./client";
+import { requestCached } from "./client-cache";
 
-const ROUTING_ENDPOINT = "https://router.project-osrm.org";
+const ROUTE_CACHE_TTL_MS = 60 * 60 * 1000;
+const ROUTE_METRICS_CACHE_TTL_MS = 60 * 60 * 1000;
 
-interface OsrmRouteResponse {
-  code: string;
-  message?: string;
-  routes?: {
-    distance: number;
-    duration: number;
-    geometry?: {
-      type: "LineString";
-      coordinates: [number, number][];
-    };
-  }[];
-}
-
-interface OsrmTableResponse {
-  code: string;
-  message?: string;
-  distances?: (number | null)[][];
-  durations?: (number | null)[][];
-}
+// Five decimal places keeps roughly meter-level precision while collapsing
+// insignificant floating-point GPS noise.
+const coordinateKey = (coordinate: RoutingCoordinate) =>
+  `${coordinate.latitude.toFixed(5)},${coordinate.longitude.toFixed(5)}`;
 
 interface RoutingCoordinate {
   latitude: number;
   longitude: number;
 }
 
-export const fetchRoute = async (
+export const fetchRoute = (
   origin: RoutingCoordinate,
   destination: RoutingCoordinate,
-): Promise<Route> => {
-  const coordinates = [
-    `${origin.longitude},${origin.latitude}`,
-    `${destination.longitude},${destination.latitude}`,
-  ].join(";");
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10_000);
-
-  let result: OsrmRouteResponse;
-
-  try {
-    const response = await fetch(
-      `${ROUTING_ENDPOINT}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
-      { signal: controller.signal },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Routing request failed with status ${response.status}`);
-    }
-
-    result = (await response.json()) as OsrmRouteResponse;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (result.code !== "Ok" || !result.routes?.[0]?.geometry) {
-    throw new Error(result.message ?? "No route found");
-  }
-
-  const route = result.routes[0];
-  const geometry = route.geometry;
-
-  if (!geometry) {
-    throw new Error("No route geometry found.");
-  }
-
-  return {
-    distanceMeters: route.distance,
-    durationSeconds: route.duration,
-    coordinates: geometry.coordinates.map(([longitude, latitude]) => ({
-      latitude,
-      longitude,
-    })),
-  };
+) => {
+  const key = `route:driving:${coordinateKey(origin)}:${coordinateKey(destination)}`;
+  return requestCached(key, ROUTE_CACHE_TTL_MS, () =>
+    apiRequest<Route>("/api/routing/route", {
+      method: "POST",
+      body: JSON.stringify({ origin, destination }),
+    }),
+  );
 };
 
-export const fetchRouteMetrics = async (
+export const fetchRouteMetrics = (
   origin: RoutingCoordinate,
   destinations: RoutingCoordinate[],
-): Promise<RouteMetrics[]> => {
-  if (destinations.length === 0) {
-    return [];
-  }
-
-  const coordinates = [
-    `${origin.longitude},${origin.latitude}`,
-    ...destinations.map(
-      ({ latitude, longitude }) => `${longitude},${latitude}`,
-    ),
-  ].join(";");
-
-  const destinationIndexes = destinations.map((_, index) => index + 1);
-
-  const params = new URLSearchParams({
-    sources: "0",
-    destinations: destinationIndexes.join(";"),
-    annotations: "duration,distance",
-  });
-
-  const url = `${ROUTING_ENDPOINT}/table/v1/driving/${coordinates}?${params.toString()}`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10_000);
-
-  let result: OsrmTableResponse;
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Routing metrics request failed with status ${response.status}`,
-      );
-    }
-
-    result = (await response.json()) as OsrmTableResponse;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (result.code !== "Ok") {
-    throw new Error(
-      result.message ?? `OSRM table request failed: ${result.code}`,
-    );
-  }
-
-  const distances = result.distances?.[0];
-  const durations = result.durations?.[0];
-
-  if (!distances || !durations) {
-    throw new Error("OSRM returned no route metrics.");
-  }
-
-  return destinations.map((_, index) => ({
-    distanceMeters: distances[index] ?? Number.NaN,
-    durationSeconds: durations[index] ?? Number.NaN,
-  }));
+) => {
+  const key = [
+    "route-metrics:driving",
+    coordinateKey(origin),
+    ...destinations.map(coordinateKey),
+  ].join(":");
+  return requestCached(key, ROUTE_METRICS_CACHE_TTL_MS, () =>
+    apiRequest<RouteMetrics[]>("/api/routing/metrics", {
+      method: "POST",
+      body: JSON.stringify({ origin, destinations }),
+    }),
+  );
 };

@@ -1,16 +1,10 @@
 import { fetchNearbyMosques } from "@/api/mosques-api";
 import { fetchRouteMetrics } from "@/api/routing-api";
-import {
-  getMosqueCache,
-  isMosqueCacheFresh,
-  setMosqueCache,
-} from "@/lib/mosque-cache";
 import { getDistanceMeters } from "@/lib/mosque-distance";
 import { useLocationStore } from "@/store/locationStore";
 import type { Mosque } from "@/types/mosque";
 import type { RouteMetrics } from "@/types/routing";
-import { useIsFocused } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface RouteMetricsState {
   requestKey: string;
@@ -31,20 +25,7 @@ export interface NearbyMosque extends Mosque {
   routeMetricsLoading: boolean;
 }
 
-const MOSQUE_CACHE_REUSE_RADIUS_METERS = 10_000;
 const ROUTE_METRICS_LIMIT = 20;
-
-const isCacheRelevant = (
-  cacheLatitude: number,
-  cacheLongitude: number,
-  latitude: number,
-  longitude: number,
-) => {
-  return (
-    getDistanceMeters(cacheLatitude, cacheLongitude, latitude, longitude) <=
-    MOSQUE_CACHE_REUSE_RADIUS_METERS
-  );
-};
 
 const createNearbyMosques = (
   mosques: Mosque[],
@@ -85,7 +66,6 @@ const createNearbyMosques = (
 export const useNearbyMosques = (
   radiusKm: number | null = 3,
 ): NearbyMosque[] => {
-  const isFocused = useIsFocused();
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
 
@@ -93,44 +73,14 @@ export const useNearbyMosques = (
   const [routeMetricsState, setRouteMetricsState] =
     useState<RouteMetricsState | null>(null);
 
-  const lastRefreshAttemptRef = useRef<number | null>(null);
-
   useEffect(() => {
-    if (!isFocused || latitude == null || longitude == null) {
+    if (latitude == null || longitude == null) {
       return;
     }
 
     let cancelled = false;
 
     const loadMosques = async () => {
-      const cache = await getMosqueCache();
-
-      if (cancelled) {
-        return;
-      }
-
-      const canUseCache =
-        cache != null &&
-        isCacheRelevant(cache.latitude, cache.longitude, latitude, longitude);
-
-      if (canUseCache && cache) {
-        setMosques(cache.mosques);
-
-        if (
-          isMosqueCacheFresh(cache) &&
-          cache.latitude === latitude &&
-          cache.longitude === longitude
-        ) {
-          return;
-        }
-
-        if (lastRefreshAttemptRef.current === cache.fetchedAt) {
-          return;
-        }
-
-        lastRefreshAttemptRef.current = cache.fetchedAt;
-      }
-
       try {
         const freshMosques = await fetchNearbyMosques(latitude, longitude);
 
@@ -140,7 +90,6 @@ export const useNearbyMosques = (
 
         setMosques(freshMosques);
 
-        await setMosqueCache(latitude, longitude, freshMosques);
       } catch (error) {
         console.error("[Mosques] Failed to fetch mosques:", error);
       }
@@ -151,7 +100,7 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [isFocused, latitude, longitude]);
+  }, [latitude, longitude]);
 
   const nearbyMosques = useMemo(() => {
     if (latitude == null || longitude == null) {
@@ -188,7 +137,6 @@ export const useNearbyMosques = (
 
   useEffect(() => {
     if (
-      !isFocused ||
       latitude == null ||
       longitude == null ||
       routeMetricsDestinationsSignature === ""
@@ -266,7 +214,6 @@ export const useNearbyMosques = (
       cancelled = true;
     };
   }, [
-    isFocused,
     latitude,
     longitude,
     routeMetricsDestinationsSignature,

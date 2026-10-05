@@ -1,60 +1,24 @@
-import type { Mosque } from "@/types/mosque";
+import type { Mosque } from "@qalb/shared";
+import { apiRequest } from "./client";
+import { requestCached } from "./client-cache";
 
-const MOSQUES_ENDPOINT = "https://takbeertime.com/api/mosques/nearby";
+const MOSQUE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-const MOSQUE_QUERY_RADIUS_METERS = 200_000;
-const MOSQUE_QUERY_LIMIT = 20;
-
-interface TakbeerTimeMosque {
-  id: string;
-  name: string;
-  nameArabic: string | null;
-  latitude: number;
-  longitude: number;
-  city: string;
-  country: string;
-  addressLine1: string | null;
-  verified: boolean;
-  status: string;
-  distanceMeters: number;
-}
-
-interface TakbeerTimeMosquesResponse {
-  data: TakbeerTimeMosque[];
-  count: number;
-  radius: number;
-  center: {
-    lat: number;
-    lng: number;
-  };
-}
-
-export const fetchNearbyMosques = async (
+export const fetchNearbyMosques = (
   latitude: number,
   longitude: number,
 ): Promise<Mosque[]> => {
   const params = new URLSearchParams({
     lat: String(latitude),
     lng: String(longitude),
-    radius: String(MOSQUE_QUERY_RADIUS_METERS),
-    limit: String(MOSQUE_QUERY_LIMIT),
+    radius: "200000",
+    limit: "20",
   });
-
-  const response = await fetch(`${MOSQUES_ENDPOINT}?${params.toString()}`);
-
-  if (!response.ok) {
-    throw new Error(`Mosque API request failed with status ${response.status}`);
-  }
-
-  const result = (await response.json()) as TakbeerTimeMosquesResponse;
-
-  return result.data
-    .filter((mosque) => mosque.status === "active")
-    .map((mosque) => ({
-      id: mosque.id,
-      name: mosque.name,
-      street: mosque.addressLine1 ?? undefined,
-      latitude: mosque.latitude,
-      longitude: mosque.longitude,
-    }));
+  const key = `mosques:${latitude.toFixed(2)}:${longitude.toFixed(2)}:200000:20`;
+  return requestCached(
+    key,
+    MOSQUE_CACHE_TTL_MS,
+    () => apiRequest<Mosque[]>(`/api/mosques/nearby?${params}`),
+    { allowStaleOnError: true },
+  );
 };
