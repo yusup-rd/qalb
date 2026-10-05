@@ -11,6 +11,7 @@ import type {
   PrayerTimeAdjustment,
   SolarEvent,
 } from "@/types/prayer";
+import { useIsFocused } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -100,6 +101,7 @@ function sortPrayersByTime(prayers: Prayer[]) {
 }
 
 export function usePrayerTimes(selectedDate?: Date) {
+  const isFocused = useIsFocused();
   const { i18n: i18nInstance } = useTranslation();
   const language = i18nInstance.language;
   const calculationMethod = usePrayerStore((state) => state.calculationMethod);
@@ -112,12 +114,22 @@ export function usePrayerTimes(selectedDate?: Date) {
   const [now, setNow] = useState(getNow);
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
+    const initialUpdate = setTimeout(() => {
+      setNow(getNow());
+    }, 0);
     const interval = setInterval(() => {
       setNow(getNow());
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearTimeout(initialUpdate);
+      clearInterval(interval);
+    };
+  }, [isFocused]);
 
   const todayKey = [now.getFullYear(), now.getMonth(), now.getDate()].join("-");
 

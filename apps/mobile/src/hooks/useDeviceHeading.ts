@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 interface UseDeviceHeadingOptions {
   onHeading?: (heading: number) => void;
+  enabled?: boolean;
 }
 
 const DISPLAY_UPDATE_INTERVAL = 100;
 
 const useDeviceHeading = (options?: UseDeviceHeadingOptions): DeviceHeading => {
+  const enabled = options?.enabled ?? true;
   const [heading, setHeading] = useState<number | null>(null);
   const [accuracy, setAccuracy] = useState(-1);
   const [hasSensor, setHasSensor] = useState(false);
@@ -25,6 +27,10 @@ const useDeviceHeading = (options?: UseDeviceHeadingOptions): DeviceHeading => {
   const servicesEnabledRef = useRef(true);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let mounted = true;
     let subscription: Location.LocationSubscription | null = null;
 
@@ -105,7 +111,7 @@ const useDeviceHeading = (options?: UseDeviceHeadingOptions): DeviceHeading => {
       mounted = false;
       subscription?.remove();
     };
-  }, []);
+  }, [enabled]);
 
   return {
     heading,

@@ -9,6 +9,7 @@ import { getDistanceMeters } from "@/lib/mosque-distance";
 import { useLocationStore } from "@/store/locationStore";
 import type { Mosque } from "@/types/mosque";
 import type { RouteMetrics } from "@/types/routing";
+import { useIsFocused } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface RouteMetricsState {
@@ -84,6 +85,7 @@ const createNearbyMosques = (
 export const useNearbyMosques = (
   radiusKm: number | null = 3,
 ): NearbyMosque[] => {
+  const isFocused = useIsFocused();
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
 
@@ -94,7 +96,7 @@ export const useNearbyMosques = (
   const lastRefreshAttemptRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (latitude == null || longitude == null) {
+    if (!isFocused || latitude == null || longitude == null) {
       return;
     }
 
@@ -149,7 +151,7 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude]);
+  }, [isFocused, latitude, longitude]);
 
   const nearbyMosques = useMemo(() => {
     if (latitude == null || longitude == null) {
@@ -186,6 +188,7 @@ export const useNearbyMosques = (
 
   useEffect(() => {
     if (
+      !isFocused ||
       latitude == null ||
       longitude == null ||
       routeMetricsDestinationsSignature === ""
@@ -263,6 +266,7 @@ export const useNearbyMosques = (
       cancelled = true;
     };
   }, [
+    isFocused,
     latitude,
     longitude,
     routeMetricsDestinationsSignature,

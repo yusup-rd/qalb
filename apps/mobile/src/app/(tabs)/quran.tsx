@@ -8,24 +8,49 @@ import type { QuranChapter, QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { styled } from "nativewind";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ListRenderItem } from "react-native";
 import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
 
 type QuranListItem =
-  | { type: "surah"; id: string; chapter: QuranChapter }
-  | { type: "ayah"; id: string; verse: QuranVerseWithContent }
-  | { type: "section"; id: string; title: string }
-  | { type: "message"; id: string; message: string }
-  | { type: "surah-skeleton"; id: string }
-  | { type: "ayah-skeleton"; id: string };
+  | {
+      type: "surah";
+      id: string;
+      chapter: QuranChapter;
+    }
+  | {
+      type: "ayah";
+      id: string;
+      verse: QuranVerseWithContent;
+    }
+  | {
+      type: "section";
+      id: string;
+      title: string;
+    }
+  | {
+      type: "message";
+      id: string;
+      message: string;
+    }
+  | {
+      type: "surah-skeleton";
+      id: string;
+    }
+  | {
+      type: "ayah-skeleton";
+      id: string;
+    };
 
 const Quran = () => {
   const { colors } = useTheme();
-  const { t } = useTranslation(undefined, { keyPrefix: "quran" });
+  const { t } = useTranslation(undefined, {
+    keyPrefix: "quran",
+  });
   const params = useLocalSearchParams<{ query?: string }>();
   const router = useRouter();
   const { chapters, error, loading: chaptersLoading } = useQuranChapters();
@@ -38,103 +63,152 @@ const Quran = () => {
   } = useQuranSearch(query);
 
   useEffect(() => {
-    queueMicrotask(() => setQuery(params.query ?? ""));
+    queueMicrotask(() => {
+      setQuery(params.query ?? "");
+    });
   }, [params.query]);
 
-  const handleQueryChange = (nextQuery: string) => {
-    setQuery(nextQuery);
-    router.setParams({ query: nextQuery || undefined });
-  };
+  const handleQueryChange = useCallback(
+    (nextQuery: string) => {
+      setQuery(nextQuery);
+      router.setParams({
+        query: nextQuery || undefined,
+      });
+    },
+    [router],
+  );
 
-  const listItems: QuranListItem[] =
-    error || searchError
-      ? [{ type: "message", id: "database-error", message: t("databaseError") }]
-      : query.trim()
-        ? searchLoading
-          ? [
-              ...Array.from({ length: 2 }, (_, index) => ({
-                type: "surah-skeleton" as const,
-                id: `surah-skeleton-${index}`,
-              })),
-              ...Array.from({ length: 3 }, (_, index) => ({
-                type: "ayah-skeleton" as const,
-                id: `ayah-skeleton-${index}`,
-              })),
-            ]
-          : [
-              ...(matchedChapters.length > 0
-                ? [
-                    {
-                      type: "section" as const,
-                      id: "surahs-section",
-                      title: t("surahs"),
-                    },
-                    ...matchedChapters.map((chapter) => ({
-                      type: "surah" as const,
-                      id: `surah-${chapter.id}`,
-                      chapter,
-                    })),
-                  ]
-                : []),
-              ...(matchedVerses.length > 0
-                ? [
-                    {
-                      type: "section" as const,
-                      id: "ayahs-section",
-                      title: t("ayahsTitle"),
-                    },
-                    ...matchedVerses.map((verse) => ({
-                      type: "ayah" as const,
-                      id: `ayah-${verse.id}`,
-                      verse,
-                    })),
-                  ]
-                : []),
-              ...(matchedChapters.length === 0 && matchedVerses.length === 0
-                ? [
-                    {
-                      type: "message" as const,
-                      id: "no-results",
-                      message: t("noResults"),
-                    },
-                  ]
-                : []),
-            ]
-        : chaptersLoading
-          ? Array.from({ length: 6 }, (_, index) => ({
-              type: "surah-skeleton" as const,
-              id: `surah-skeleton-${index}`,
-            }))
-          : chapters.map((chapter) => ({
-              type: "surah" as const,
-              id: `surah-${chapter.id}`,
-              chapter,
-            }));
-
-  const renderItem = ({ item }: { item: QuranListItem }) => {
-    switch (item.type) {
-      case "surah":
-        return <SurahCard chapter={item.chapter} />;
-      case "ayah":
-        return <AyahCard verse={item.verse} />;
-      case "section":
-        return (
-          <Text className="text-muted-foreground font-sans-bold">
-            {item.title}
-          </Text>
-        );
-      case "message":
-        return (
-          <Text className="text-destructive font-sans-regular">
-            {item.message}
-          </Text>
-        );
-      case "surah-skeleton":
-        return <SurahCardSkeleton />;
-      case "ayah-skeleton":
-        return <AyahCardSkeleton />;
+  const listItems = useMemo<QuranListItem[]>(() => {
+    if (error || searchError) {
+      return [
+        {
+          type: "message",
+          id: "database-error",
+          message: t("databaseError"),
+        },
+      ];
     }
-  };
+
+    if (query.trim()) {
+      if (searchLoading) {
+        return [
+          ...Array.from({ length: 2 }, (_, index) => ({
+            type: "surah-skeleton" as const,
+            id: `surah-skeleton-${index}`,
+          })),
+          ...Array.from({ length: 3 }, (_, index) => ({
+            type: "ayah-skeleton" as const,
+            id: `ayah-skeleton-${index}`,
+          })),
+        ];
+      }
+
+      return [
+        ...(matchedChapters.length > 0
+          ? [
+              {
+                type: "section" as const,
+                id: "surahs-section",
+                title: t("surahs"),
+              },
+              ...matchedChapters.map((chapter) => ({
+                type: "surah" as const,
+                id: `surah-${chapter.id}`,
+                chapter,
+              })),
+            ]
+          : []),
+
+        ...(matchedVerses.length > 0
+          ? [
+              {
+                type: "section" as const,
+                id: "ayahs-section",
+                title: t("ayahsTitle"),
+              },
+              ...matchedVerses.map((verse) => ({
+                type: "ayah" as const,
+                id: `ayah-${verse.id}`,
+                verse,
+              })),
+            ]
+          : []),
+
+        ...(matchedChapters.length === 0 && matchedVerses.length === 0
+          ? [
+              {
+                type: "message" as const,
+                id: "no-results",
+                message: t("noResults"),
+              },
+            ]
+          : []),
+      ];
+    }
+
+    if (chaptersLoading) {
+      return Array.from({ length: 6 }, (_, index) => ({
+        type: "surah-skeleton" as const,
+        id: `surah-skeleton-${index}`,
+      }));
+    }
+
+    return chapters.map((chapter) => ({
+      type: "surah" as const,
+      id: `surah-${chapter.id}`,
+      chapter,
+    }));
+  }, [
+    chapters,
+    chaptersLoading,
+    error,
+    matchedChapters,
+    matchedVerses,
+    query,
+    searchError,
+    searchLoading,
+    t,
+  ]);
+
+  const renderItem = useCallback<ListRenderItem<QuranListItem>>(
+    ({ item }) => {
+      switch (item.type) {
+        case "surah":
+          return (
+            <SurahCard
+              chapter={item.chapter}
+              ayahsLabel={t("ayahs", {
+                count: item.chapter.versesCount,
+              })}
+            />
+          );
+
+        case "ayah":
+          return <AyahCard verse={item.verse} />;
+
+        case "section":
+          return (
+            <Text className="text-muted-foreground font-sans-bold">
+              {item.title}
+            </Text>
+          );
+
+        case "message":
+          return (
+            <Text className="text-destructive font-sans-regular">
+              {item.message}
+            </Text>
+          );
+
+        case "surah-skeleton":
+          return <SurahCardSkeleton />;
+
+        case "ayah-skeleton":
+          return <AyahCardSkeleton />;
+      }
+    },
+    [t],
+  );
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={["top"]}>

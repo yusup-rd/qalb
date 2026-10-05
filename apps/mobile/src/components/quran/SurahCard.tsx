@@ -1,12 +1,18 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import type { QuranChapter } from "@/types/quran";
 import { Link } from "expo-router";
-import { useTranslation } from "react-i18next";
+import { memo } from "react";
 import { Text, View } from "react-native";
 
-export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
-  const { t } = useTranslation(undefined, { keyPrefix: "quran" });
+type SurahCardProps = {
+  chapter: QuranChapter;
+  ayahsLabel: string;
+};
 
+export const SurahCard = memo(function SurahCard({
+  chapter,
+  ayahsLabel,
+}: SurahCardProps) {
   return (
     <Link
       href={{
@@ -26,7 +32,7 @@ export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
             {chapter.nameSimple}
           </Text>
           <Text className="text-muted-foreground font-sans-regular text-sm">
-            {t("ayahs", { count: chapter.versesCount })}
+            {ayahsLabel}
           </Text>
         </View>
         <Text className="text-primary font-sans-regular writingDirection-rtl text-xl">
@@ -35,4 +41,4 @@ export const SurahCard = ({ chapter }: { chapter: QuranChapter }) => {
       </SmoothPressable>
     </Link>
   );
-};
+});
