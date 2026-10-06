@@ -13,9 +13,9 @@ const TEST_POST_PRAYER: PrayerName = "Fajr"; // Only used if TEST_SPIRITUAL_PAUS
 type RoutineSpiritualPauseType = Exclude<SpiritualPauseType, "postPrayer">;
 
 interface GetSpiritualPauseSessionParams {
-  prayers: Prayer[];
+  prayers: Pick<Prayer, "name" | "time">[];
   sunrise: Date | null;
-  previousPrayer: Prayer | null;
+  previousPrayer: Pick<Prayer, "name" | "time"> | null;
   now: Date;
 }
 
@@ -55,7 +55,7 @@ function createPostPrayerSession(
   };
 }
 
-function getPrayer(prayers: Prayer[], name: PrayerName) {
+function getPrayer(prayers: Pick<Prayer, "name" | "time">[], name: PrayerName) {
   return prayers.find((prayer) => prayer.name === name) ?? null;
 }
 

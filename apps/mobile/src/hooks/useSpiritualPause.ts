@@ -5,8 +5,8 @@ import {
 import { getSpiritualPauseSession } from "@/lib/spiritual-pause";
 import { useSpiritualPauseStore } from "@/store/spiritualPauseStore";
 import type { SpiritualPauseSession } from "@/types/spiritual-pause";
-import { useEffect, useRef, useState } from "react";
-import { usePrayerTimes } from "./usePrayerTimes";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePrayerTimesData } from "./usePrayerTimes";
 
 function getFallbackSession(
   session: SpiritualPauseSession,
@@ -57,14 +57,18 @@ const EMPTY_RESULT = {
 };
 
 export function useSpiritualPause() {
-  const { prayers, sunrise, previousPrayer, now } = usePrayerTimes();
+  const { prayers, sunrise, previousPrayer, now } = usePrayerTimesData();
 
-  const activeSession = getSpiritualPauseSession({
-    prayers,
-    sunrise,
-    previousPrayer,
-    now,
-  });
+  const activeSession = useMemo(
+    () =>
+      getSpiritualPauseSession({
+        prayers,
+        sunrise,
+        previousPrayer,
+        now,
+      }),
+    [prayers, sunrise, previousPrayer, now],
+  );
 
   const sessions = useSpiritualPauseStore((state) => state.sessions);
   const incrementProgress = useSpiritualPauseStore((state) => state.increment);
