@@ -218,9 +218,6 @@ export function usePrayerTimes(selectedDate?: Date) {
     prayerTimeAdjustments,
   ]);
 
-  // A locale change must update every formatted label, but the underlying
-  // astronomical calculations and Date instances are language independent.
-  // Keep that work cached and only rebuild the small display records here.
   const localizedData = useMemo(() => {
     if (!calculatedData) {
       return null;
