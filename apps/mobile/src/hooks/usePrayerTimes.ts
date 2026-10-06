@@ -55,7 +55,6 @@ function getPrayerData(
   longitude: number,
   calculationMethod: Parameters<typeof calculatePrayerTimes>[3],
   asrMethod: Parameters<typeof calculatePrayerTimes>[4],
-  language: string,
   prayerTimeAdjustments: Record<PrayerName, PrayerTimeAdjustment>,
 ) {
   const times = calculatePrayerTimes(
@@ -66,7 +65,7 @@ function getPrayerData(
     asrMethod,
   );
 
-  const prayers: Prayer[] = prayerNames.map((name) => {
+  const prayers: Omit<Prayer, "formattedTime">[] = prayerNames.map((name) => {
     const calculatedTime = getPrayerTime(name, times);
     const adjustment = prayerTimeAdjustments[name];
     const time = applyPrayerTimeAdjustment(calculatedTime, adjustment);
@@ -75,17 +74,15 @@ function getPrayerData(
     return {
       name,
       time,
-      formattedTime: formatTime(time, language),
       description: metadata.description,
       icon: metadata.icon,
       status: "upcoming",
     };
   });
 
-  const sunriseEvent: SolarEvent = {
+  const sunriseEvent: Omit<SolarEvent, "formattedTime"> = {
     name: "Sunrise",
     time: times.sunrise,
-    formattedTime: formatTime(times.sunrise, language),
   };
 
   return {
@@ -176,7 +173,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       today: getPrayerData(
@@ -185,7 +181,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       tomorrow: getPrayerData(
@@ -194,7 +189,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       selected: getPrayerData(
@@ -203,7 +197,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       selectedNextDay: getPrayerData(
@@ -212,7 +205,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
     };
@@ -223,12 +215,40 @@ export function usePrayerTimes(selectedDate?: Date) {
     longitude,
     calculationMethod,
     asrMethod,
-    language,
     prayerTimeAdjustments,
   ]);
 
-  return useMemo(() => {
+  // A locale change must update every formatted label, but the underlying
+  // astronomical calculations and Date instances are language independent.
+  // Keep that work cached and only rebuild the small display records here.
+  const localizedData = useMemo(() => {
     if (!calculatedData) {
+      return null;
+    }
+
+    const localizeDay = (day: (typeof calculatedData)["today"]) => ({
+      ...day,
+      prayers: day.prayers.map((prayer) => ({
+        ...prayer,
+        formattedTime: formatTime(prayer.time, language),
+      })),
+      sunriseEvent: {
+        ...day.sunriseEvent,
+        formattedTime: formatTime(day.sunrise, language),
+      },
+    });
+
+    return {
+      yesterday: localizeDay(calculatedData.yesterday),
+      today: localizeDay(calculatedData.today),
+      tomorrow: localizeDay(calculatedData.tomorrow),
+      selected: localizeDay(calculatedData.selected),
+      selectedNextDay: localizeDay(calculatedData.selectedNextDay),
+    };
+  }, [calculatedData, language]);
+
+  return useMemo(() => {
+    if (!localizedData) {
       return {
         prayers: [],
         selectedPrayers: [],
@@ -251,7 +271,7 @@ export function usePrayerTimes(selectedDate?: Date) {
     }
 
     const { yesterday, today, tomorrow, selected, selectedNextDay } =
-      calculatedData;
+      localizedData;
 
     const nowTime = now.getTime();
 
@@ -386,5 +406,5 @@ export function usePrayerTimes(selectedDate?: Date) {
         remainingFormatted: formatDuration(solarEvent.time.getTime() - nowTime),
       },
     };
-  }, [calculatedData, now, selectedKey, todayKey]);
+  }, [localizedData, now, selectedKey, todayKey]);
 }
