@@ -1,4 +1,4 @@
-import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { usePrayerTimesData } from "@/hooks/usePrayerTimes";
 import { formatDate, formatHijriDate } from "@/lib/format";
 import { useLocationStore } from "@/store/locationStore";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -13,7 +13,7 @@ const DateWithLocation = () => {
     keyPrefix: "home.dateLocation",
   });
 
-  const { now, sunset } = usePrayerTimes();
+  const { now, sunset } = usePrayerTimesData();
 
   const isAfterSunset = sunset != null && now.getTime() >= sunset.getTime();
   const locationName = useLocationStore((state) => state.locationName);

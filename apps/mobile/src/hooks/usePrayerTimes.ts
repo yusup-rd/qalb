@@ -55,7 +55,6 @@ function getPrayerData(
   longitude: number,
   calculationMethod: Parameters<typeof calculatePrayerTimes>[3],
   asrMethod: Parameters<typeof calculatePrayerTimes>[4],
-  language: string,
   prayerTimeAdjustments: Record<PrayerName, PrayerTimeAdjustment>,
 ) {
   const times = calculatePrayerTimes(
@@ -66,7 +65,7 @@ function getPrayerData(
     asrMethod,
   );
 
-  const prayers: Prayer[] = prayerNames.map((name) => {
+  const prayers: Omit<Prayer, "formattedTime">[] = prayerNames.map((name) => {
     const calculatedTime = getPrayerTime(name, times);
     const adjustment = prayerTimeAdjustments[name];
     const time = applyPrayerTimeAdjustment(calculatedTime, adjustment);
@@ -75,17 +74,15 @@ function getPrayerData(
     return {
       name,
       time,
-      formattedTime: formatTime(time, language),
       description: metadata.description,
       icon: metadata.icon,
       status: "upcoming",
     };
   });
 
-  const sunriseEvent: SolarEvent = {
+  const sunriseEvent: Omit<SolarEvent, "formattedTime"> = {
     name: "Sunrise",
     time: times.sunrise,
-    formattedTime: formatTime(times.sunrise, language),
   };
 
   return {
@@ -96,14 +93,46 @@ function getPrayerData(
   };
 }
 
-function sortPrayersByTime(prayers: Prayer[]) {
+type PrayerTimeSnapshotPrayer = Omit<
+  Prayer,
+  "formattedTime" | "remainingFormatted"
+> & { remainingMilliseconds?: number };
+
+type PrayerTimeSnapshot = {
+  prayers: PrayerTimeSnapshotPrayer[];
+  selectedPrayers: PrayerTimeSnapshotPrayer[];
+  sunrise: Date | null;
+  sunriseEvent: Omit<SolarEvent, "formattedTime"> | null;
+  isSunriseCompleted: boolean;
+  selectedSunrise: Date | null;
+  selectedSunriseEvent: Omit<SolarEvent, "formattedTime"> | null;
+  selectedSunset: Date | null;
+  selectedNightSunset: Date | null;
+  selectedNextFajr: Date | null;
+  previousPrayer: PrayerTimeSnapshotPrayer | null;
+  nextPrayer: PrayerTimeSnapshotPrayer | null;
+  countdown: string;
+  elapsedPercent: number;
+  sunset: Date | null;
+  now: Date;
+  solarEvent: {
+    label: "Sunrise" | "Sunset";
+    remainingMilliseconds: number;
+  } | null;
+};
+
+type CalculatedPrayerDay = ReturnType<typeof getPrayerData>;
+
+function sortPrayersByTime<T extends { time: Date }>(prayers: T[]) {
   return [...prayers].sort((a, b) => a.time.getTime() - b.time.getTime());
 }
 
-export function usePrayerTimes(selectedDate?: Date) {
+/**
+ * Returns prayer and temporal state without subscribing to locale changes.
+ * Consumers that only need prayer dates/statuses can avoid formatting work.
+ */
+function usePrayerTimesState(selectedDate?: Date) {
   const isFocused = useIsFocused();
-  const { i18n: i18nInstance } = useTranslation();
-  const language = i18nInstance.language;
   const calculationMethod = usePrayerStore((state) => state.calculationMethod);
   const asrMethod = usePrayerStore((state) => state.asrMethod);
   const prayerTimeAdjustments = usePrayerStore(
@@ -176,7 +205,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       today: getPrayerData(
@@ -185,7 +213,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       tomorrow: getPrayerData(
@@ -194,7 +221,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       selected: getPrayerData(
@@ -203,7 +229,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
       selectedNextDay: getPrayerData(
@@ -212,7 +237,6 @@ export function usePrayerTimes(selectedDate?: Date) {
         longitude,
         calculationMethod,
         asrMethod,
-        language,
         prayerTimeAdjustments,
       ),
     };
@@ -223,11 +247,10 @@ export function usePrayerTimes(selectedDate?: Date) {
     longitude,
     calculationMethod,
     asrMethod,
-    language,
     prayerTimeAdjustments,
   ]);
 
-  return useMemo(() => {
+  const data = useMemo<PrayerTimeSnapshot>(() => {
     if (!calculatedData) {
       return {
         prayers: [],
@@ -293,8 +316,8 @@ export function usePrayerTimes(selectedDate?: Date) {
       return {
         ...prayer,
         status,
-        remainingFormatted: isNextPrayerToday
-          ? formatDuration(prayer.time.getTime() - nowTime)
+        remainingMilliseconds: isNextPrayerToday
+          ? prayer.time.getTime() - nowTime
           : undefined,
       };
     });
@@ -383,8 +406,111 @@ export function usePrayerTimes(selectedDate?: Date) {
       now,
       solarEvent: {
         label: solarEvent.label,
-        remainingFormatted: formatDuration(solarEvent.time.getTime() - nowTime),
+        remainingMilliseconds: solarEvent.time.getTime() - nowTime,
       },
     };
   }, [calculatedData, now, selectedKey, todayKey]);
+
+  return useMemo(() => ({ data, calculatedData }), [calculatedData, data]);
+}
+
+export function usePrayerTimesData(selectedDate?: Date): PrayerTimeSnapshot {
+  return usePrayerTimesState(selectedDate).data;
+}
+
+export function usePrayerTimes(selectedDate?: Date) {
+  const { data, calculatedData } = usePrayerTimesState(selectedDate);
+  const { i18n: i18nInstance } = useTranslation();
+  const language = i18nInstance.language;
+
+  const localizedData = useMemo(() => {
+    if (!calculatedData) {
+      return null;
+    }
+
+    const localizeDay = (day: CalculatedPrayerDay) => ({
+      ...day,
+      prayers: day.prayers.map((prayer) => ({
+        ...prayer,
+        formattedTime: formatTime(prayer.time, language),
+      })),
+      sunriseEvent: {
+        ...day.sunriseEvent,
+        formattedTime: formatTime(day.sunrise, language),
+      },
+    });
+
+    const days = {
+      yesterday: localizeDay(calculatedData.yesterday),
+      today: localizeDay(calculatedData.today),
+      tomorrow: localizeDay(calculatedData.tomorrow),
+      selected: localizeDay(calculatedData.selected),
+      selectedNextDay: localizeDay(calculatedData.selectedNextDay),
+    };
+    const formattedTimes = new Map<number, string>();
+
+    Object.values(days).forEach((day) => {
+      day.prayers.forEach((prayer) => {
+        formattedTimes.set(prayer.time.getTime(), prayer.formattedTime);
+      });
+      formattedTimes.set(
+        day.sunriseEvent.time.getTime(),
+        day.sunriseEvent.formattedTime,
+      );
+    });
+
+    return { days, formattedTimes };
+  }, [calculatedData, language]);
+
+  return useMemo(() => {
+    const localizePrayer = (prayer: PrayerTimeSnapshotPrayer | null) => {
+      if (!prayer) {
+        return null;
+      }
+
+      const { remainingMilliseconds, ...prayerData } = prayer;
+
+      return {
+        ...prayerData,
+        formattedTime:
+          localizedData?.formattedTimes.get(prayer.time.getTime()) ??
+          formatTime(prayer.time, language),
+        ...(remainingMilliseconds === undefined
+          ? {}
+          : { remainingFormatted: formatDuration(remainingMilliseconds) }),
+      };
+    };
+
+    const localizeSolarEvent = (
+      event: Omit<SolarEvent, "formattedTime"> | null,
+    ): SolarEvent | null =>
+      event
+        ? {
+            ...event,
+            formattedTime:
+              localizedData?.formattedTimes.get(event.time.getTime()) ??
+              formatTime(event.time, language),
+          }
+        : null;
+
+    return {
+      ...data,
+      prayers: data.prayers.map((prayer) => localizePrayer(prayer)!),
+      selectedPrayers: data.selectedPrayers.map((prayer) =>
+        localizePrayer(prayer)!,
+      ),
+      sunriseEvent: localizeSolarEvent(data.sunriseEvent),
+      selectedSunriseEvent: localizeSolarEvent(data.selectedSunriseEvent),
+      previousPrayer: localizePrayer(data.previousPrayer),
+      nextPrayer: localizePrayer(data.nextPrayer),
+      solarEvent: data.solarEvent
+        ? {
+            label: data.solarEvent.label,
+            remainingFormatted: formatDuration(
+              data.solarEvent.remainingMilliseconds,
+            ),
+          }
+        : null,
+    };
+  }, [data, language, localizedData]);
 }

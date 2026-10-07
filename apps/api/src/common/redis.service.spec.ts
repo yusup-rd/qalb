@@ -1,0 +1,144 @@
+import { PinoLogger } from 'nestjs-pino';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RedisService } from './redis.service.js';
+
+const redisMock = {
+  get: vi.fn(),
+  set: vi.fn(),
+  quit: vi.fn(),
+  connect: vi.fn(),
+  on: vi.fn(),
+};
+
+const loggerMock = {
+  setContext: vi.fn(),
+  warn: vi.fn(),
+};
+
+vi.mock('ioredis', () => ({
+  Redis: class {
+    get = redisMock.get;
+    set = redisMock.set;
+    quit = redisMock.quit;
+    connect = redisMock.connect;
+    on = redisMock.on;
+  },
+}));
+
+describe('RedisService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redisMock.connect.mockResolvedValue(undefined);
+    redisMock.quit.mockResolvedValue('OK');
+    redisMock.set.mockResolvedValue('OK');
+    delete process.env.REDIS_URL;
+  });
+
+  it('returns parsed JSON from Redis', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    redisMock.get.mockResolvedValue(
+      JSON.stringify({
+        goldPerGram: 140.78,
+        silverPerGram: 2.13,
+      }),
+    );
+
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+    const result = await service.get<{
+      goldPerGram: number;
+      silverPerGram: number;
+    }>('qalb:metals:latest:usd:g');
+
+    expect(result).toEqual({
+      goldPerGram: 140.78,
+      silverPerGram: 2.13,
+    });
+    expect(redisMock.get).toHaveBeenCalledWith('qalb:metals:latest:usd:g');
+  });
+
+  it('serializes values and applies the TTL when setting Redis data', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+    const value = {
+      goldPerGram: 140.78,
+      silverPerGram: 2.13,
+    };
+
+    await expect(
+      service.set('qalb:metals:latest:usd:g', value, 86400),
+    ).resolves.toBe(true);
+
+    expect(redisMock.set).toHaveBeenCalledWith(
+      'qalb:metals:latest:usd:g',
+      JSON.stringify(value),
+      'EX',
+      86400,
+    );
+  });
+
+  it('returns null when Redis read fails', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    const error = new Error('Redis unavailable');
+    redisMock.get.mockRejectedValue(error);
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+    const result = await service.get('some-key');
+
+    expect(result).toBeNull();
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      {
+        key: 'some-key',
+        errorCode: 'Error',
+      },
+      'Redis read failed',
+    );
+  });
+
+  it('does not throw when Redis write fails', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    const error = new Error('Redis unavailable');
+    redisMock.set.mockRejectedValue(error);
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
+    );
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      {
+        key: 'some-key',
+        ttlSeconds: 300,
+        errorCode: 'Error',
+      },
+      'Redis write failed',
+    );
+  });
+
+  it('returns false without attempting a write when Redis is disabled', async () => {
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
+    );
+
+    expect(redisMock.set).not.toHaveBeenCalled();
+  });
+
+  it('returns false when Redis does not acknowledge the write', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    redisMock.set.mockResolvedValue(null);
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
+    );
+  });
+
+  it('closes the Redis connection when the module is destroyed', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await service.onModuleDestroy();
+
+    expect(redisMock.quit).toHaveBeenCalledTimes(1);
+  });
+});
