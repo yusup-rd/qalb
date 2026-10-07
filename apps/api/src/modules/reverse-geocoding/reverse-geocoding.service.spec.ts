@@ -37,13 +37,15 @@ describe('ReverseGeocodingService', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
 
-    const result = await service.reverse(3.139, 101.6869, 'en');
+    try {
+      const result = await service.reverse(3.139, 101.6869, 'en');
 
-    expect(result).toEqual(cached);
-    expect(redis.get).toHaveBeenCalledWith('qalb:geocode:3.1390:101.6869:en');
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+      expect(result).toEqual(cached);
+      expect(redis.get).toHaveBeenCalledWith('qalb:geocode:3.1390:101.6869:en');
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('fetches and transforms the Nominatim response when the cache is empty', async () => {
@@ -68,22 +70,22 @@ describe('ReverseGeocodingService', () => {
       ),
     );
 
-    const result = await service.reverse(3.139, 101.6869, 'en');
+    try {
+      const result = await service.reverse(3.139, 101.6869, 'en');
 
-    expect(result).toEqual({
-      city: 'Kuala Lumpur',
-      country: 'Malaysia',
-    });
-
-    expect(redis.set).toHaveBeenCalledWith(
-      'qalb:geocode:3.1390:101.6869:en',
-      result,
-      24 * 60 * 60,
-    );
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    fetchMock.mockRestore();
+      expect(result).toEqual({
+        city: 'Kuala Lumpur',
+        country: 'Malaysia',
+      });
+      expect(redis.set).toHaveBeenCalledWith(
+        'qalb:geocode:3.1390:101.6869:en',
+        result,
+        24 * 60 * 60,
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('uses the requested language when calling Nominatim', async () => {
@@ -108,20 +110,22 @@ describe('ReverseGeocodingService', () => {
       ),
     );
 
-    await service.reverse(55.7558, 37.6173, 'ru');
+    try {
+      await service.reverse(55.7558, 37.6173, 'ru');
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        search: expect.stringContaining('accept-language=ru'),
-      }),
-      expect.objectContaining({
-        headers: {
-          'User-Agent': 'Qalb/1.0 (prayer times app)',
-        },
-      }),
-    );
-
-    fetchMock.mockRestore();
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: expect.stringContaining('accept-language=ru'),
+        }),
+        expect.objectContaining({
+          headers: {
+            'User-Agent': 'Qalb/1.0 (prayer times app)',
+          },
+        }),
+      );
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('falls back through available address fields when city is missing', async () => {
@@ -129,7 +133,7 @@ describe('ReverseGeocodingService', () => {
 
     redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
           address: {
@@ -146,14 +150,16 @@ describe('ReverseGeocodingService', () => {
       ),
     );
 
-    const result = await service.reverse(3.1073, 101.6067, 'en');
+    try {
+      const result = await service.reverse(3.1073, 101.6067, 'en');
 
-    expect(result).toEqual({
-      city: 'Petaling Jaya',
-      country: 'Malaysia',
-    });
-
-    vi.restoreAllMocks();
+      expect(result).toEqual({
+        city: 'Petaling Jaya',
+        country: 'Malaysia',
+      });
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('throws 503 when the Nominatim API fails', async () => {
@@ -161,7 +167,7 @@ describe('ReverseGeocodingService', () => {
 
     redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
           error: 'API unavailable',
@@ -175,12 +181,14 @@ describe('ReverseGeocodingService', () => {
       ),
     );
 
-    await expect(service.reverse(3.139, 101.6869, 'en')).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
+    try {
+      await expect(
+        service.reverse(3.139, 101.6869, 'en'),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    expect(redis.set).not.toHaveBeenCalled();
-
-    vi.restoreAllMocks();
+      expect(redis.set).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 });

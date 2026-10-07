@@ -70,6 +70,7 @@ export class MetalsService {
     }
 
     if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
       this.logger.warn(
         {
           event: 'upstream_error',

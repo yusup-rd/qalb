@@ -18,7 +18,8 @@ export class RedisService implements OnModuleDestroy {
       });
 
       this.client.on('error', (error: unknown) => {
-        this.logger.warn({ err: error }, 'Redis connection error');
+        const errorCode = error instanceof Error ? error.name : 'UnknownError';
+        this.logger.warn({ errorCode }, 'Redis connection error');
       });
 
       void this.client.connect().catch(() => {});
@@ -36,7 +37,8 @@ export class RedisService implements OnModuleDestroy {
       const value = await this.client.get(key);
       return value ? (JSON.parse(value) as T) : null;
     } catch (error) {
-      this.logger.warn({ key, err: error }, 'Redis read failed');
+      const errorCode = error instanceof Error ? error.name : 'UnknownError';
+      this.logger.warn({ key, errorCode }, 'Redis read failed');
       return null;
     }
   }
@@ -54,7 +56,8 @@ export class RedisService implements OnModuleDestroy {
         )) === 'OK'
       );
     } catch (error) {
-      this.logger.warn({ key, ttlSeconds, err: error }, 'Redis write failed');
+      const errorCode = error instanceof Error ? error.name : 'UnknownError';
+      this.logger.warn({ key, ttlSeconds, errorCode }, 'Redis write failed');
       return false;
     }
   }

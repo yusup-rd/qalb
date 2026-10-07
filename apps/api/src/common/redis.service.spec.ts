@@ -80,7 +80,6 @@ describe('RedisService', () => {
     process.env.REDIS_URL = 'redis://test';
     const error = new Error('Redis unavailable');
     redisMock.get.mockRejectedValue(error);
-
     const service = new RedisService(loggerMock as unknown as PinoLogger);
     const result = await service.get('some-key');
 
@@ -88,7 +87,7 @@ describe('RedisService', () => {
     expect(loggerMock.warn).toHaveBeenCalledWith(
       {
         key: 'some-key',
-        err: error,
+        errorCode: 'Error',
       },
       'Redis read failed',
     );
@@ -98,7 +97,6 @@ describe('RedisService', () => {
     process.env.REDIS_URL = 'redis://test';
     const error = new Error('Redis unavailable');
     redisMock.set.mockRejectedValue(error);
-
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
@@ -109,7 +107,7 @@ describe('RedisService', () => {
       {
         key: 'some-key',
         ttlSeconds: 300,
-        err: error,
+        errorCode: 'Error',
       },
       'Redis write failed',
     );
@@ -128,7 +126,6 @@ describe('RedisService', () => {
   it('returns false when Redis does not acknowledge the write', async () => {
     process.env.REDIS_URL = 'redis://test';
     redisMock.set.mockResolvedValue(null);
-
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
@@ -138,7 +135,6 @@ describe('RedisService', () => {
 
   it('closes the Redis connection when the module is destroyed', async () => {
     process.env.REDIS_URL = 'redis://test';
-
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await service.onModuleDestroy();

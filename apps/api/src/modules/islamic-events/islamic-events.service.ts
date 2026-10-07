@@ -62,6 +62,7 @@ export class IslamicEventsService {
     }
 
     if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
       this.logger.warn(
         {
           event: 'upstream_error',
@@ -95,7 +96,6 @@ export class IslamicEventsService {
         },
         'Islamic events upstream returned invalid JSON',
       );
-
       throw new ServiceUnavailableException('Islamic events are unavailable.');
     }
 

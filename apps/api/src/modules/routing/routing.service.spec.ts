@@ -54,15 +54,17 @@ describe('RoutingService', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
 
-    const result = await service.route(origin, destination);
+    try {
+      const result = await service.route(origin, destination);
 
-    expect(result).toEqual(cached);
-    expect(redis.get).toHaveBeenCalledWith(
-      'qalb:route:driving:3.13900,101.68690:3.15790,101.71230',
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+      expect(result).toEqual(cached);
+      expect(redis.get).toHaveBeenCalledWith(
+        'qalb:route:driving:3.13900,101.68690:3.15790,101.71230',
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it.each([true, false])(
@@ -70,7 +72,6 @@ describe('RoutingService', () => {
     async (stored) => {
       const { service, redis, logger } = createService();
       redis.set.mockResolvedValue(stored);
-
       redis.get.mockResolvedValue(null);
 
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -100,41 +101,42 @@ describe('RoutingService', () => {
         ),
       );
 
-      const result = await service.route(origin, destination);
+      try {
+        const result = await service.route(origin, destination);
 
-      expect(result).toEqual({
-        distanceMeters: 4200,
-        durationSeconds: 600,
-        coordinates: [
-          {
-            latitude: 3.139,
-            longitude: 101.6869,
-          },
-          {
-            latitude: 3.148,
-            longitude: 101.7,
-          },
-          {
-            latitude: 3.1579,
-            longitude: 101.7123,
-          },
-        ],
-      });
+        expect(result).toEqual({
+          distanceMeters: 4200,
+          durationSeconds: 600,
+          coordinates: [
+            {
+              latitude: 3.139,
+              longitude: 101.6869,
+            },
+            {
+              latitude: 3.148,
+              longitude: 101.7,
+            },
+            {
+              latitude: 3.1579,
+              longitude: 101.7123,
+            },
+          ],
+        });
 
-      const cacheStoreLogs = logger.info.mock.calls.filter(
-        ([fields]) => fields.event === 'cache_store',
-      );
-      expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
+        const cacheStoreLogs = logger.info.mock.calls.filter(
+          ([fields]) => fields.event === 'cache_store',
+        );
 
-      expect(redis.set).toHaveBeenCalledWith(
-        'qalb:route:driving:3.13900,101.68690:3.15790,101.71230',
-        result,
-        60 * 60,
-      );
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-
-      fetchMock.mockRestore();
+        expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
+        expect(redis.set).toHaveBeenCalledWith(
+          'qalb:route:driving:3.13900,101.68690:3.15790,101.71230',
+          result,
+          60 * 60,
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      } finally {
+        fetchMock.mockRestore();
+      }
     },
   );
 
@@ -143,7 +145,7 @@ describe('RoutingService', () => {
 
     redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
           code: 'NoRoute',
@@ -158,13 +160,14 @@ describe('RoutingService', () => {
       ),
     );
 
-    await expect(service.route(origin, destination)).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
-
-    expect(redis.set).not.toHaveBeenCalled();
-
-    vi.restoreAllMocks();
+    try {
+      await expect(service.route(origin, destination)).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+      expect(redis.set).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('returns cached metrics without calling the upstream API', async () => {
@@ -197,15 +200,17 @@ describe('RoutingService', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
 
-    const result = await service.metrics(origin, destinations);
+    try {
+      const result = await service.metrics(origin, destinations);
 
-    expect(result).toEqual(cached);
-    expect(redis.get).toHaveBeenCalledWith(
-      'qalb:route-metrics:driving:3.13900,101.68690:3.15790,101.71230:3.15010,101.69550',
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+      expect(result).toEqual(cached);
+      expect(redis.get).toHaveBeenCalledWith(
+        'qalb:route-metrics:driving:3.13900,101.68690:3.15790,101.71230:3.15010,101.69550',
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('returns an empty array without calling the upstream API when there are no destinations', async () => {
@@ -217,19 +222,19 @@ describe('RoutingService', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
 
-    const result = await service.metrics(origin, []);
+    try {
+      const result = await service.metrics(origin, []);
 
-    expect(result).toEqual([]);
-
-    expect(redis.set).toHaveBeenCalledWith(
-      'qalb:route-metrics:driving:3.13900,101.68690',
-      [],
-      60 * 60,
-    );
-
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+      expect(result).toEqual([]);
+      expect(redis.set).toHaveBeenCalledWith(
+        'qalb:route-metrics:driving:3.13900,101.68690',
+        [],
+        60 * 60,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it.each([true, false])(
@@ -266,33 +271,34 @@ describe('RoutingService', () => {
         ),
       );
 
-      const result = await service.metrics(origin, destinations);
+      try {
+        const result = await service.metrics(origin, destinations);
 
-      expect(result).toEqual([
-        {
-          distanceMeters: 4200,
-          durationSeconds: 600,
-        },
-        {
-          distanceMeters: 2800,
-          durationSeconds: 420,
-        },
-      ]);
+        expect(result).toEqual([
+          {
+            distanceMeters: 4200,
+            durationSeconds: 600,
+          },
+          {
+            distanceMeters: 2800,
+            durationSeconds: 420,
+          },
+        ]);
 
-      const cacheStoreLogs = logger.info.mock.calls.filter(
-        ([fields]) => fields.event === 'cache_store',
-      );
-      expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
+        const cacheStoreLogs = logger.info.mock.calls.filter(
+          ([fields]) => fields.event === 'cache_store',
+        );
 
-      expect(redis.set).toHaveBeenCalledWith(
-        'qalb:route-metrics:driving:3.13900,101.68690:3.15790,101.71230:3.15010,101.69550',
-        result,
-        60 * 60,
-      );
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-
-      fetchMock.mockRestore();
+        expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
+        expect(redis.set).toHaveBeenCalledWith(
+          'qalb:route-metrics:driving:3.13900,101.68690:3.15790,101.71230:3.15010,101.69550',
+          result,
+          60 * 60,
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      } finally {
+        fetchMock.mockRestore();
+      }
     },
   );
 
@@ -301,7 +307,7 @@ describe('RoutingService', () => {
 
     redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
           code: 'NoTable',
@@ -316,13 +322,14 @@ describe('RoutingService', () => {
       ),
     );
 
-    await expect(service.metrics(origin, [destination])).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
-
-    expect(redis.set).not.toHaveBeenCalled();
-
-    vi.restoreAllMocks();
+    try {
+      await expect(
+        service.metrics(origin, [destination]),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+      expect(redis.set).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
   it.each(['route', 'metrics'] as const)(
     'preserves the %s fetch error for structured logging',

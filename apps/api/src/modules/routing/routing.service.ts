@@ -72,6 +72,7 @@ export class RoutingService {
     }
 
     if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
       this.logger.warn(
         {
           event: 'upstream_error',
@@ -234,6 +235,7 @@ export class RoutingService {
     }
 
     if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
       this.logger.warn(
         {
           event: 'upstream_error',

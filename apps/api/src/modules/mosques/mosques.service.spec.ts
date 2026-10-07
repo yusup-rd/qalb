@@ -39,13 +39,17 @@ describe('MosquesService', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
 
-    const result = await service.nearby(3.139, 101.6869, 10000, 20);
+    try {
+      const result = await service.nearby(3.139, 101.6869, 10000, 20);
 
-    expect(result).toEqual(cached);
-    expect(redis.get).toHaveBeenCalledWith('qalb:mosques:3.14:101.69:10000:20');
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+      expect(result).toEqual(cached);
+      expect(redis.get).toHaveBeenCalledWith(
+        'qalb:mosques:3.14:101.69:10000:20',
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('fetches and transforms mosques when the cache is empty', async () => {
@@ -76,26 +80,27 @@ describe('MosquesService', () => {
       ),
     );
 
-    const result = await service.nearby(3.139, 101.6869, 10000, 20);
+    try {
+      const result = await service.nearby(3.139, 101.6869, 10000, 20);
 
-    expect(result).toEqual([
-      {
-        id: 'mosque-1',
-        name: 'Central Mosque',
-        street: 'Main Street',
-        latitude: 3.139,
-        longitude: 101.6869,
-      },
-    ]);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(redis.set).toHaveBeenCalledWith(
-      'qalb:mosques:3.14:101.69:10000:20',
-      result,
-      15 * 60,
-    );
-
-    fetchMock.mockRestore();
+      expect(result).toEqual([
+        {
+          id: 'mosque-1',
+          name: 'Central Mosque',
+          street: 'Main Street',
+          latitude: 3.139,
+          longitude: 101.6869,
+        },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(redis.set).toHaveBeenCalledWith(
+        'qalb:mosques:3.14:101.69:10000:20',
+        result,
+        15 * 60,
+      );
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('filters out inactive mosques', async () => {
@@ -103,7 +108,7 @@ describe('MosquesService', () => {
 
     redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
           data: [
@@ -134,19 +139,21 @@ describe('MosquesService', () => {
       ),
     );
 
-    const result = await service.nearby(3.139, 101.6869, 10000, 20);
+    try {
+      const result = await service.nearby(3.139, 101.6869, 10000, 20);
 
-    expect(result).toEqual([
-      {
-        id: 'mosque-1',
-        name: 'Active Mosque',
-        street: 'Active Street',
-        latitude: 3.139,
-        longitude: 101.6869,
-      },
-    ]);
-
-    vi.restoreAllMocks();
+      expect(result).toEqual([
+        {
+          id: 'mosque-1',
+          name: 'Active Mosque',
+          street: 'Active Street',
+          latitude: 3.139,
+          longitude: 101.6869,
+        },
+      ]);
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it('uses the requested coordinates and search parameters', async () => {
@@ -163,33 +170,70 @@ describe('MosquesService', () => {
       }),
     );
 
-    await service.nearby(3.139, 101.6869, 5000, 10);
+    try {
+      await service.nearby(3.139, 101.6869, 5000, 10);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        search: expect.stringContaining('lat=3.139'),
-      }),
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: expect.stringContaining('lat=3.139'),
+        }),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: expect.stringContaining('lng=101.6869'),
+        }),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: expect.stringContaining('radius=5000'),
+        }),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: expect.stringContaining('limit=10'),
+        }),
+      );
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
+  it('throws 503 when the upstream data array contains a null entry', async () => {
+    const { service, redis, logger } = createService();
+
+    redis.get.mockResolvedValue(null);
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: [null],
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
     );
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        search: expect.stringContaining('lng=101.6869'),
-      }),
-    );
+    try {
+      await expect(
+        service.nearby(3.139, 101.6869, 10000, 20),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        search: expect.stringContaining('radius=5000'),
-      }),
-    );
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        search: expect.stringContaining('limit=10'),
-      }),
-    );
-
-    vi.restoreAllMocks();
+      expect(logger.warn).toHaveBeenCalledWith(
+        {
+          event: 'upstream_error',
+          provider: 'takbeertime',
+          statusCode: 200,
+        },
+        'Mosques upstream returned an invalid response',
+      );
+      expect(redis.set).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 
   it.each([
@@ -223,7 +267,10 @@ describe('MosquesService', () => {
           'Mosques upstream returned an invalid response',
         );
         expect(redis.set).not.toHaveBeenCalled();
-        if (status === 503) expect(jsonSpy).not.toHaveBeenCalled();
+
+        if (status === 503) {
+          expect(jsonSpy).not.toHaveBeenCalled();
+        }
       } finally {
         fetchMock.mockRestore();
         jsonSpy.mockRestore();

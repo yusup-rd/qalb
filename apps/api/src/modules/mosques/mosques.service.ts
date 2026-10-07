@@ -12,6 +12,22 @@ interface ProviderMosque {
   status: string;
 }
 
+function isProviderMosque(value: unknown): value is ProviderMosque {
+  if (!value || typeof value !== 'object') return false;
+  const mosque = value as Record<string, unknown>;
+
+  return (
+    typeof mosque.id === 'string' &&
+    typeof mosque.name === 'string' &&
+    (mosque.addressLine1 === null || typeof mosque.addressLine1 === 'string') &&
+    typeof mosque.latitude === 'number' &&
+    Number.isFinite(mosque.latitude) &&
+    typeof mosque.longitude === 'number' &&
+    Number.isFinite(mosque.longitude) &&
+    typeof mosque.status === 'string'
+  );
+}
+
 @Injectable()
 export class MosquesService {
   constructor(
@@ -79,11 +95,11 @@ export class MosquesService {
 
     const data = response.ok
       ? ((await response.json().catch(() => null)) as {
-          data?: ProviderMosque[];
+          data?: unknown[];
         } | null)
       : null;
 
-    if (!Array.isArray(data?.data)) {
+    if (!Array.isArray(data?.data) || !data.data.every(isProviderMosque)) {
       this.logger.warn(
         {
           event: 'upstream_error',
