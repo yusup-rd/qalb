@@ -36,7 +36,6 @@ describe('RedisService', () => {
 
   it('returns parsed JSON from Redis', async () => {
     process.env.REDIS_URL = 'redis://test';
-
     redisMock.get.mockResolvedValue(
       JSON.stringify({
         goldPerGram: 140.78,
@@ -45,7 +44,6 @@ describe('RedisService', () => {
     );
 
     const service = new RedisService(loggerMock as unknown as PinoLogger);
-
     const result = await service.get<{
       goldPerGram: number;
       silverPerGram: number;
@@ -55,15 +53,12 @@ describe('RedisService', () => {
       goldPerGram: 140.78,
       silverPerGram: 2.13,
     });
-
     expect(redisMock.get).toHaveBeenCalledWith('qalb:metals:latest:usd:g');
   });
 
   it('serializes values and applies the TTL when setting Redis data', async () => {
     process.env.REDIS_URL = 'redis://test';
-
     const service = new RedisService(loggerMock as unknown as PinoLogger);
-
     const value = {
       goldPerGram: 140.78,
       silverPerGram: 2.13,
@@ -83,19 +78,17 @@ describe('RedisService', () => {
 
   it('returns null when Redis read fails', async () => {
     process.env.REDIS_URL = 'redis://test';
-
-    redisMock.get.mockRejectedValue(new Error('Redis unavailable'));
+    const error = new Error('Redis unavailable');
+    redisMock.get.mockRejectedValue(error);
 
     const service = new RedisService(loggerMock as unknown as PinoLogger);
-
     const result = await service.get('some-key');
 
     expect(result).toBeNull();
-
     expect(loggerMock.warn).toHaveBeenCalledWith(
       {
         key: 'some-key',
-        error: 'Error: Redis unavailable',
+        err: error,
       },
       'Redis read failed',
     );
@@ -103,8 +96,8 @@ describe('RedisService', () => {
 
   it('does not throw when Redis write fails', async () => {
     process.env.REDIS_URL = 'redis://test';
-
-    redisMock.set.mockRejectedValue(new Error('Redis unavailable'));
+    const error = new Error('Redis unavailable');
+    redisMock.set.mockRejectedValue(error);
 
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
@@ -116,7 +109,7 @@ describe('RedisService', () => {
       {
         key: 'some-key',
         ttlSeconds: 300,
-        error: 'Error: Redis unavailable',
+        err: error,
       },
       'Redis write failed',
     );
@@ -128,12 +121,14 @@ describe('RedisService', () => {
     await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
       false,
     );
+
     expect(redisMock.set).not.toHaveBeenCalled();
   });
 
   it('returns false when Redis does not acknowledge the write', async () => {
     process.env.REDIS_URL = 'redis://test';
     redisMock.set.mockResolvedValue(null);
+
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(

@@ -54,21 +54,52 @@ export class IslamicEventsService {
         {
           event: 'upstream_error',
           provider: 'aladhan',
-          error: String(error),
+          err: error,
         },
         'Islamic events upstream request failed',
       );
       throw new ServiceUnavailableException('Islamic events are unavailable.');
     }
 
-    const data = (await response.json()) as {
+    if (!response.ok) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'aladhan',
+          statusCode: response.status,
+        },
+        'Islamic events upstream returned an invalid response',
+      );
+      throw new ServiceUnavailableException('Islamic events are unavailable.');
+    }
+
+    let data: {
       code: number;
       status: string;
       data?: unknown[];
     };
 
+    try {
+      data = (await response.json()) as {
+        code: number;
+        status: string;
+        data?: unknown[];
+      };
+    } catch (error) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'aladhan',
+          statusCode: response.status,
+          err: error,
+        },
+        'Islamic events upstream returned invalid JSON',
+      );
+
+      throw new ServiceUnavailableException('Islamic events are unavailable.');
+    }
+
     if (
-      !response.ok ||
       data.code !== 200 ||
       data.status !== 'OK' ||
       !Array.isArray(data.data)

@@ -66,7 +66,7 @@ export class ReverseGeocodingService {
         {
           event: 'upstream_error',
           provider: 'nominatim',
-          error: String(error),
+          err: error,
         },
         'Reverse geocoding upstream request failed',
       );
@@ -118,12 +118,12 @@ export class ReverseGeocodingService {
       'Reverse geocoding result received',
     );
 
-    await this.redis.set(key, result, 24 * 60 * 60);
-
-    this.logger.info(
-      { event: 'cache_store', ttlSeconds: 24 * 60 * 60 },
-      'Reverse geocoding result cached',
-    );
+    if (await this.redis.set(key, result, 24 * 60 * 60)) {
+      this.logger.info(
+        { event: 'cache_store', ttlSeconds: 24 * 60 * 60 },
+        'Reverse geocoding result cached',
+      );
+    }
 
     return result;
   }

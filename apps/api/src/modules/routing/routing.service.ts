@@ -71,14 +71,48 @@ export class RoutingService {
       throw new ServiceUnavailableException('Route is unavailable.');
     }
 
-    const data = (await response.json()) as {
+    if (!response.ok) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'osrm',
+          operation: 'route',
+          statusCode: response.status,
+        },
+        'Route upstream returned an invalid response',
+      );
+      throw new ServiceUnavailableException('Route is unavailable.');
+    }
+
+    let data: {
       code: string;
       message?: string;
       routes?: OsrmRoute[];
     };
+
+    try {
+      data = (await response.json()) as {
+        code: string;
+        message?: string;
+        routes?: OsrmRoute[];
+      };
+    } catch (error) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'osrm',
+          operation: 'route',
+          statusCode: response.status,
+          err: error,
+        },
+        'Route upstream returned invalid JSON',
+      );
+      throw new ServiceUnavailableException('Route is unavailable.');
+    }
+
     const route = data.routes?.[0];
 
-    if (!response.ok || data.code !== 'Ok' || !route?.geometry) {
+    if (data.code !== 'Ok' || !route?.geometry) {
       this.logger.warn(
         {
           event: 'upstream_error',
@@ -199,19 +233,48 @@ export class RoutingService {
       throw new ServiceUnavailableException('Route metrics are unavailable.');
     }
 
-    const data = (await response.json()) as {
+    if (!response.ok) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'osrm',
+          operation: 'metrics',
+          statusCode: response.status,
+        },
+        'Route metrics upstream returned an invalid response',
+      );
+      throw new ServiceUnavailableException('Route metrics are unavailable.');
+    }
+
+    let data: {
       code: string;
       message?: string;
       distances?: (number | null)[][];
       durations?: (number | null)[][];
     };
 
-    if (
-      !response.ok ||
-      data.code !== 'Ok' ||
-      !data.distances?.[0] ||
-      !data.durations?.[0]
-    ) {
+    try {
+      data = (await response.json()) as {
+        code: string;
+        message?: string;
+        distances?: (number | null)[][];
+        durations?: (number | null)[][];
+      };
+    } catch (error) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'osrm',
+          operation: 'metrics',
+          statusCode: response.status,
+          err: error,
+        },
+        'Route metrics upstream returned invalid JSON',
+      );
+      throw new ServiceUnavailableException('Route metrics are unavailable.');
+    }
+
+    if (data.code !== 'Ok' || !data.distances?.[0] || !data.durations?.[0]) {
       this.logger.warn(
         {
           event: 'upstream_error',

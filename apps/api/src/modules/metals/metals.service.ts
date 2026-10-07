@@ -62,18 +62,52 @@ export class MetalsService {
         {
           event: 'upstream_error',
           provider: 'metals.dev',
-          error: String(error),
+          err: error,
         },
         'Metals upstream request failed',
       );
       throw new ServiceUnavailableException('Market prices are unavailable.');
     }
 
-    const data = (await response.json()) as MetalsResponse;
+    if (!response.ok) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'metals.dev',
+          statusCode: response.status,
+        },
+        'Metals upstream returned an invalid response',
+      );
+      throw new ServiceUnavailableException('Market prices are unavailable.');
+    }
+
+    let data: MetalsResponse;
+
+    try {
+      data = (await response.json()) as MetalsResponse;
+    } catch (error) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'metals.dev',
+          statusCode: response.status,
+          err: error,
+        },
+        'Metals upstream returned invalid JSON',
+      );
+      throw new ServiceUnavailableException('Market prices are unavailable.');
+    }
+
     const gold = data.metals?.gold;
     const silver = data.metals?.silver;
 
-    if (!response.ok || data.status !== 'success' || !gold || !silver) {
+    if (
+      data.status !== 'success' ||
+      typeof gold !== 'number' ||
+      !Number.isFinite(gold) ||
+      typeof silver !== 'number' ||
+      !Number.isFinite(silver)
+    ) {
       this.logger.warn(
         {
           event: 'upstream_error',
@@ -94,7 +128,7 @@ export class MetalsService {
       'Metals prices received',
     );
 
-    const result = {
+    const result: ZakatMarketPrices = {
       goldPerGram: gold,
       silverPerGram: silver,
       updatedAt: data.timestamps?.metal ?? new Date().toISOString(),

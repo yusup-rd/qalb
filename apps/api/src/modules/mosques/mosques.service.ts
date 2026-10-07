@@ -70,7 +70,7 @@ export class MosquesService {
         {
           event: 'upstream_error',
           provider: 'takbeertime',
-          error: String(error),
+          err: error,
         },
         'Mosques upstream request failed',
       );
@@ -115,12 +115,12 @@ export class MosquesService {
       'Nearby mosques received',
     );
 
-    await this.redis.set(key, result, 15 * 60);
-
-    this.logger.info(
-      { event: 'cache_store', ttlSeconds: 15 * 60 },
-      'Nearby mosques cached',
-    );
+    if (await this.redis.set(key, result, 15 * 60)) {
+      this.logger.info(
+        { event: 'cache_store', ttlSeconds: 15 * 60 },
+        'Nearby mosques cached',
+      );
+    }
 
     return result;
   }
