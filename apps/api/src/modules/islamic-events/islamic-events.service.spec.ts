@@ -9,14 +9,20 @@ describe('IslamicEventsService', () => {
       set: vi.fn(),
     };
 
-    const service = new IslamicEventsService(redis as never);
+    const logger = {
+      setContext: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
 
-    return { service, redis };
+    const service = new IslamicEventsService(redis as never, logger as never);
+
+    return { service, redis, logger };
   };
 
   it('returns cached calendar without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const cached = [
       {
         date: '2026-10-01',
@@ -38,9 +44,7 @@ describe('IslamicEventsService', () => {
     const result = await service.getCalendar(10, 2026);
 
     expect(result).toEqual(cached);
-
     expect(redis.get).toHaveBeenCalledWith('qalb:islamic-events:2026:10');
-
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();

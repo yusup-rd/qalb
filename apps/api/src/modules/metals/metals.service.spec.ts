@@ -9,14 +9,20 @@ describe('MetalsService', () => {
       set: vi.fn(),
     };
 
-    const service = new MetalsService(redis as never);
+    const logger = {
+      setContext: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
 
-    return { service, redis };
+    const service = new MetalsService(redis as never, logger as never);
+
+    return { service, redis, logger };
   };
 
   it('returns cached prices without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const cached = {
       goldPerGram: 140,
       silverPerGram: 2,
@@ -42,7 +48,6 @@ describe('MetalsService', () => {
     const { service, redis } = createService();
 
     redis.get.mockResolvedValue(null);
-
     process.env.METALS_API_KEY = 'test-api-key';
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -87,7 +92,6 @@ describe('MetalsService', () => {
     const { service, redis } = createService();
 
     redis.get.mockResolvedValue(null);
-
     process.env.METALS_API_KEY = 'test-api-key';
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(

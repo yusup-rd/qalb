@@ -9,9 +9,16 @@ describe('RoutingService', () => {
       set: vi.fn(),
     };
 
-    const service = new RoutingService(redis as never);
+    const logger = {
+      setContext: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
 
-    return { service, redis };
+    const service = new RoutingService(redis as never, logger as never);
+
+    return { service, redis, logger };
   };
 
   const origin = {
@@ -26,7 +33,6 @@ describe('RoutingService', () => {
 
   it('returns a cached route without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const cached = {
       distanceMeters: 4200,
       durationSeconds: 600,
@@ -51,11 +57,9 @@ describe('RoutingService', () => {
     const result = await service.route(origin, destination);
 
     expect(result).toEqual(cached);
-
     expect(redis.get).toHaveBeenCalledWith(
       'qalb:route:driving:3.13900,101.68690:3.15790,101.71230',
     );
-
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();
@@ -156,7 +160,6 @@ describe('RoutingService', () => {
 
   it('returns cached metrics without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const destinations = [
       {
         latitude: 3.1579,
@@ -188,11 +191,9 @@ describe('RoutingService', () => {
     const result = await service.metrics(origin, destinations);
 
     expect(result).toEqual(cached);
-
     expect(redis.get).toHaveBeenCalledWith(
       'qalb:route-metrics:driving:3.13900,101.68690:3.15790,101.71230:3.15010,101.69550',
     );
-
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();
@@ -224,7 +225,6 @@ describe('RoutingService', () => {
 
   it('fetches and transforms route metrics when the cache is empty', async () => {
     const { service, redis } = createService();
-
     const destinations = [
       {
         latitude: 3.1579,

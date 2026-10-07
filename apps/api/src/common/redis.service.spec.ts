@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RedisService } from './redis.service.js';
 
@@ -7,6 +7,12 @@ const redisMock = {
   set: vi.fn(),
   quit: vi.fn(),
   connect: vi.fn(),
+  on: vi.fn(),
+};
+
+const loggerMock = {
+  setContext: vi.fn(),
+  warn: vi.fn(),
 };
 
 vi.mock('ioredis', () => ({
@@ -15,16 +21,15 @@ vi.mock('ioredis', () => ({
     set = redisMock.set;
     quit = redisMock.quit;
     connect = redisMock.connect;
+    on = redisMock.on;
   },
 }));
 
 describe('RedisService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
     redisMock.connect.mockResolvedValue(undefined);
     redisMock.quit.mockResolvedValue('OK');
-
     delete process.env.REDIS_URL;
   });
 
@@ -38,7 +43,7 @@ describe('RedisService', () => {
       }),
     );
 
-    const service = new RedisService();
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     const result = await service.get<{
       goldPerGram: number;
@@ -56,7 +61,7 @@ describe('RedisService', () => {
   it('serializes values and applies the TTL when setting Redis data', async () => {
     process.env.REDIS_URL = 'redis://test';
 
-    const service = new RedisService();
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     const value = {
       goldPerGram: 140.78,
@@ -78,20 +83,19 @@ describe('RedisService', () => {
 
     redisMock.get.mockRejectedValue(new Error('Redis unavailable'));
 
-    const warnSpy = vi
-      .spyOn(Logger.prototype, 'warn')
-      .mockImplementation(() => {});
-
-    const service = new RedisService();
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     const result = await service.get('some-key');
 
     expect(result).toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Redis read failed for some-key'),
-    );
 
-    warnSpy.mockRestore();
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      {
+        key: 'some-key',
+        error: 'Error: Redis unavailable',
+      },
+      'Redis read failed',
+    );
   });
 
   it('does not throw when Redis write fails', async () => {
@@ -99,27 +103,26 @@ describe('RedisService', () => {
 
     redisMock.set.mockRejectedValue(new Error('Redis unavailable'));
 
-    const warnSpy = vi
-      .spyOn(Logger.prototype, 'warn')
-      .mockImplementation(() => {});
-
-    const service = new RedisService();
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await expect(
       service.set('some-key', { value: 'test' }, 300),
     ).resolves.toBeUndefined();
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Redis write failed for some-key'),
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      {
+        key: 'some-key',
+        ttlSeconds: 300,
+        error: 'Error: Redis unavailable',
+      },
+      'Redis write failed',
     );
-
-    warnSpy.mockRestore();
   });
 
   it('closes the Redis connection when the module is destroyed', async () => {
     process.env.REDIS_URL = 'redis://test';
 
-    const service = new RedisService();
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
 
     await service.onModuleDestroy();
 

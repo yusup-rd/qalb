@@ -9,14 +9,23 @@ describe('ReverseGeocodingService', () => {
       set: vi.fn(),
     };
 
-    const service = new ReverseGeocodingService(redis as never);
+    const logger = {
+      setContext: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
 
-    return { service, redis };
+    const service = new ReverseGeocodingService(
+      redis as never,
+      logger as never,
+    );
+
+    return { service, redis, logger };
   };
 
   it('returns cached location without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const cached = {
       city: 'Kuala Lumpur',
       country: 'Malaysia',
@@ -31,9 +40,7 @@ describe('ReverseGeocodingService', () => {
     const result = await service.reverse(3.139, 101.6869, 'en');
 
     expect(result).toEqual(cached);
-
     expect(redis.get).toHaveBeenCalledWith('qalb:geocode:3.1390:101.6869:en');
-
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();

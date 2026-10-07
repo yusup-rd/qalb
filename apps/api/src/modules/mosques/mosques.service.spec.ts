@@ -9,14 +9,20 @@ describe('MosquesService', () => {
       set: vi.fn(),
     };
 
-    const service = new MosquesService(redis as never);
+    const logger = {
+      setContext: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
 
-    return { service, redis };
+    const service = new MosquesService(redis as never, logger as never);
+
+    return { service, redis, logger };
   };
 
   it('returns cached mosques without calling the upstream API', async () => {
     const { service, redis } = createService();
-
     const cached = [
       {
         id: 'mosque-1',
@@ -36,9 +42,7 @@ describe('MosquesService', () => {
     const result = await service.nearby(3.139, 101.6869, 10000, 20);
 
     expect(result).toEqual(cached);
-
     expect(redis.get).toHaveBeenCalledWith('qalb:mosques:3.14:101.69:10000:20');
-
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();
@@ -85,7 +89,6 @@ describe('MosquesService', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-
     expect(redis.set).toHaveBeenCalledWith(
       'qalb:mosques:3.14:101.69:10000:20',
       result,
