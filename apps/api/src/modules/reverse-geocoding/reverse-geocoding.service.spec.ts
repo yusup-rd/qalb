@@ -8,19 +8,16 @@ describe('ReverseGeocodingService', () => {
       get: vi.fn(),
       set: vi.fn(),
     };
-
     const logger = {
       setContext: vi.fn(),
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
     };
-
     const service = new ReverseGeocodingService(
       redis as never,
       logger as never,
     );
-
     return { service, redis, logger };
   };
 
@@ -30,9 +27,7 @@ describe('ReverseGeocodingService', () => {
       city: 'Kuala Lumpur',
       country: 'Malaysia',
     };
-
     redis.get.mockResolvedValue(cached);
-
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('fetch should not be called'));
@@ -50,7 +45,6 @@ describe('ReverseGeocodingService', () => {
 
   it('fetches and transforms the Nominatim response when the cache is empty', async () => {
     const { service, redis } = createService();
-
     redis.get.mockResolvedValue(null);
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -90,7 +84,6 @@ describe('ReverseGeocodingService', () => {
 
   it('uses the requested language when calling Nominatim', async () => {
     const { service, redis } = createService();
-
     redis.get.mockResolvedValue(null);
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -130,7 +123,6 @@ describe('ReverseGeocodingService', () => {
 
   it('falls back through available address fields when city is missing', async () => {
     const { service, redis } = createService();
-
     redis.get.mockResolvedValue(null);
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -164,7 +156,6 @@ describe('ReverseGeocodingService', () => {
 
   it('throws 503 when the Nominatim API fails', async () => {
     const { service, redis } = createService();
-
     redis.get.mockResolvedValue(null);
 
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -185,7 +176,29 @@ describe('ReverseGeocodingService', () => {
       await expect(
         service.reverse(3.139, 101.6869, 'en'),
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
+      expect(redis.set).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
 
+  it('throws 503 when Nominatim returns invalid JSON', async () => {
+    const { service, redis } = createService();
+    redis.get.mockResolvedValue(null);
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('not-json', {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    );
+
+    try {
+      await expect(
+        service.reverse(3.139, 101.6869, 'en'),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
       expect(redis.set).not.toHaveBeenCalled();
     } finally {
       fetchMock.mockRestore();

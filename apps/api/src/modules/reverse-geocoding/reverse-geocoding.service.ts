@@ -86,7 +86,7 @@ export class ReverseGeocodingService {
       throw new ServiceUnavailableException('Location lookup is unavailable.');
     }
 
-    const data = (await response.json()) as {
+    let data: {
       address?: {
         city?: string;
         town?: string;
@@ -96,6 +96,21 @@ export class ReverseGeocodingService {
         country?: string;
       };
     };
+
+    try {
+      data = (await response.json()) as typeof data;
+    } catch (error) {
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'nominatim',
+          statusCode: response.status,
+          err: error,
+        },
+        'Reverse geocoding upstream returned invalid JSON',
+      );
+      throw new ServiceUnavailableException('Location lookup is unavailable.');
+    }
 
     const address = data.address;
 

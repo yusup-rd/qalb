@@ -93,11 +93,24 @@ export class MosquesService {
       throw new ServiceUnavailableException('Mosques are unavailable.');
     }
 
-    const data = response.ok
-      ? ((await response.json().catch(() => null)) as {
-          data?: unknown[];
-        } | null)
-      : null;
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
+
+      this.logger.warn(
+        {
+          event: 'upstream_error',
+          provider: 'takbeertime',
+          statusCode: response.status,
+        },
+        'Mosques upstream returned an invalid response',
+      );
+
+      throw new ServiceUnavailableException('Mosques are unavailable.');
+    }
+
+    const data = (await response.json().catch(() => null)) as {
+      data?: unknown[];
+    } | null;
 
     if (!Array.isArray(data?.data) || !data.data.every(isProviderMosque)) {
       this.logger.warn(
