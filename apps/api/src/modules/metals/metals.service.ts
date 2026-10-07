@@ -100,12 +100,12 @@ export class MetalsService {
       updatedAt: data.timestamps?.metal ?? new Date().toISOString(),
     };
 
-    await this.redis.set(this.key, result, 24 * 60 * 60);
-
-    this.logger.info(
-      { event: 'cache_store', ttlSeconds: 24 * 60 * 60 },
-      'Metals prices cached',
-    );
+    if (await this.redis.set(this.key, result, 24 * 60 * 60)) {
+      this.logger.info(
+        { event: 'cache_store', ttlSeconds: 24 * 60 * 60 },
+        'Metals prices cached',
+      );
+    }
 
     return result;
   }

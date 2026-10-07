@@ -77,11 +77,13 @@ export class MosquesService {
       throw new ServiceUnavailableException('Mosques are unavailable.');
     }
 
-    const data = (await response.json()) as {
-      data?: ProviderMosque[];
-    };
+    const data = response.ok
+      ? ((await response.json().catch(() => null)) as {
+          data?: ProviderMosque[];
+        } | null)
+      : null;
 
-    if (!response.ok || !Array.isArray(data.data)) {
+    if (!Array.isArray(data?.data)) {
       this.logger.warn(
         {
           event: 'upstream_error',

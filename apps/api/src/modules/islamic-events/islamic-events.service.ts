@@ -125,17 +125,17 @@ export class IslamicEventsService {
       };
     });
 
-    await this.redis.set(key, result, 30 * 24 * 60 * 60);
-
-    this.logger.info(
-      {
-        event: 'cache_store',
-        month,
-        year,
-        ttlSeconds: 30 * 24 * 60 * 60,
-      },
-      'Islamic events cached',
-    );
+    if (await this.redis.set(key, result, 30 * 24 * 60 * 60)) {
+      this.logger.info(
+        {
+          event: 'cache_store',
+          month,
+          year,
+          ttlSeconds: 30 * 24 * 60 * 60,
+        },
+        'Islamic events cached',
+      );
+    }
 
     return result;
   }

@@ -17,6 +17,17 @@ import { RoutingModule } from './modules/routing/routing.module.js';
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
+        redact: {
+          paths: [
+            'req.headers.authorization',
+            'req.headers.cookie',
+            'req.headers.referer',
+            'req.url',
+            'req.query',
+            'req.params',
+          ],
+          remove: true,
+        },
         transport:
           process.env.NODE_ENV === 'production'
             ? undefined

@@ -50,60 +50,69 @@ describe('IslamicEventsService', () => {
     fetchMock.mockRestore();
   });
 
-  it('fetches and transforms the calendar when the cache is empty', async () => {
-    const { service, redis } = createService();
+  it.each([true, false])(
+    'fetches and transforms the calendar when the cache is empty (cache stored: %s)',
+    async (stored) => {
+      const { service, redis, logger } = createService();
+      redis.set.mockResolvedValue(stored);
 
-    redis.get.mockResolvedValue(null);
+      redis.get.mockResolvedValue(null);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          code: 200,
-          status: 'OK',
-          data: [
-            {
-              gregorian: {
-                date: '01-10-2026',
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            code: 200,
+            status: 'OK',
+            data: [
+              {
+                gregorian: {
+                  date: '01-10-2026',
+                },
+                hijri: {
+                  date: '19-04-1448',
+                  holidays: ['Islamic New Year'],
+                  adjustedHolidays: [],
+                },
               },
-              hijri: {
-                date: '19-04-1448',
-                holidays: ['Islamic New Year'],
-                adjustedHolidays: [],
-              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
             },
-          ],
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
           },
+        ),
+      );
+
+      const result = await service.getCalendar(10, 2026);
+
+      expect(result).toEqual([
+        {
+          date: '2026-10-01',
+          hijriDate: {
+            day: 19,
+            month: 4,
+            year: 1448,
+          },
+          events: ['Islamic New Year'],
         },
-      ),
-    );
+      ]);
 
-    const result = await service.getCalendar(10, 2026);
+      const cacheStoreLogs = logger.info.mock.calls.filter(
+        ([fields]) => fields.event === 'cache_store',
+      );
+      expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
 
-    expect(result).toEqual([
-      {
-        date: '2026-10-01',
-        hijriDate: {
-          day: 19,
-          month: 4,
-          year: 1448,
-        },
-        events: ['Islamic New Year'],
-      },
-    ]);
+      expect(redis.set).toHaveBeenCalledWith(
+        'qalb:islamic-events:2026:10',
+        result,
+        30 * 24 * 60 * 60,
+      );
 
-    expect(redis.set).toHaveBeenCalledWith(
-      'qalb:islamic-events:2026:10',
-      result,
-      30 * 24 * 60 * 60,
-    );
-
-    vi.restoreAllMocks();
-  });
+      vi.restoreAllMocks();
+    },
+  );
 
   it('combines regular and adjusted holidays', async () => {
     const { service, redis } = createService();

@@ -30,6 +30,7 @@ describe('RedisService', () => {
     vi.clearAllMocks();
     redisMock.connect.mockResolvedValue(undefined);
     redisMock.quit.mockResolvedValue('OK');
+    redisMock.set.mockResolvedValue('OK');
     delete process.env.REDIS_URL;
   });
 
@@ -68,7 +69,9 @@ describe('RedisService', () => {
       silverPerGram: 2.13,
     };
 
-    await service.set('qalb:metals:latest:usd:g', value, 86400);
+    await expect(
+      service.set('qalb:metals:latest:usd:g', value, 86400),
+    ).resolves.toBe(true);
 
     expect(redisMock.set).toHaveBeenCalledWith(
       'qalb:metals:latest:usd:g',
@@ -105,9 +108,9 @@ describe('RedisService', () => {
 
     const service = new RedisService(loggerMock as unknown as PinoLogger);
 
-    await expect(
-      service.set('some-key', { value: 'test' }, 300),
-    ).resolves.toBeUndefined();
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
+    );
 
     expect(loggerMock.warn).toHaveBeenCalledWith(
       {
@@ -116,6 +119,25 @@ describe('RedisService', () => {
         error: 'Error: Redis unavailable',
       },
       'Redis write failed',
+    );
+  });
+
+  it('returns false without attempting a write when Redis is disabled', async () => {
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
+    );
+    expect(redisMock.set).not.toHaveBeenCalled();
+  });
+
+  it('returns false when Redis does not acknowledge the write', async () => {
+    process.env.REDIS_URL = 'redis://test';
+    redisMock.set.mockResolvedValue(null);
+    const service = new RedisService(loggerMock as unknown as PinoLogger);
+
+    await expect(service.set('some-key', { value: 'test' }, 300)).resolves.toBe(
+      false,
     );
   });
 

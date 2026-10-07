@@ -192,31 +192,42 @@ describe('MosquesService', () => {
     vi.restoreAllMocks();
   });
 
-  it('throws 503 when the upstream API fails', async () => {
-    const { service, redis } = createService();
+  it.each([
+    { status: 503, body: JSON.stringify({ error: 'API unavailable' }) },
+    { status: 503, body: '<html>Service unavailable</html>' },
+    { status: 200, body: 'not JSON' },
+    { status: 200, body: 'null' },
+    { status: 200, body: '{}' },
+  ])(
+    'throws 503 for an invalid upstream response: $status $body',
+    async ({ status, body }) => {
+      const { service, redis, logger } = createService();
+      redis.get.mockResolvedValue(null);
+      const response = new Response(body, { status });
+      const jsonSpy = vi.spyOn(response, 'json');
+      const fetchMock = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(response);
 
-    redis.get.mockResolvedValue(null);
+      try {
+        await expect(
+          service.nearby(3.139, 101.6869, 10000, 20),
+        ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          error: 'API unavailable',
-        }),
-        {
-          status: 503,
-          headers: {
-            'Content-Type': 'application/json',
+        expect(logger.warn).toHaveBeenCalledWith(
+          {
+            event: 'upstream_error',
+            provider: 'takbeertime',
+            statusCode: status,
           },
-        },
-      ),
-    );
-
-    await expect(
-      service.nearby(3.139, 101.6869, 10000, 20),
-    ).rejects.toBeInstanceOf(ServiceUnavailableException);
-
-    expect(redis.set).not.toHaveBeenCalled();
-
-    vi.restoreAllMocks();
-  });
+          'Mosques upstream returned an invalid response',
+        );
+        expect(redis.set).not.toHaveBeenCalled();
+        if (status === 503) expect(jsonSpy).not.toHaveBeenCalled();
+      } finally {
+        fetchMock.mockRestore();
+        jsonSpy.mockRestore();
+      }
+    },
+  );
 });

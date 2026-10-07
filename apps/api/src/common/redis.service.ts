@@ -41,16 +41,24 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
-  async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
-    if (!this.client) return;
+  async set<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
+    if (!this.client) return false;
 
     try {
-      await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+      return (
+        (await this.client.set(
+          key,
+          JSON.stringify(value),
+          'EX',
+          ttlSeconds,
+        )) === 'OK'
+      );
     } catch (error) {
       this.logger.warn(
         { key, ttlSeconds, error: String(error) },
         'Redis write failed',
       );
+      return false;
     }
   }
 

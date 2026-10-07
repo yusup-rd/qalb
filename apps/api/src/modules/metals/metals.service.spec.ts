@@ -44,49 +44,58 @@ describe('MetalsService', () => {
     fetchMock.mockRestore();
   });
 
-  it('fetches prices when the cache is empty', async () => {
-    const { service, redis } = createService();
+  it.each([true, false])(
+    'fetches prices when the cache is empty (cache stored: %s)',
+    async (stored) => {
+      const { service, redis, logger } = createService();
+      redis.set.mockResolvedValue(stored);
 
-    redis.get.mockResolvedValue(null);
-    process.env.METALS_API_KEY = 'test-api-key';
+      redis.get.mockResolvedValue(null);
+      process.env.METALS_API_KEY = 'test-api-key';
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          status: 'success',
-          metals: {
-            gold: 140.7815,
-            silver: 2.1302,
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            status: 'success',
+            metals: {
+              gold: 140.7815,
+              silver: 2.1302,
+            },
+            timestamps: {
+              metal: '2026-10-07T00:00:00.000Z',
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+            },
           },
-          timestamps: {
-            metal: '2026-10-07T00:00:00.000Z',
-          },
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      ),
-    );
+        ),
+      );
 
-    const result = await service.getLatest();
+      const result = await service.getLatest();
 
-    expect(result).toEqual({
-      goldPerGram: 140.7815,
-      silverPerGram: 2.1302,
-      updatedAt: '2026-10-07T00:00:00.000Z',
-    });
+      expect(result).toEqual({
+        goldPerGram: 140.7815,
+        silverPerGram: 2.1302,
+        updatedAt: '2026-10-07T00:00:00.000Z',
+      });
 
-    expect(redis.set).toHaveBeenCalledWith(
-      'qalb:metals:latest:usd:g',
-      result,
-      24 * 60 * 60,
-    );
+      const cacheStoreLogs = logger.info.mock.calls.filter(
+        ([fields]) => fields.event === 'cache_store',
+      );
+      expect(cacheStoreLogs).toHaveLength(stored ? 1 : 0);
 
-    vi.restoreAllMocks();
-  });
+      expect(redis.set).toHaveBeenCalledWith(
+        'qalb:metals:latest:usd:g',
+        result,
+        24 * 60 * 60,
+      );
+
+      vi.restoreAllMocks();
+    },
+  );
 
   it('throws 503 when the upstream API fails', async () => {
     const { service, redis } = createService();

@@ -64,7 +64,7 @@ export class RoutingService {
           event: 'upstream_error',
           provider: 'osrm',
           operation: 'route',
-          error: String(error),
+          err: error,
         },
         'Route upstream request failed',
       );
@@ -112,16 +112,16 @@ export class RoutingService {
       })),
     };
 
-    await this.redis.set(cacheKey, result, this.cacheTtlSeconds);
-
-    this.logger.info(
-      {
-        event: 'cache_store',
-        operation: 'route',
-        ttlSeconds: this.cacheTtlSeconds,
-      },
-      'Route cached',
-    );
+    if (await this.redis.set(cacheKey, result, this.cacheTtlSeconds)) {
+      this.logger.info(
+        {
+          event: 'cache_store',
+          operation: 'route',
+          ttlSeconds: this.cacheTtlSeconds,
+        },
+        'Route cached',
+      );
+    }
 
     return result;
   }
@@ -192,7 +192,7 @@ export class RoutingService {
           event: 'upstream_error',
           provider: 'osrm',
           operation: 'metrics',
-          error: String(error),
+          err: error,
         },
         'Route metrics upstream request failed',
       );
@@ -242,16 +242,16 @@ export class RoutingService {
       durationSeconds: data.durations![0]![index] ?? Number.NaN,
     }));
 
-    await this.redis.set(cacheKey, result, this.cacheTtlSeconds);
-
-    this.logger.info(
-      {
-        event: 'cache_store',
-        operation: 'metrics',
-        ttlSeconds: this.cacheTtlSeconds,
-      },
-      'Route metrics cached',
-    );
+    if (await this.redis.set(cacheKey, result, this.cacheTtlSeconds)) {
+      this.logger.info(
+        {
+          event: 'cache_store',
+          operation: 'metrics',
+          ttlSeconds: this.cacheTtlSeconds,
+        },
+        'Route metrics cached',
+      );
+    }
 
     return result;
   }
