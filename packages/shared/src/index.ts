@@ -12,7 +12,7 @@ export interface Mosque {
   tags?: string[];
 }
 
-export interface RouteCoordinate {
+interface RouteCoordinate {
   latitude: number;
   longitude: number;
 }

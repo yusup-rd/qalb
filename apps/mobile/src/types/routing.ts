@@ -1,2 +1,2 @@
-export type { Route, RouteCoordinate, RouteMetrics } from "@qalb/shared";
+export type { Route, RouteMetrics } from "@qalb/shared";
 

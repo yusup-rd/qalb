@@ -3,7 +3,7 @@ const API_BASE_URL = (
 ).replace(/\/$/, "");
 const REQUEST_TIMEOUT_MS = 10_000;
 
-export class ApiClientError extends Error {
+class ApiClientError extends Error {
   constructor(
     public readonly status: number | null,
     message: string,
