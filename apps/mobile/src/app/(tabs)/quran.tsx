@@ -220,29 +220,28 @@ const Quran = () => {
     [t, translationLanguage],
   );
 
-  const renderHeader = useCallback(
-    () => (
-      <View className="bg-background -mx-5 gap-3 px-5 pb-4">
-        <Text className="text-foreground font-sans-bold text-2xl">
-          {t("title")}
-        </Text>
-        <View className="bg-muted flex-row items-center gap-2 rounded-2xl px-4">
-          <Fa
-            name="magnifying-glass"
-            size={15}
-            className="text-muted-foreground"
-          />
-          <TextInput
-            className="text-foreground font-sans-regular flex-1 py-3"
-            placeholder={t("search")}
-            placeholderTextColor={colors.mutedForeground}
-            value={query}
-            onChangeText={handleQueryChange}
-          />
-        </View>
+  const renderHeader = (
+    <View className="bg-background -mx-5 gap-3 px-5 pb-4">
+      <Text className="text-foreground font-sans-bold text-2xl">
+        {t("title")}
+      </Text>
+
+      <View className="bg-muted flex-row items-center gap-2 rounded-2xl px-4">
+        <Fa
+          name="magnifying-glass"
+          size={15}
+          className="text-muted-foreground"
+        />
+
+        <TextInput
+          className="text-foreground font-sans-regular flex-1 py-3"
+          placeholder={t("search")}
+          placeholderTextColor={colors.mutedForeground}
+          value={query}
+          onChangeText={handleQueryChange}
+        />
       </View>
-    ),
-    [colors.mutedForeground, handleQueryChange, query, t],
+    </View>
   );
 
   const keyExtractor = useCallback((item: QuranListItem) => item.id, []);
