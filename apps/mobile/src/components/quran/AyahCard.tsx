@@ -1,14 +1,17 @@
 import { AudioButton } from "@/components/quran/AudioButton";
 import type { QuranVerseWithContent } from "@/types/quran";
-import { useTranslation } from "react-i18next";
+import { memo } from "react";
 import { Text, View } from "react-native";
 
-export const AyahCard = ({ verse }: { verse: QuranVerseWithContent }) => {
-  const { i18n } = useTranslation();
-  const translation = i18n.language.startsWith("ru")
-    ? verse.russian
-    : verse.english;
+type AyahCardProps = {
+  verse: QuranVerseWithContent;
+  translation: string | null;
+};
 
+export const AyahCard = memo(function AyahCard({
+  verse,
+  translation,
+}: AyahCardProps) {
   return (
     <View className="bg-card gap-3 rounded-2xl p-4 shadow-md">
       <View className="flex-row items-center justify-between">
@@ -27,9 +30,9 @@ export const AyahCard = ({ verse }: { verse: QuranVerseWithContent }) => {
       ) : null}
       {translation ? (
         <Text className="text-card-foreground font-sans-regular">
-          {translation.text}
+          {translation}
         </Text>
       ) : null}
     </View>
   );
-};
+});

@@ -53,6 +53,7 @@ const Quran = () => {
   });
   const params = useLocalSearchParams<{ query?: string }>();
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { chapters, error, loading: chaptersLoading } = useQuranChapters();
   const [query, setQuery] = useState(params.query ?? "");
   const {
@@ -170,6 +171,10 @@ const Quran = () => {
     t,
   ]);
 
+  const translationLanguage = i18n.language.startsWith("ru")
+    ? "russian"
+    : "english";
+
   const renderItem = useCallback<ListRenderItem<QuranListItem>>(
     ({ item }) => {
       switch (item.type) {
@@ -184,7 +189,12 @@ const Quran = () => {
           );
 
         case "ayah":
-          return <AyahCard verse={item.verse} />;
+          return (
+            <AyahCard
+              verse={item.verse}
+              translation={item.verse[translationLanguage]?.text ?? null}
+            />
+          );
 
         case "section":
           return (
@@ -207,8 +217,34 @@ const Quran = () => {
           return <AyahCardSkeleton />;
       }
     },
-    [t],
+    [t, translationLanguage],
   );
+
+  const renderHeader = (
+    <View className="bg-background -mx-5 gap-3 px-5 pb-4">
+      <Text className="text-foreground font-sans-bold text-2xl">
+        {t("title")}
+      </Text>
+
+      <View className="bg-muted flex-row items-center gap-2 rounded-2xl px-4">
+        <Fa
+          name="magnifying-glass"
+          size={15}
+          className="text-muted-foreground"
+        />
+
+        <TextInput
+          className="text-foreground font-sans-regular flex-1 py-3"
+          placeholder={t("search")}
+          placeholderTextColor={colors.mutedForeground}
+          value={query}
+          onChangeText={handleQueryChange}
+        />
+      </View>
+    </View>
+  );
+
+  const keyExtractor = useCallback((item: QuranListItem) => item.id, []);
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={["top"]}>
@@ -216,35 +252,17 @@ const Quran = () => {
         className="bg-background flex-1 px-5"
         contentContainerClassName="gap-3 pb-5"
         data={listItems}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        windowSize={5}
-        maxToRenderPerBatch={10}
-        removeClippedSubviews={true}
+        initialNumToRender={10}
         keyboardDismissMode="on-drag"
+        ListHeaderComponent={renderHeader}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
+        showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
-        ListHeaderComponent={
-          <View className="bg-background -mx-5 gap-3 px-5 pb-4">
-            <Text className="text-foreground font-sans-bold text-2xl">
-              {t("title")}
-            </Text>
-            <View className="bg-muted flex-row items-center gap-2 rounded-2xl px-4">
-              <Fa
-                name="magnifying-glass"
-                size={15}
-                className="text-muted-foreground"
-              />
-              <TextInput
-                className="text-foreground font-sans-regular flex-1 py-3"
-                placeholder={t("search")}
-                placeholderTextColor={colors.mutedForeground}
-                value={query}
-                onChangeText={handleQueryChange}
-              />
-            </View>
-          </View>
-        }
+        updateCellsBatchingPeriod={50}
+        windowSize={5}
       />
     </SafeAreaView>
   );

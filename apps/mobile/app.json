@@ -21,6 +21,11 @@
       "output": "static",
       "favicon": "./assets/images/app/favicon.png"
     },
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/4fc7edef-51b0-47f6-8203-66dd1d1ec294"
+    },
     "plugins": [
       "expo-router",
       [
@@ -65,6 +70,9 @@
         "projectId": "4fc7edef-51b0-47f6-8203-66dd1d1ec294"
       }
     },
-    "owner": "yusuprd"
+    "owner": "yusuprd",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
