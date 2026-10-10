@@ -19,7 +19,7 @@ export type QuranVerse = {
   textUthmani: string;
 };
 
-export type QuranTranslation = {
+type QuranTranslation = {
   verseId: number;
   language: "en" | "ru";
   resourceId: number;
@@ -27,7 +27,7 @@ export type QuranTranslation = {
   footNotes: string | null;
 };
 
-export type QuranTransliteration = {
+type QuranTransliteration = {
   verseId: number;
   resourceId: number;
   text: string;
