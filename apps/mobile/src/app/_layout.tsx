@@ -1,3 +1,5 @@
+import AppNavigator from "@/components/ui/AppNavigator";
+import AppStatusBar from "@/components/ui/AppStatusBar";
 import "@/global.css";
 import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
@@ -6,7 +8,6 @@ import { setupNotificationHandler } from "@/lib/notifications";
 import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SQLiteProvider } from "expo-sqlite";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -94,50 +95,10 @@ const RootLayout = () => {
       <ThemeProvider>
         <QuranAudioProvider>
           <View className="flex-1" onLayout={handleRootLayout}>
+            <AppStatusBar />
             <LocationInitializer />
             <NotificationInitializer />
-
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  animation: "fade",
-                  headerShown: false,
-                }}
-              />
-
-              <Stack.Screen
-                name="prayer-times"
-                options={{
-                  presentation: "modal",
-                  headerShown: false,
-                }}
-              />
-
-              <Stack.Screen
-                name="zakat"
-                options={{
-                  presentation: "modal",
-                  headerShown: false,
-                }}
-              />
-
-              <Stack.Screen
-                name="tasbih"
-                options={{
-                  presentation: "modal",
-                }}
-              />
-
-              <Stack.Screen
-                name="quran/[chapterId]"
-                options={{
-                  animation: "fade",
-                  gestureEnabled: false,
-                  headerShown: false,
-                }}
-              />
-            </Stack>
+            <AppNavigator />
           </View>
         </QuranAudioProvider>
       </ThemeProvider>

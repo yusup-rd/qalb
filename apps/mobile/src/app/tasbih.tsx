@@ -59,6 +59,9 @@ const Tasbih = () => {
         options={{
           headerShown: true,
           headerTransparent: true,
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
           headerTitle: "",
           headerShadowVisible: false,
           headerRight: () => (

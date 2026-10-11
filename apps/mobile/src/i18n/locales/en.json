@@ -192,6 +192,7 @@
     }
   },
   "prayerTimes": {
+    "title": "Prayer Times",
     "loading": {
       "title": "Getting your location",
       "message": "Please wait while we determine your current location."
@@ -332,6 +333,7 @@
     }
   },
   "zakat": {
+    "title": "Zakat",
     "nisab": {
       "title": "Nisab",
       "description": "Choose the standard used to determine your Nisab threshold.",

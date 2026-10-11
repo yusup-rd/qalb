@@ -1,12 +1,9 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
-import { useTheme } from "@/providers/ThemeProvider";
 import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
-import { BottomSheet, Host, RNHostView } from "@expo/ui";
-import { background } from "@expo/ui/jetpack-compose/modifiers";
-import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, Text, View } from "react-native";
+import SheetWrapper from "../SheetWrapper";
 import PrayerNotificationSection from "./PrayerNotificationSection";
 import PrayerTimeAdjustmentSection from "./PrayerTimeAdjustmentSection";
 
@@ -33,8 +30,6 @@ const PrayerTimeSettingsSheet = ({
   onAdjustmentChange,
   onClose,
 }: PrayerTimeSettingsSheetProps) => {
-  const { colors } = useTheme();
-
   const { t: tPrayer } = useTranslation(undefined, {
     keyPrefix: "prayers",
   });
@@ -85,92 +80,76 @@ const PrayerTimeSettingsSheet = ({
   };
 
   return (
-    <Host>
-      <BottomSheet
-        isPresented={visible}
-        onDismiss={onClose}
-        snapPoints={["half", "full"]}
-        modifiers={[
-          presentationBackground(colors.background),
-          background(colors.background),
-        ]}
-        contentPadding={{
-          left: 20,
-          right: 20,
-        }}
+    <SheetWrapper
+      visible={visible}
+      onClose={onClose}
+      snapPoints={["half", "full"]}
+    >
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-5 px-1 py-5"
+        showsVerticalScrollIndicator={false}
       >
-        <RNHostView>
-          <ScrollView
-            className="flex-1"
-            contentContainerClassName="gap-5 px-1 py-5"
-            showsVerticalScrollIndicator={false}
-          >
-            <View className="items-center gap-1">
-              <View className="bg-primary-soft mb-1 size-12 items-center justify-center rounded-full">
-                {isSolarEvent ? (
-                  <Feather name="sunrise" size={22} className="text-primary" />
-                ) : (
-                  <Ionicons
-                    name={prayer.icon}
-                    size={22}
-                    className="text-primary"
-                  />
-                )}
-              </View>
+        <View className="items-center gap-1">
+          <View className="bg-primary-soft mb-1 size-12 items-center justify-center rounded-full">
+            {isSolarEvent ? (
+              <Feather name="sunrise" size={22} className="text-primary" />
+            ) : (
+              <Ionicons name={prayer.icon} size={22} className="text-primary" />
+            )}
+          </View>
 
-              <Text className="font-sans-bold text-foreground text-xl">
-                {tPrayer(prayerKey)}
-              </Text>
+          <Text className="font-sans-bold text-foreground text-xl">
+            {tPrayer(prayerKey)}
+          </Text>
 
-              <Text className="font-sans-semibold text-primary text-base">
-                {prayer.formattedTime}
-              </Text>
+          <Text className="font-sans-semibold text-primary text-base">
+            {prayer.formattedTime}
+          </Text>
 
-              {!isSolarEvent && descriptionKey && (
-                <Text className="text-muted-foreground font-sans text-xs">
-                  {tPrayer(descriptionKey)}
-                </Text>
-              )}
-            </View>
+          {!isSolarEvent && descriptionKey && (
+            <Text className="text-muted-foreground font-sans text-xs">
+              {tPrayer(descriptionKey)}
+            </Text>
+          )}
+        </View>
 
-            <PrayerNotificationSection
-              enabled={enabled}
-              minutesBefore={minutesBefore}
-              isSolarEvent={isSolarEvent}
-              onEnabledChange={onEnabledChange}
-              onMinutesBeforeChange={onMinutesBeforeChange}
+        <PrayerNotificationSection
+          enabled={enabled}
+          minutesBefore={minutesBefore}
+          isSolarEvent={isSolarEvent}
+          onEnabledChange={onEnabledChange}
+          onMinutesBeforeChange={onMinutesBeforeChange}
+        />
+
+        {!isSolarEvent && adjustment && (
+          <>
+            <PrayerTimeAdjustmentSection
+              adjustment={adjustment}
+              prayerTime={prayer.time}
+              onChange={onAdjustmentChange}
             />
 
-            {!isSolarEvent && adjustment && (
-              <>
-                <PrayerTimeAdjustmentSection
-                  adjustment={adjustment}
-                  prayerTime={prayer.time}
-                  onChange={onAdjustmentChange}
-                />
+            <SmoothPressable
+              onPress={handleResetToAdhan}
+              className="flex-row items-center justify-center gap-2 py-2"
+              accessibilityRole="button"
+              accessibilityLabel={tAdjustment("resetToAdhan.confirm")}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={17}
+                className="text-primary"
+              />
 
-                <SmoothPressable
-                  onPress={handleResetToAdhan}
-                  className="flex-row items-center justify-center gap-2 py-2"
-                  accessibilityRole="button"
-                  accessibilityLabel={tAdjustment("resetToAdhan.confirm")}
-                >
-                  <Ionicons
-                    name="refresh-outline"
-                    size={17}
-                    className="text-primary"
-                  />
-
-                  <Text className="font-sans-semibold text-primary text-sm">
-                    {tAdjustment("resetToAdhan.button")}
-                  </Text>
-                </SmoothPressable>
-              </>
-            )}
-          </ScrollView>
-        </RNHostView>
-      </BottomSheet>
-    </Host>
+              <Text className="font-sans-semibold text-primary text-sm">
+                {tAdjustment("resetToAdhan.button")}
+              </Text>
+            </SmoothPressable>
+          </>
+        )}
+      </ScrollView>
+    </SheetWrapper>
   );
 };
 
