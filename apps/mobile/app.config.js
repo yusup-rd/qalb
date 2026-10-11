@@ -1,27 +1,26 @@
 module.exports = ({ config }) => {
-  console.log("[app.config.js] Dynamic config is executing");
-  console.log(
-    "[app.config.js] Google Maps key present:",
-    Boolean(process.env.GOOGLE_MAPS_API_KEY),
-  );
-
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const isAndroidBuild = process.env.EAS_BUILD_PLATFORM === "android";
 
-  if (!apiKey) {
-    throw new Error("GOOGLE_MAPS_API_KEY is missing");
+  if (isAndroidBuild && !apiKey) {
+    throw new Error("GOOGLE_MAPS_API_KEY is required for Android builds.");
   }
 
   return {
     ...config,
-    android: {
-      ...config.android,
-      config: {
-        ...config.android?.config,
-        googleMaps: {
-          ...config.android?.config?.googleMaps,
-          apiKey,
-        },
-      },
-    },
+    ...(apiKey
+      ? {
+          android: {
+            ...config.android,
+            config: {
+              ...config.android?.config,
+              googleMaps: {
+                ...config.android?.config?.googleMaps,
+                apiKey,
+              },
+            },
+          },
+        }
+      : {}),
   };
 };
