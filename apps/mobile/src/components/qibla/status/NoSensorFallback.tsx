@@ -24,7 +24,7 @@ const NoSensorFallback = () => {
       </View>
 
       <View className="bg-card w-full rounded-xl p-4 shadow-md">
-        <View className="flex-row items-start gap-3">
+        <View className="flex-row items-start gap-2">
           <View className="bg-secondary-soft size-7 items-center justify-center rounded-full">
             <Fa
               name="location-arrow"
