@@ -1,9 +1,11 @@
 import { useTheme } from "@/providers/ThemeProvider";
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Platform } from "react-native";
 
 const AppNavigator = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Stack
@@ -35,7 +37,7 @@ const AppNavigator = () => {
           presentation: "modal",
           headerShown: Platform.OS === "android",
           headerBackButtonDisplayMode: "minimal",
-          headerTitle: "Prayer Times",
+          headerTitle: t("prayerTimes.title"),
         }}
       />
 
@@ -45,7 +47,7 @@ const AppNavigator = () => {
           presentation: "modal",
           headerShown: Platform.OS === "android",
           headerBackButtonDisplayMode: "minimal",
-          headerTitle: "Zakat",
+          headerTitle: t("zakat.title"),
         }}
       />
 
