@@ -2,7 +2,6 @@ import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { changeLanguage } from "@/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
-import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { clsx } from "clsx";
 import { useState } from "react";
@@ -71,10 +70,8 @@ const LanguageSheet = ({
         isPresented={visible}
         onDismiss={onClose}
         snapPoints={["half"]}
-        modifiers={[
-          presentationBackground(colors.background),
-          background(colors.background),
-        ]}
+        containerColor={colors.background}
+        modifiers={[presentationBackground(colors.background)]}
         contentPadding={{
           left: 20,
           right: 20,

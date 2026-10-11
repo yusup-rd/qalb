@@ -1,6 +1,5 @@
 import { useTheme } from "@/providers/ThemeProvider";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
-import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import Slider from "@react-native-community/slider";
 import { useEffect, useRef, useState } from "react";
@@ -53,10 +52,8 @@ const MosqueRadiusSheet = ({
         isPresented={visible}
         onDismiss={onClose}
         snapPoints={["half"]}
-        modifiers={[
-          presentationBackground(colors.background),
-          background(colors.background),
-        ]}
+        containerColor={colors.background}
+        modifiers={[presentationBackground(colors.background)]}
         contentPadding={{
           left: 20,
           right: 20,

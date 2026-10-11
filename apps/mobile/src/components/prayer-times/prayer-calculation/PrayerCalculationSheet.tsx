@@ -3,7 +3,6 @@ import { asrMethods, calculationMethods } from "@/constants/prayer-calculation";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { AsrMethod, CalculationMethodId } from "@/types/prayer";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
-import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Text, View } from "react-native";
@@ -52,10 +51,8 @@ const PrayerCalculationSheet = ({
         isPresented={visible}
         onDismiss={onClose}
         snapPoints={["half", "full"]}
-        modifiers={[
-          presentationBackground(colors.background),
-          background(colors.background),
-        ]}
+        containerColor={colors.background}
+        modifiers={[presentationBackground(colors.background)]}
         contentPadding={{
           left: 20,
           right: 20,

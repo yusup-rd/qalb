@@ -2,7 +2,6 @@ import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
-import { background } from "@expo/ui/jetpack-compose/modifiers";
 import { presentationBackground } from "@expo/ui/swift-ui/modifiers";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -90,10 +89,8 @@ const PrayerTimeSettingsSheet = ({
         isPresented={visible}
         onDismiss={onClose}
         snapPoints={["half", "full"]}
-        modifiers={[
-          presentationBackground(colors.background),
-          background(colors.background),
-        ]}
+        containerColor={colors.background}
+        modifiers={[presentationBackground(colors.background)]}
         contentPadding={{
           left: 20,
           right: 20,
