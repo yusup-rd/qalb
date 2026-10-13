@@ -184,9 +184,10 @@ const MosqueMap = ({
               longitude: mosque.longitude,
             }}
             onPress={() => onSelectMosque(mosque.id)}
-            tracksViewChanges={Platform.OS === "android"}
+            // NOTE: iOS supports selected-marker stacking correctly, but on Android, zIndex causes stale custom-marker snapshots to overlap.
+            {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
           >
-            {selected ? <MosqueMarker selected /> : <MosqueMarker />}
+            <MosqueMarker selected={selected} />
           </Marker>
         );
       })}
