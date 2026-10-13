@@ -3,7 +3,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
 import { useEffect, useRef } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
 
@@ -178,16 +178,15 @@ const MosqueMap = ({
 
         return (
           <Marker
-            key={`${mosque.id}-${selected ? "selected" : "default"}`}
+            key={mosque.id}
             coordinate={{
               latitude: mosque.latitude,
               longitude: mosque.longitude,
             }}
             onPress={() => onSelectMosque(mosque.id)}
-            tracksViewChanges={false}
-            zIndex={selected ? 1000 : 0}
+            tracksViewChanges={Platform.OS === "android"}
           >
-            <MosqueMarker selected={selected} />
+            {selected ? <MosqueMarker selected /> : <MosqueMarker />}
           </Marker>
         );
       })}
