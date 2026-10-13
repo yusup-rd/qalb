@@ -4,11 +4,13 @@ import { View } from "react-native";
 
 interface MosqueMarkerProps {
   selected?: boolean;
+  onLayout?: () => void;
 }
 
-const MosqueMarker = ({ selected = false }: MosqueMarkerProps) => {
+const MosqueMarker = ({ selected = false, onLayout }: MosqueMarkerProps) => {
   return (
     <View
+      onLayout={onLayout}
       className={clsx(
         "border-primary items-center justify-center rounded-full border-2",
         selected ? "bg-primary size-12" : "bg-card size-10",

@@ -2,7 +2,7 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
-import { useEffect, useRef, type ComponentRef } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Platform, StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
@@ -83,6 +83,22 @@ const MosqueMap = ({
     new Map(),
   );
   const previousSelectedMosqueIdRef = useRef<string | null>(null);
+
+  const [initializedMarkerIds, setInitializedMarkerIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const handleMarkerLayout = (mosqueId: string) => {
+    setInitializedMarkerIds((current) => {
+      if (current.has(mosqueId)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add(mosqueId);
+      return next;
+    });
+  };
 
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
@@ -194,6 +210,8 @@ const MosqueMap = ({
 
       {mosques.map((mosque) => {
         const selected = mosque.id === selectedMosqueId;
+        const isTracking =
+          Platform.OS === "android" && !initializedMarkerIds.has(mosque.id);
 
         return (
           <Marker
@@ -210,12 +228,15 @@ const MosqueMap = ({
               longitude: mosque.longitude,
             }}
             onPress={() => onSelectMosque(mosque.id)}
-            //NOTE: Android needs continuous tracking to render custom marker icons on initial mount; iOS renders them correctly without it.
-            tracksViewChanges={Platform.OS === "android"}
-            // NOTE: iOS supports selected-marker stacking correctly, but on Android, zIndex causes stale custom-marker snapshots to overlap.
+            //NOTE: Track Android markers only until their initial layout completes.
+            tracksViewChanges={isTracking}
+            // NOTE: Avoid stale custom-marker snapshots caused by Android zIndex changes.
             {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
           >
-            <MosqueMarker selected={selected} />
+            <MosqueMarker
+              selected={selected}
+              onLayout={() => handleMarkerLayout(mosque.id)}
+            />
           </Marker>
         );
       })}
