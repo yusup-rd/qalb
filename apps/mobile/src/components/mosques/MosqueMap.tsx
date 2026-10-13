@@ -2,7 +2,7 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useRef } from "react";
 import { Platform, StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
@@ -79,27 +79,6 @@ const MosqueMap = ({
   const mapRef = useRef<MapView>(null);
   const previousRadiusRef = useRef<number | null>(null);
 
-  const markerRefs = useRef<Map<string, ComponentRef<typeof Marker>>>(
-    new Map(),
-  );
-  const previousSelectedMosqueIdRef = useRef<string | null>(null);
-
-  const [initializedMarkerIds, setInitializedMarkerIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-
-  const handleMarkerLayout = (mosqueId: string) => {
-    setInitializedMarkerIds((current) => {
-      if (current.has(mosqueId)) {
-        return current;
-      }
-
-      const next = new Set(current);
-      next.add(mosqueId);
-      return next;
-    });
-  };
-
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
 
@@ -168,20 +147,6 @@ const MosqueMap = ({
     });
   }, [route]);
 
-  useEffect(() => {
-    const previousId = previousSelectedMosqueIdRef.current;
-
-    if (previousId && previousId !== selectedMosqueId) {
-      markerRefs.current.get(previousId)?.redraw();
-    }
-
-    if (selectedMosqueId && selectedMosqueId !== previousId) {
-      markerRefs.current.get(selectedMosqueId)?.redraw();
-    }
-
-    previousSelectedMosqueIdRef.current = selectedMosqueId;
-  }, [selectedMosqueId]);
-
   if (latitude == null || longitude == null) {
     return null;
   }
@@ -210,33 +175,21 @@ const MosqueMap = ({
 
       {mosques.map((mosque) => {
         const selected = mosque.id === selectedMosqueId;
-        const isTracking =
-          Platform.OS === "android" && !initializedMarkerIds.has(mosque.id);
 
         return (
           <Marker
             key={mosque.id}
-            ref={(ref) => {
-              if (ref) {
-                markerRefs.current.set(mosque.id, ref);
-              } else {
-                markerRefs.current.delete(mosque.id);
-              }
-            }}
             coordinate={{
               latitude: mosque.latitude,
               longitude: mosque.longitude,
             }}
             onPress={() => onSelectMosque(mosque.id)}
-            //NOTE: Track Android markers only until their initial layout completes.
-            tracksViewChanges={isTracking}
-            // NOTE: Avoid stale custom-marker snapshots caused by Android zIndex changes.
+            // NOTE: Keep Android marker tracking enabled to prevent stale bitmap snapshots when selection changes marker size.
+            tracksViewChanges={Platform.OS === "android"}
+            // NOTE: Apply zIndex on iOS only; changing Android marker zIndex can cause stale overlapping snapshots.
             {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
           >
-            <MosqueMarker
-              selected={selected}
-              onLayout={() => handleMarkerLayout(mosque.id)}
-            />
+            <MosqueMarker selected={selected} />
           </Marker>
         );
       })}
