@@ -156,8 +156,10 @@ export async function apiRequest<T>(
   init?: RequestInit,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
-  const method = init?.method ?? "GET";
+  const method = (init?.method ?? "GET").toUpperCase();
+  const defaultMaxAttempts =
+    method === "GET" || method === "HEAD" ? DEFAULT_MAX_ATTEMPTS : 1;
+  const maxAttempts = options.maxAttempts ?? defaultMaxAttempts;
   let lastError: ApiClientError | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
