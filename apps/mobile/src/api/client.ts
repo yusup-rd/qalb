@@ -160,6 +160,11 @@ export async function apiRequest<T>(
   const defaultMaxAttempts =
     method === "GET" || method === "HEAD" ? DEFAULT_MAX_ATTEMPTS : 1;
   const maxAttempts = options.maxAttempts ?? defaultMaxAttempts;
+
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+    throw new RangeError("maxAttempts must be a positive integer.");
+  }
+
   let lastError: ApiClientError | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
