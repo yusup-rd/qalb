@@ -2,7 +2,7 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentRef } from "react";
 import { Platform, StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
@@ -31,6 +31,7 @@ const getRegionForRadius = (
     MAX_VISIBLE_RADIUS_KM,
     Math.max(MIN_VISIBLE_RADIUS_KM, radiusKm * MAP_PADDING_FACTOR),
   );
+
   const latitudeDelta = (visibleRadiusKm * 2) / EARTH_RADIUS_KM;
   const longitudeScale = Math.cos((latitude * Math.PI) / 180);
   const longitudeDelta = latitudeDelta / Math.max(longitudeScale, 0.1);
@@ -77,8 +78,22 @@ const MosqueMap = ({
 
   const mapRef = useRef<MapView>(null);
   const previousRadiusRef = useRef<number | null>(null);
+
+  const markerRefs = useRef<Map<string, ComponentRef<typeof Marker>>>(
+    new Map(),
+  );
+  const previousSelectedMosqueIdRef = useRef<string | null>(null);
+
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
+
+  const selectedMosque = mosques.find(
+    (mosque) => mosque.id === selectedMosqueId,
+  );
+
+  const selectedMosqueLatitude = selectedMosque?.latitude;
+  const selectedMosqueLongitude = selectedMosque?.longitude;
+  const hasRoute = route != null;
 
   useEffect(() => {
     if (latitude == null || longitude == null) {
@@ -86,26 +101,16 @@ const MosqueMap = ({
     }
 
     const region = getRegionForRadius(latitude, longitude, radiusKm);
-
     const duration = getMapAnimationDuration(
       previousRadiusRef.current,
       radiusKm,
     );
 
     previousRadiusRef.current = radiusKm;
-
     mapRef.current?.animateToRegion(region, duration);
   }, [latitude, longitude, radiusKm]);
 
-  const selectedMosque = mosques.find(
-    (mosque) => mosque.id === selectedMosqueId,
-  );
-
-  const selectedMosqueIdValue = selectedMosque?.id;
-  const selectedMosqueLatitude = selectedMosque?.latitude;
-  const selectedMosqueLongitude = selectedMosque?.longitude;
-  const hasRoute = route != null;
-
+  // Center the map on the selected mosque when no route is being displayed.
   useEffect(() => {
     if (selectedMosqueLatitude == null || selectedMosqueLongitude == null) {
       return;
@@ -125,7 +130,7 @@ const MosqueMap = ({
       500,
     );
   }, [
-    selectedMosqueIdValue,
+    selectedMosqueId,
     selectedMosqueLatitude,
     selectedMosqueLongitude,
     hasRoute,
@@ -146,6 +151,20 @@ const MosqueMap = ({
       animated: true,
     });
   }, [route]);
+
+  useEffect(() => {
+    const previousId = previousSelectedMosqueIdRef.current;
+
+    if (previousId && previousId !== selectedMosqueId) {
+      markerRefs.current.get(previousId)?.redraw();
+    }
+
+    if (selectedMosqueId && selectedMosqueId !== previousId) {
+      markerRefs.current.get(selectedMosqueId)?.redraw();
+    }
+
+    previousSelectedMosqueIdRef.current = selectedMosqueId;
+  }, [selectedMosqueId]);
 
   if (latitude == null || longitude == null) {
     return null;
@@ -179,11 +198,20 @@ const MosqueMap = ({
         return (
           <Marker
             key={mosque.id}
+            ref={(ref) => {
+              if (ref) {
+                markerRefs.current.set(mosque.id, ref);
+              } else {
+                markerRefs.current.delete(mosque.id);
+              }
+            }}
             coordinate={{
               latitude: mosque.latitude,
               longitude: mosque.longitude,
             }}
             onPress={() => onSelectMosque(mosque.id)}
+            //NOTE: Android needs continuous tracking to render custom marker icons on initial mount; iOS renders them correctly without it.
+            tracksViewChanges={Platform.OS === "android"}
             // NOTE: iOS supports selected-marker stacking correctly, but on Android, zIndex causes stale custom-marker snapshots to overlap.
             {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
           >
