@@ -75,14 +75,13 @@ function wait(ms: number, signal?: AbortSignal | null): Promise<void> {
   }
 
   return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      signal?.removeEventListener("abort", abort);
-      resolve();
-    }, ms);
-
-    const abort = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       signal?.removeEventListener("abort", abort);
+    };
+
+    const abort = () => {
+      cleanup();
 
       reject(
         new ApiClientError(
@@ -93,6 +92,11 @@ function wait(ms: number, signal?: AbortSignal | null): Promise<void> {
         ),
       );
     };
+
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
 
     signal?.addEventListener("abort", abort, { once: true });
   });
@@ -160,7 +164,10 @@ async function sendRequest<T>(
     );
   }
 
-  callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  callerSignal?.addEventListener("abort", abortFromCaller, {
+    once: true,
+  });
+
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -173,9 +180,18 @@ async function sendRequest<T>(
       },
       signal: controller.signal,
     });
-    const data = (await response.json().catch(() => null)) as {
-      message?: string;
-    } | null;
+
+    const data = (await response.json().catch(() => {
+      if (controller.signal.aborted) {
+        throw new Error("The request was aborted.");
+      }
+
+      return null;
+    })) as { message?: string } | null;
+
+    if (controller.signal.aborted) {
+      throw new Error("The request was aborted.");
+    }
 
     if (!response.ok) {
       throw new ApiClientError(
@@ -248,8 +264,10 @@ export async function apiRequest<T>(
         throw lastError;
       }
 
-      const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS.at(-1);
-      await wait(delayMs ?? 2_000, init?.signal);
+      const delayMs =
+        RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS.at(-1) ?? 2_000;
+
+      await wait(delayMs, init?.signal);
     }
   }
 
