@@ -37,10 +37,14 @@ export const fetchRouteMetrics = (
     coordinateKey(origin),
     ...destinations.map(coordinateKey),
   ].join(":");
-  return requestCached(key, ROUTE_METRICS_CACHE_TTL_MS, () =>
-    apiRequest<RouteMetrics[]>("/api/routing/metrics", {
-      method: "POST",
-      body: JSON.stringify({ origin, destinations }),
-    }),
+  return requestCached(
+    key,
+    ROUTE_METRICS_CACHE_TTL_MS,
+    () =>
+      apiRequest<RouteMetrics[]>("/api/routing/metrics", {
+        method: "POST",
+        body: JSON.stringify({ origin, destinations }),
+      }),
+    { allowStaleOnError: true },
   );
 };

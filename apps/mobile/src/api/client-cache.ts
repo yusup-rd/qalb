@@ -56,10 +56,7 @@ function prune(cache: StoredCache): StoredCache {
   return Object.fromEntries(entries);
 }
 
-function isFresh<T>(
-  entry: CacheEntry<T> | undefined,
-  ttlMs: number,
-): boolean {
+function isFresh<T>(entry: CacheEntry<T> | undefined, ttlMs: number): boolean {
   return (
     entry !== undefined &&
     Date.now() - entry.cachedAt >= 0 &&
@@ -101,15 +98,16 @@ export async function requestCached<T>(
   request: () => Promise<T>,
   options: CachedRequestOptions = {},
 ): Promise<T> {
-  const cached = await readEntry<T>(key);
-  if (cached && isFresh(cached, ttlMs)) return cached.value;
-  const stale = cached;
+  const existing = inFlightRequests.get(key) as Promise<T> | undefined;
+  if (existing) return existing;
 
-  const inFlight = inFlightRequests.get(key) as Promise<T> | undefined;
-  if (inFlight) return inFlight;
+  const pending = (async () => {
+    const cached = await readEntry<T>(key);
+    if (cached && isFresh(cached, ttlMs)) return cached.value;
+    const stale = cached;
 
-  const pending = request()
-    .then(async (value) => {
+    try {
+      const value = await request();
       if (value === null || value === undefined) {
         throw new Error("Cannot cache an empty API response.");
       }
@@ -123,20 +121,23 @@ export async function requestCached<T>(
         }),
       );
       return value;
-    })
-    .catch(async (error) => {
+    } catch (error) {
       if (options.allowStaleOnError && stale) {
         options.onStaleFallback?.();
         return stale.value;
       }
       throw error;
-    })
-    .finally(() => {
-      inFlightRequests.delete(key);
-    });
+    }
+  })();
 
   inFlightRequests.set(key, pending);
-  return pending;
+  try {
+    return await pending;
+  } finally {
+    if (inFlightRequests.get(key) === pending) {
+      inFlightRequests.delete(key);
+    }
+  }
 }
 
 export async function invalidateCached(key: string): Promise<void> {
@@ -149,4 +150,11 @@ export async function invalidateCached(key: string): Promise<void> {
 
 export function clearMemoryCache(): void {
   memoryCache.clear();
+}
+
+export function resetApiCache(): void {
+  memoryCache.clear();
+  inFlightRequests.clear();
+  storageLoad = null;
+  storageWrite = Promise.resolve();
 }

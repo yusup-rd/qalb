@@ -17,10 +17,7 @@ const MosqueMarker = ({ selected = false }: MosqueMarkerProps) => {
       <Fa
         name="mosque"
         size={selected ? 20 : 17}
-        className={clsx(
-          "will-change-variable",
-          selected ? "text-primary-foreground" : "text-primary",
-        )}
+        className={clsx(selected ? "text-primary-foreground" : "text-primary")}
       />
     </View>
   );
