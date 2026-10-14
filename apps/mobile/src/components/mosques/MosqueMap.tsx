@@ -2,7 +2,7 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentRef } from "react";
 import { Platform, StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
@@ -13,6 +13,16 @@ interface MosqueMapProps {
   selectedMosqueId: string | null;
   onSelectMosque: (mosqueId: string) => void;
   route: Route | null;
+}
+
+interface MosqueMapMarkerProps {
+  mosque: NearbyMosque;
+  selected: boolean;
+  onSelect: (mosqueId: string) => void;
+  registerMarker: (
+    mosqueId: string,
+    marker: ComponentRef<typeof Marker> | null,
+  ) => void;
 }
 
 const EARTH_RADIUS_KM = 111;
@@ -67,6 +77,43 @@ const getMapAnimationDuration = (
   return 500;
 };
 
+const MosqueMapMarker = ({
+  mosque,
+  selected,
+  onSelect,
+  registerMarker,
+}: MosqueMapMarkerProps) => {
+  const markerRef = useRef<ComponentRef<typeof Marker>>(null);
+  const previousSelectedRef = useRef(selected);
+
+  useEffect(() => {
+    if (Platform.OS === "android" && previousSelectedRef.current !== selected) {
+      markerRef.current?.redraw();
+    }
+
+    previousSelectedRef.current = selected;
+  }, [selected]);
+
+  return (
+    <Marker
+      ref={(marker) => {
+        markerRef.current = marker;
+        registerMarker(mosque.id, marker);
+      }}
+      coordinate={{
+        latitude: mosque.latitude,
+        longitude: mosque.longitude,
+      }}
+      onPress={() => onSelect(mosque.id)}
+      tracksViewChanges={false}
+      // NOTE: Apply zIndex on iOS only; changing Android marker zIndex can cause stale overlapping snapshots.
+      {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
+    >
+      <MosqueMarker selected={selected} />
+    </Marker>
+  );
+};
+
 const MosqueMap = ({
   mosques,
   radiusKm,
@@ -78,6 +125,7 @@ const MosqueMap = ({
 
   const mapRef = useRef<MapView>(null);
   const previousRadiusRef = useRef<number | null>(null);
+  const markerRefs = useRef(new Map<string, ComponentRef<typeof Marker>>());
 
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
@@ -89,6 +137,27 @@ const MosqueMap = ({
   const selectedMosqueLatitude = selectedMosque?.latitude;
   const selectedMosqueLongitude = selectedMosque?.longitude;
   const hasRoute = route != null;
+
+  const registerMarker = (
+    mosqueId: string,
+    marker: ComponentRef<typeof Marker> | null,
+  ) => {
+    if (marker) {
+      markerRefs.current.set(mosqueId, marker);
+    } else {
+      markerRefs.current.delete(mosqueId);
+    }
+  };
+
+  const handleMapReady = () => {
+    if (Platform.OS !== "android") {
+      return;
+    }
+
+    markerRefs.current.forEach((marker) => {
+      marker.redraw();
+    });
+  };
 
   useEffect(() => {
     if (latitude == null || longitude == null) {
@@ -157,6 +226,7 @@ const MosqueMap = ({
     <MapView
       ref={mapRef}
       style={StyleSheet.absoluteFill}
+      onMapReady={handleMapReady}
       showsUserLocation
       showsMyLocationButton
       showsCompass={false}
@@ -173,26 +243,15 @@ const MosqueMap = ({
         />
       ) : null}
 
-      {mosques.map((mosque) => {
-        const selected = mosque.id === selectedMosqueId;
-
-        return (
-          <Marker
-            key={mosque.id}
-            coordinate={{
-              latitude: mosque.latitude,
-              longitude: mosque.longitude,
-            }}
-            onPress={() => onSelectMosque(mosque.id)}
-            // NOTE: Keep Android marker tracking enabled to prevent stale bitmap snapshots when selection changes marker size.
-            tracksViewChanges={Platform.OS === "android"}
-            // NOTE: Apply zIndex on iOS only; changing Android marker zIndex can cause stale overlapping snapshots.
-            {...(Platform.OS === "ios" && selected ? { zIndex: 1 } : {})}
-          >
-            <MosqueMarker selected={selected} />
-          </Marker>
-        );
-      })}
+      {mosques.map((mosque) => (
+        <MosqueMapMarker
+          key={mosque.id}
+          mosque={mosque}
+          selected={mosque.id === selectedMosqueId}
+          onSelect={onSelectMosque}
+          registerMarker={registerMarker}
+        />
+      ))}
     </MapView>
   );
 };
