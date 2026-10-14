@@ -6,7 +6,7 @@ const REQUEST_TIMEOUTS_MS = [15_000, 20_000, 45_000] as const;
 const RETRY_DELAYS_MS = [2_000, 8_000] as const;
 const DEFAULT_MAX_ATTEMPTS = 3;
 
-export type ApiErrorKind = "timeout" | "network" | "http";
+export type ApiErrorKind = "timeout" | "network" | "http" | "cancelled";
 
 export class ApiClientError extends Error {
   readonly status: number | null;
@@ -62,9 +62,39 @@ function isRetryableStatus(status: number): boolean {
   return status === 408 || status === 429 || status >= 500;
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+function wait(ms: number, signal?: AbortSignal | null): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(
+      new ApiClientError(
+        null,
+        "The request was cancelled.",
+        "cancelled",
+        false,
+      ),
+    );
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+
+    const abort = () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", abort);
+
+      reject(
+        new ApiClientError(
+          null,
+          "The request was cancelled.",
+          "cancelled",
+          false,
+        ),
+      );
+    };
+
+    signal?.addEventListener("abort", abort, { once: true });
   });
 }
 
@@ -118,6 +148,19 @@ async function sendRequest<T>(
   timeoutMs: number,
 ): Promise<T> {
   const controller = new AbortController();
+  const callerSignal = init?.signal;
+  const abortFromCaller = () => controller.abort();
+
+  if (callerSignal?.aborted) {
+    throw new ApiClientError(
+      null,
+      "The request was cancelled.",
+      "cancelled",
+      false,
+    );
+  }
+
+  callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -145,9 +188,20 @@ async function sendRequest<T>(
 
     return data as T;
   } catch (error) {
+    if (callerSignal?.aborted) {
+      throw new ApiClientError(
+        null,
+        "The request was cancelled.",
+        "cancelled",
+        false,
+        error,
+      );
+    }
+
     throw toApiClientError(error, controller.signal.aborted);
   } finally {
     clearTimeout(timeoutId);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
   }
 }
 
@@ -176,6 +230,17 @@ export async function apiRequest<T>(
       return await sendRequest<T>(path, init, timeoutMs);
     } catch (error) {
       lastError = toApiClientError(error, false);
+
+      if (init?.signal?.aborted) {
+        throw new ApiClientError(
+          null,
+          "The request was cancelled.",
+          "cancelled",
+          false,
+          error,
+        );
+      }
+
       const willRetry = lastError.retryable && attempt < maxAttempts;
       logRequestFailure(path, method, lastError, attempt, willRetry);
 
@@ -184,7 +249,7 @@ export async function apiRequest<T>(
       }
 
       const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS.at(-1);
-      await wait(delayMs ?? 2_000);
+      await wait(delayMs ?? 2_000, init?.signal);
     }
   }
 
