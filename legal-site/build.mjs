@@ -88,6 +88,7 @@ function route(pathname) {
 function pageShell({ language, title, description, body, currentPath, switchPath, home = false }) {
   const text = labels[language];
   const navigation = documents
+    .filter((document) => document.language === language)
     .map((document) => {
       const href = route(`/${document.slug}/`);
       const current = currentPath === `/${document.slug}/` ? ' aria-current="page"' : "";
@@ -95,9 +96,8 @@ function pageShell({ language, title, description, body, currentPath, switchPath
     })
     .join("\n            ");
 
-  const languageSwitch = home
-    ? ""
-    : `<a class="language-switch" href="${route(switchPath)}" hreflang="${language === "en" ? "ru" : "en"}">${escapeHtml(text.switchTo)}</a>`;
+  const languageSwitch = `<a class="language-switch" href="${route(switchPath)}" hreflang="${language === "en" ? "ru" : "en"}">${escapeHtml(text.switchTo)}</a>`;
+  const homePath = language === "ru" ? "/ru/" : "/";
 
   return `<!doctype html>
 <html lang="${language}">
@@ -112,7 +112,7 @@ function pageShell({ language, title, description, body, currentPath, switchPath
   <body>
     <a class="skip-link" href="#main">${escapeHtml(text.skip)}</a>
     <header class="site-header">
-      <a class="brand" href="${route("/")}" aria-label="Qalb — ${escapeHtml(text.home)}">Qalb<span aria-hidden="true"> · </span>${escapeHtml(text.home)}</a>
+      <a class="brand" href="${route(homePath)}" aria-label="Qalb — ${escapeHtml(text.home)}">Qalb<span aria-hidden="true"> · </span>${escapeHtml(text.home)}</a>
       ${languageSwitch}
     </header>
     <nav class="document-nav" aria-label="${escapeHtml(text.home)}">
@@ -151,24 +151,28 @@ for (const document of documents) {
   await writeFile(targetPath, page);
 }
 
-const homepageLinks = [
-  ["privacy", "Privacy Policy"],
-  ["privacy/ru", "Политика конфиденциальности · Русский"],
-  ["terms", "Terms of Use"],
-  ["terms/ru", "Условия использования · Русский"],
-];
-const links = homepageLinks
-  .map(([slug, title]) => `<li><a href="${route(`/${slug}/`)}" lang="${slug.endsWith("/ru") ? "ru" : "en"}">${escapeHtml(title)}<span aria-hidden="true">↗</span></a></li>`)
-  .join("\n          ");
-const text = labels.en;
-const body = `<h1>${escapeHtml(text.home)}</h1><p class="intro">${escapeHtml(text.homeDescription)}</p><ul class="document-list">${links}</ul>`;
-const homepage = pageShell({
-  language: "en",
-  title: `Qalb — ${text.home}`,
-  description: text.homeDescription,
-  body,
-  home: true,
-});
-await writeFile(path.join(outputDirectory, "index.html"), homepage);
+for (const language of ["en", "ru"]) {
+  const text = labels[language];
+  const links = documents
+    .filter((document) => document.language === language)
+    .map((document) => {
+      const href = route(`/${document.slug}/`);
+      return `<li><a href="${href}" lang="${document.language}">${escapeHtml(document.navigationTitle)}<span aria-hidden="true">↗</span></a></li>`;
+    })
+    .join("\n          ");
+  const body = `<h1>${escapeHtml(text.home)}</h1><p class="intro">${escapeHtml(text.homeDescription)}</p><ul class="document-list">${links}</ul>`;
+  const homepage = pageShell({
+    language,
+    title: `Qalb — ${text.home}`,
+    description: text.homeDescription,
+    body,
+    switchPath: language === "en" ? "/ru/" : "/",
+    home: true,
+  });
+  const targetPath = language === "en" ? "index.html" : "ru/index.html";
+  const target = path.join(outputDirectory, targetPath);
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, homepage);
+}
 
-console.log(`Built four legal documents and a homepage in ${outputDirectory}`);
+console.log(`Built four legal documents and two language-specific homepages in ${outputDirectory}`);
