@@ -547,9 +547,7 @@
         "free": "Qalb is intended to remain free to use.",
         "version": "Version {{version}}",
         "credits": "Quran data provided by Quran.Foundation. Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio.",
-        "noticesPending": "Software and content license notices are being finalized.",
-        "legalPendingTitle": "Documents in preparation",
-        "legalPendingMessage": "The public Privacy Policy and Terms of Use links will be added before release."
+        "noticesPending": "Software and content license notices are being finalized."
       },
       "copyright": "© Yusup Rejebov {{year}}"
     }

@@ -21,15 +21,10 @@ const Settings = () => {
         showsVerticalScrollIndicator={false}
       >
         <SettingsHeader />
-
         <AppearanceSection />
-
         <QuranSection />
-
         <SupportSection />
-
         <AboutSection />
-
         <Text className="text-muted-foreground text-center font-sans text-xs">
           {t("copyright", { year: new Date().getFullYear() })}
         </Text>

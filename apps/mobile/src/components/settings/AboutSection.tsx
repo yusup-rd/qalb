@@ -3,19 +3,27 @@ import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import SheetWrapper from "@/components/ui/SheetWrapper";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import Constants from "expo-constants";
+import * as Linking from "expo-linking";
 import type { ComponentProps } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 type IconName = ComponentProps<typeof Fa>["name"];
 
 export default function AboutSection() {
-  const { t } = useTranslation(undefined, { keyPrefix: "settings.more" });
+  const { t, i18n } = useTranslation(undefined, {
+    keyPrefix: "settings.more",
+  });
   const [aboutSheetVisible, setAboutSheetVisible] = useState(false);
   const version = Constants.expoConfig?.version ?? "—";
-  const showLegalPending = () =>
-    Alert.alert(t("about.legalPendingTitle"), t("about.legalPendingMessage"));
+  const language = (i18n.resolvedLanguage ?? i18n.language).startsWith("ru")
+    ? "ru"
+    : "en";
+  const legalUrls = {
+    privacy: `https://yusup-rd.github.io/qalb/privacy/${language === "ru" ? "ru/" : ""}`,
+    terms: `https://yusup-rd.github.io/qalb/terms/${language === "ru" ? "ru/" : ""}`,
+  };
 
   return (
     <View>
@@ -29,13 +37,15 @@ export default function AboutSection() {
         <SettingsRow
           title={t("about.privacy")}
           icon="shield-halved"
-          onPress={showLegalPending}
+          onPress={() => Linking.openURL(legalUrls.privacy)}
+          accessibilityRole="link"
         />
         <View className="border-border border-t" />
         <SettingsRow
           title={t("about.terms")}
           icon="file-lines"
-          onPress={showLegalPending}
+          onPress={() => Linking.openURL(legalUrls.terms)}
+          accessibilityRole="link"
         />
       </SettingsSection>
       <SheetWrapper
@@ -72,15 +82,17 @@ function SettingsRow({
   title,
   icon,
   onPress,
+  accessibilityRole = "button",
 }: {
   title: string;
   icon: IconName;
   onPress: () => void;
+  accessibilityRole?: "button" | "link";
 }) {
   return (
     <SmoothPressable
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={title}
       className="flex-row items-center gap-3 px-3 py-3"
     >
