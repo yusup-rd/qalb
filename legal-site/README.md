@@ -9,9 +9,10 @@ npm ci
 npm run build
 ```
 
-The site uses `/qalb/` as its base path for GitHub Pages project-site hosting. Expected routes after deployment are:
+The site uses `/qalb/` as its base path for GitHub Pages project-site hosting. English is the default at the root; the language switch keeps the current document when switching languages. The navigation and home page show only documents in the selected language. Expected routes after deployment are:
 
 - `https://yusup-rd.github.io/qalb/`
+- `https://yusup-rd.github.io/qalb/ru/`
 - `https://yusup-rd.github.io/qalb/privacy/`
 - `https://yusup-rd.github.io/qalb/privacy/ru/`
 - `https://yusup-rd.github.io/qalb/terms/`
