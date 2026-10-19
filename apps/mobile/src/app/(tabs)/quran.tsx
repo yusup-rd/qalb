@@ -4,6 +4,7 @@ import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { SurahCardSkeleton } from "@/components/ui/skeletons/SurahCardSkeleton";
 import { useQuranChapters, useQuranSearch } from "@/hooks/useQuran";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import type { QuranChapter, QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -48,6 +49,12 @@ type QuranListItem =
 
 const Quran = () => {
   const { colors } = useTheme();
+  const showTranslation = useQuranPreferencesStore(
+    (state) => state.showTranslation,
+  );
+  const showTransliteration = useQuranPreferencesStore(
+    (state) => state.showTransliteration,
+  );
   const { t } = useTranslation(undefined, {
     keyPrefix: "quran",
   });
@@ -193,6 +200,8 @@ const Quran = () => {
             <AyahCard
               verse={item.verse}
               translation={item.verse[translationLanguage]?.text ?? null}
+              showTranslation={showTranslation}
+              showTransliteration={showTransliteration}
             />
           );
 
@@ -217,7 +226,7 @@ const Quran = () => {
           return <AyahCardSkeleton />;
       }
     },
-    [t, translationLanguage],
+    [showTranslation, showTransliteration, t, translationLanguage],
   );
 
   const renderHeader = (

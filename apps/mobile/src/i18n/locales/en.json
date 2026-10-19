@@ -344,8 +344,7 @@
       "currentNisab": "Current Nisab",
       "usingSavedPrices": "Using previously saved market prices.",
       "lastUpdatedRecently": "Last updated recently",
-      "updated": "Updated {{date}}",
-      "loadingPrices": "Loading current market prices..."
+      "updated": "Updated {{date}}"
     },
     "preciousMetals": {
       "title": "Gold & Silver",
@@ -476,6 +475,7 @@
     "list": {
       "title": "Mosques nearby",
       "found": "{{count}} found nearby",
+      "loading": "Finding nearby mosques...",
       "radius": "{{radius}} {{unit}}",
       "changeRadius": "Change mosque search radius"
     },
@@ -514,11 +514,44 @@
         },
         "language": {
           "title": "Language",
+          "language": "Language",
           "description": "Choose your preferred language.",
           "english": "English",
           "russian": "Russian"
         }
       }
+    },
+    "more": {
+      "quran": {
+        "title": "Quran Preferences",
+        "translation": "Show Translation",
+        "transliteration": "Show Transliteration"
+      },
+      "support": {
+        "title": "Support",
+        "donate": "Support the Developer",
+        "donateDescription": "Qalb is free to use; contributions are optional.",
+        "contact": "Contact the Developer",
+        "sheetTitle": "Support Qalb",
+        "sheetBody": "Qalb is free to use. Optional contributions help support its continued development, and never unlock features.",
+        "unavailable": "In-app contributions are not available yet.",
+        "emailUnavailableTitle": "Email unavailable",
+        "emailUnavailableMessage": "No email app could be opened. Please email yusuprd@icloud.com."
+      },
+      "about": {
+        "title": "About",
+        "aboutQalb": "About Qalb",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Use",
+        "description": "Qalb is a free Islamic companion designed to make Quran reading and everyday worship tools easy to access.",
+        "free": "Qalb is intended to remain free to use.",
+        "version": "Version {{version}}",
+        "credits": "Quran data provided by Quran.Foundation. Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio.",
+        "noticesPending": "Software and content license notices are being finalized.",
+        "legalPendingTitle": "Documents in preparation",
+        "legalPendingMessage": "The public Privacy Policy and Terms of Use links will be added before release."
+      },
+      "copyright": "© Yusup Rejebov {{year}}"
     }
   }
 }

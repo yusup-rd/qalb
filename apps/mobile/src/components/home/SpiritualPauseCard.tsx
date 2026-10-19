@@ -2,6 +2,7 @@ import AutoScrollText from "@/components/ui/animated/AutoScrollText";
 import ProgressCircle from "@/components/ui/animated/ProgressCircle";
 import { SPIRITUAL_PAUSE_PHRASE_TARGET } from "@/constants/spiritual-pause";
 import { useSpiritualPause } from "@/hooks/useSpiritualPause";
+import type { PrayerTimesResult } from "@/hooks/usePrayerTimes";
 import type { SpiritualPauseType } from "@/types/spiritual-pause";
 import { AntDesign as Ant, FontAwesome6 as Fa } from "@expo/vector-icons";
 import { clsx } from "clsx";
@@ -74,7 +75,11 @@ const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
     },
   };
 
-const SpiritualPauseCard = () => {
+const SpiritualPauseCard = ({
+  prayerTimes,
+}: {
+  prayerTimes: PrayerTimesResult;
+}) => {
   const { t } = useTranslation(undefined, {
     keyPrefix: "home.spiritualPause",
   });
@@ -82,7 +87,7 @@ const SpiritualPauseCard = () => {
     keyPrefix: "dhikrs",
   });
   const { session, counts, currentPhraseIndex, increment, reset } =
-    useSpiritualPause();
+    useSpiritualPause(prayerTimes);
 
   const handleReset = () => {
     Alert.alert(t("reset.title"), t("reset.description"), [

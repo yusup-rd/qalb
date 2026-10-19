@@ -25,7 +25,13 @@ export interface NearbyMosque extends Mosque {
   routeMetricsLoading: boolean;
 }
 
+interface NearbyMosquesResult {
+  mosques: NearbyMosque[];
+  loading: boolean;
+}
+
 const ROUTE_METRICS_LIMIT = 20;
+const EMPTY_MOSQUES: Mosque[] = [];
 
 const createNearbyMosques = (
   mosques: Mosque[],
@@ -65,16 +71,25 @@ const createNearbyMosques = (
 
 export const useNearbyMosques = (
   radiusKm: number | null = 3,
-): NearbyMosque[] => {
+): NearbyMosquesResult => {
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
+  const locationLoading = useLocationStore((state) => state.locationLoading);
 
-  const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [mosquesState, setMosquesState] = useState<{
+    locationKey: string;
+    mosques: Mosque[];
+  } | null>(null);
+  const [loadedLocationKey, setLoadedLocationKey] = useState<string | null>(
+    null,
+  );
   const [routeMetricsState, setRouteMetricsState] =
     useState<RouteMetricsState | null>(null);
+  const locationKey =
+    latitude == null || longitude == null ? null : `${latitude}:${longitude}`;
 
   useEffect(() => {
-    if (latitude == null || longitude == null) {
+    if (locationKey == null || latitude == null || longitude == null) {
       return;
     }
 
@@ -88,10 +103,13 @@ export const useNearbyMosques = (
           return;
         }
 
-        setMosques(freshMosques);
-
+        setMosquesState({ locationKey, mosques: freshMosques });
       } catch (error) {
         console.error("[Mosques] Failed to fetch mosques:", error);
+      } finally {
+        if (!cancelled) {
+          setLoadedLocationKey(locationKey);
+        }
       }
     };
 
@@ -100,15 +118,20 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude]);
+  }, [latitude, longitude, locationKey]);
+
+  const currentMosques =
+    mosquesState?.locationKey === locationKey
+      ? mosquesState.mosques
+      : EMPTY_MOSQUES;
 
   const nearbyMosques = useMemo(() => {
     if (latitude == null || longitude == null) {
       return [];
     }
 
-    return createNearbyMosques(mosques, latitude, longitude, radiusKm);
-  }, [mosques, latitude, longitude, radiusKm]);
+    return createNearbyMosques(currentMosques, latitude, longitude, radiusKm);
+  }, [currentMosques, latitude, longitude, radiusKm]);
 
   const routeMosques = useMemo(
     () => nearbyMosques.slice(0, ROUTE_METRICS_LIMIT),
@@ -223,7 +246,7 @@ export const useNearbyMosques = (
   const routeMetricsLoading =
     routeMetricsState?.requestKey !== routeMetricsRequestKey;
 
-  return useMemo(() => {
+  const nearbyMosquesWithMetrics = useMemo(() => {
     const currentRouteMetrics =
       routeMetricsState?.requestKey === routeMetricsRequestKey
         ? routeMetricsState.metrics
@@ -247,4 +270,11 @@ export const useNearbyMosques = (
     routeMetricMosqueIds,
     routeMetricsLoading,
   ]);
+
+  return {
+    mosques: nearbyMosquesWithMetrics,
+    loading:
+      locationLoading ||
+      (locationKey !== null && loadedLocationKey !== locationKey),
+  };
 };

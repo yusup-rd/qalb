@@ -82,7 +82,7 @@ const MosqueQuickAccessButton = () => {
     keyPrefix: "units",
   });
 
-  const mosques = useNearbyMosques(DEFAULT_MOSQUE_RADIUS_KM);
+  const { mosques } = useNearbyMosques(DEFAULT_MOSQUE_RADIUS_KM);
   const closestMosque = mosques[0];
 
   const badge = closestMosque

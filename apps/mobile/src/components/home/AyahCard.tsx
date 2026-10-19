@@ -1,5 +1,6 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import type { AyahOfDay } from "@/hooks/useQuran";
+import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -7,6 +8,12 @@ import { Text, View } from "react-native";
 
 const AyahCard = ({ ayah }: { ayah: AyahOfDay | null }) => {
   const { t, i18n } = useTranslation(undefined, { keyPrefix: "home" });
+  const showTranslation = useQuranPreferencesStore(
+    (state) => state.showTranslation,
+  );
+  const showTransliteration = useQuranPreferencesStore(
+    (state) => state.showTransliteration,
+  );
   if (!ayah) return null;
 
   const translation = i18n.language.startsWith("ru")
@@ -36,7 +43,13 @@ const AyahCard = ({ ayah }: { ayah: AyahOfDay | null }) => {
           {ayah.verse.textUthmani}
         </Text>
 
-        {translation ? (
+        {showTransliteration && ayah.verse.transliteration ? (
+          <Text className="text-secondary font-sans-regular text-sm italic">
+            {ayah.verse.transliteration.text}
+          </Text>
+        ) : null}
+
+        {showTranslation && translation ? (
           <Text className="text-card-foreground font-sans-italic text-sm">
             “{translation.text}”
           </Text>

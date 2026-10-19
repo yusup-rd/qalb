@@ -7,6 +7,7 @@ import SpiritualPauseCard from "@/components/home/SpiritualPauseCard";
 import ErrorCard from "@/components/ui/ErrorCard";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PrayerTimeSettingsSheet from "@/components/ui/prayer-settings/PrayerTimeSettingsSheet";
+import { AyahOfDaySkeleton } from "@/components/ui/skeletons/AyahOfDaySkeleton";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { usePrayerTimeSettings } from "@/hooks/usePrayerTimeSettings";
 import { useAyahOfDay } from "@/hooks/useQuran";
@@ -28,7 +29,7 @@ const Index = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "home" });
 
   const prayerTimes = usePrayerTimes();
-  const { ayah: ayahOfDay } = useAyahOfDay();
+  const { ayah: ayahOfDay, loading: ayahOfDayLoading } = useAyahOfDay();
   const locationLoading = useLocationStore((state) => state.locationLoading);
   const locationError = useLocationStore((state) => state.locationError);
   const locationPermissionStatus = useLocationStore(
@@ -112,7 +113,7 @@ const Index = () => {
 
     return (
       <>
-        <DateWithLocation />
+        <DateWithLocation now={prayerTimes.now} sunset={prayerTimes.sunset} />
 
         <HeroCountdown
           previousPrayer={prayerTimes.previousPrayer}
@@ -142,8 +143,12 @@ const Index = () => {
         >
           {renderLocationContent()}
           <QuickAccess />
-          <SpiritualPauseCard />
-          <AyahCard ayah={ayahOfDay} />
+          <SpiritualPauseCard prayerTimes={prayerTimes} />
+          {ayahOfDayLoading ? (
+            <AyahOfDaySkeleton />
+          ) : (
+            <AyahCard ayah={ayahOfDay} />
+          )}
         </ScrollView>
       </SafeAreaView>
 

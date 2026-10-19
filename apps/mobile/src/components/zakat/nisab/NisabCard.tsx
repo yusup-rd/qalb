@@ -1,10 +1,11 @@
 import MetalPrices from "@/components/zakat/nisab/MetalPrices";
 import NisabSelector from "@/components/zakat/nisab/NisabSelector";
+import { NisabCardSkeleton } from "@/components/ui/skeletons/NisabCardSkeleton";
 import { formatUpdatedAt } from "@/lib/format";
 import type { ZakatMarketPrices, ZakatNisabStandard } from "@/types/zakat";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface NisabCardProps {
   prices: ZakatMarketPrices | null;
@@ -42,8 +43,6 @@ const NisabCard = ({
               {t("title")}
             </Text>
           </View>
-
-          {isLoading ? <ActivityIndicator /> : null}
         </View>
 
         <Text className="font-sans-regular text-muted-foreground text-sm leading-5">
@@ -78,11 +77,9 @@ const NisabCard = ({
         <Text className="font-sans-regular text-destructive text-sm leading-5">
           {error}
         </Text>
-      ) : (
-        <Text className="font-sans-regular text-muted-foreground text-sm leading-5">
-          {t("loadingPrices")}
-        </Text>
-      )}
+      ) : isLoading ? (
+        <NisabCardSkeleton nisabStandard={nisabStandard} />
+      ) : null}
     </View>
   );
 };
