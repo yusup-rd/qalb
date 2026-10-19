@@ -113,7 +113,7 @@ const Index = () => {
 
     return (
       <>
-        <DateWithLocation />
+        <DateWithLocation now={prayerTimes.now} sunset={prayerTimes.sunset} />
 
         <HeroCountdown
           previousPrayer={prayerTimes.previousPrayer}
@@ -143,7 +143,7 @@ const Index = () => {
         >
           {renderLocationContent()}
           <QuickAccess />
-          <SpiritualPauseCard />
+          <SpiritualPauseCard prayerTimes={prayerTimes} />
           {ayahOfDayLoading ? (
             <AyahOfDaySkeleton />
           ) : (

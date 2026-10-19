@@ -514,3 +514,5 @@ export function usePrayerTimes(selectedDate?: Date) {
     };
   }, [data, language, localizedData]);
 }
+
+export type PrayerTimesResult = ReturnType<typeof usePrayerTimes>;

@@ -5,8 +5,8 @@ import {
 import { getSpiritualPauseSession } from "@/lib/spiritual-pause";
 import { useSpiritualPauseStore } from "@/store/spiritualPauseStore";
 import type { SpiritualPauseSession } from "@/types/spiritual-pause";
+import type { PrayerTimesResult } from "@/hooks/usePrayerTimes";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePrayerTimesData } from "./usePrayerTimes";
 
 function getFallbackSession(
   session: SpiritualPauseSession,
@@ -56,9 +56,12 @@ const EMPTY_RESULT = {
   reset: () => {},
 };
 
-export function useSpiritualPause() {
-  const { prayers, sunrise, previousPrayer, now } = usePrayerTimesData();
-
+export function useSpiritualPause({
+  prayers,
+  sunrise,
+  previousPrayer,
+  now,
+}: Pick<PrayerTimesResult, "prayers" | "sunrise" | "previousPrayer" | "now">) {
   const activeSession = useMemo(
     () =>
       getSpiritualPauseSession({

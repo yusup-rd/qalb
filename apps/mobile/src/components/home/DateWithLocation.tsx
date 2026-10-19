@@ -1,4 +1,4 @@
-import { usePrayerTimesData } from "@/hooks/usePrayerTimes";
+import type { PrayerTimesResult } from "@/hooks/usePrayerTimes";
 import { formatDate, formatHijriDate } from "@/lib/format";
 import { useLocationStore } from "@/store/locationStore";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -6,14 +6,15 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 
-const DateWithLocation = () => {
+const DateWithLocation = ({
+  now,
+  sunset,
+}: Pick<PrayerTimesResult, "now" | "sunset">) => {
   const today = new Date();
 
   const { t, i18n } = useTranslation(undefined, {
     keyPrefix: "home.dateLocation",
   });
-
-  const { now, sunset } = usePrayerTimesData();
 
   const isAfterSunset = sunset != null && now.getTime() >= sunset.getTime();
   const locationName = useLocationStore((state) => state.locationName);

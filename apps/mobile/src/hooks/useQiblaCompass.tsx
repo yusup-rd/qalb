@@ -78,6 +78,7 @@ const useQiblaCompass = ({
 
   const { heading, accuracy, hasSensor, permissionStatus } = useDeviceHeading({
     onHeading: handleHeading,
+    enabled: isFocused,
   });
 
   const qibla = useQiblaBearing();
@@ -152,7 +153,7 @@ const useQiblaCompass = ({
     [initialized, rotation, targetRotation, velocity],
   );
 
-  useFrameCallback(frameCallback);
+  useFrameCallback(frameCallback, isFocused);
 
   return {
     heading,
