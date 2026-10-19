@@ -344,8 +344,7 @@
       "currentNisab": "Current Nisab",
       "usingSavedPrices": "Using previously saved market prices.",
       "lastUpdatedRecently": "Last updated recently",
-      "updated": "Updated {{date}}",
-      "loadingPrices": "Loading current market prices..."
+      "updated": "Updated {{date}}"
     },
     "preciousMetals": {
       "title": "Gold & Silver",
@@ -476,6 +475,7 @@
     "list": {
       "title": "Mosques nearby",
       "found": "{{count}} found nearby",
+      "loading": "Finding nearby mosques...",
       "radius": "{{radius}} {{unit}}",
       "changeRadius": "Change mosque search radius"
     },

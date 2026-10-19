@@ -22,7 +22,7 @@ const Mosques = () => {
   const [radiusSheetVisible, setRadiusSheetVisible] = useState(false);
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
 
-  const mosques = useNearbyMosques(radiusKm);
+  const { mosques, loading: mosquesLoading } = useNearbyMosques(radiusKm);
 
   const {
     route,
@@ -80,6 +80,7 @@ const Mosques = () => {
         <View className="flex-2/3">
           <MosquesList
             mosques={mosques}
+            loading={mosquesLoading}
             radiusKm={radiusKm}
             selectedMosqueId={selectedMosqueId}
             onSelectMosque={handleSelectMosque}

@@ -344,8 +344,7 @@
       "currentNisab": "Текущий нисаб",
       "usingSavedPrices": "Используются ранее сохранённые рыночные цены.",
       "lastUpdatedRecently": "Обновлено недавно",
-      "updated": "Обновлено {{date}}",
-      "loadingPrices": "Загрузка текущих рыночных цен..."
+      "updated": "Обновлено {{date}}"
     },
     "preciousMetals": {
       "title": "Золото и серебро",
@@ -476,6 +475,7 @@
     "list": {
       "title": "Мечети поблизости",
       "found": "Поблизости: {{count}}",
+      "loading": "Ищем мечети поблизости...",
       "radius": "{{radius}} {{unit}}",
       "changeRadius": "Изменить радиус поиска мечетей"
     },

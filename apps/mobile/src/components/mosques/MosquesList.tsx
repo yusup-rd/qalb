@@ -1,4 +1,5 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
+import { MosqueCardSkeleton } from "@/components/ui/skeletons/MosqueCardSkeleton";
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -9,6 +10,7 @@ import MosqueCard from "./MosqueCard";
 
 interface MosquesListProps {
   mosques: NearbyMosque[];
+  loading: boolean;
   radiusKm: number;
   selectedMosqueId: string | null;
   onSelectMosque: (mosqueId: string) => void;
@@ -21,6 +23,7 @@ interface MosquesListProps {
 
 const MosquesList = ({
   mosques,
+  loading,
   radiusKm,
   selectedMosqueId,
   onSelectMosque,
@@ -100,7 +103,9 @@ const MosquesList = ({
               </Text>
 
               <Text className="font-sans-regular text-muted-foreground text-sm">
-                {t("found", { count: mosques.length })}
+                {loading && mosques.length === 0
+                  ? t("loading")
+                  : t("found", { count: mosques.length })}
               </Text>
             </View>
 
@@ -137,6 +142,15 @@ const MosquesList = ({
           route={routedMosqueId === item.id ? route : null}
         />
       )}
+      ListEmptyComponent={
+        loading ? (
+          <View className="gap-[15px]">
+            <MosqueCardSkeleton />
+            <MosqueCardSkeleton />
+            <MosqueCardSkeleton />
+          </View>
+        ) : null
+      }
       onScrollToIndexFailed={handleScrollToIndexFailed}
       contentContainerStyle={{
         gap: 15,

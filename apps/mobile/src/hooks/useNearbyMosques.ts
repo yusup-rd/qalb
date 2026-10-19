@@ -25,6 +25,11 @@ export interface NearbyMosque extends Mosque {
   routeMetricsLoading: boolean;
 }
 
+interface NearbyMosquesResult {
+  mosques: NearbyMosque[];
+  loading: boolean;
+}
+
 const ROUTE_METRICS_LIMIT = 20;
 
 const createNearbyMosques = (
@@ -65,16 +70,22 @@ const createNearbyMosques = (
 
 export const useNearbyMosques = (
   radiusKm: number | null = 3,
-): NearbyMosque[] => {
+): NearbyMosquesResult => {
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
+  const locationLoading = useLocationStore((state) => state.locationLoading);
 
   const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [loadedLocationKey, setLoadedLocationKey] = useState<string | null>(
+    null,
+  );
   const [routeMetricsState, setRouteMetricsState] =
     useState<RouteMetricsState | null>(null);
+  const locationKey =
+    latitude == null || longitude == null ? null : `${latitude}:${longitude}`;
 
   useEffect(() => {
-    if (latitude == null || longitude == null) {
+    if (locationKey == null || latitude == null || longitude == null) {
       return;
     }
 
@@ -89,9 +100,12 @@ export const useNearbyMosques = (
         }
 
         setMosques(freshMosques);
-
       } catch (error) {
         console.error("[Mosques] Failed to fetch mosques:", error);
+      } finally {
+        if (!cancelled) {
+          setLoadedLocationKey(locationKey);
+        }
       }
     };
 
@@ -100,7 +114,7 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude]);
+  }, [latitude, longitude, locationKey]);
 
   const nearbyMosques = useMemo(() => {
     if (latitude == null || longitude == null) {
@@ -223,7 +237,7 @@ export const useNearbyMosques = (
   const routeMetricsLoading =
     routeMetricsState?.requestKey !== routeMetricsRequestKey;
 
-  return useMemo(() => {
+  const nearbyMosquesWithMetrics = useMemo(() => {
     const currentRouteMetrics =
       routeMetricsState?.requestKey === routeMetricsRequestKey
         ? routeMetricsState.metrics
@@ -247,4 +261,11 @@ export const useNearbyMosques = (
     routeMetricMosqueIds,
     routeMetricsLoading,
   ]);
+
+  return {
+    mosques: nearbyMosquesWithMetrics,
+    loading:
+      locationLoading ||
+      (locationKey !== null && loadedLocationKey !== locationKey),
+  };
 };
