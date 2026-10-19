@@ -4,6 +4,7 @@ import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { useQuranChapter } from "@/hooks/useQuran";
 import { saveLastOpenedSurah } from "@/lib/quran-reading";
 import { useQuranAudio } from "@/providers/QuranAudioProvider";
+import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import type { QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
@@ -29,6 +30,12 @@ const QuranReader = () => {
   const params = useLocalSearchParams<{ chapterId: string }>();
   const chapterId = Number(params.chapterId);
   const { chapter, verses, error, loading } = useQuranChapter(chapterId);
+  const showTranslation = useQuranPreferencesStore(
+    (state) => state.showTranslation,
+  );
+  const showTransliteration = useQuranPreferencesStore(
+    (state) => state.showTransliteration,
+  );
   const { status, queueActive, playQueue, pause } = useQuranAudio();
   const [listenRequesting, setListenRequesting] = useState(false);
   const audioUrls = useMemo(
@@ -96,6 +103,8 @@ const QuranReader = () => {
           <AyahCard
             verse={item.verse}
             translation={item.verse[translationLanguage]?.text ?? null}
+            showTranslation={showTranslation}
+            showTransliteration={showTransliteration}
           />
         );
       }
@@ -106,7 +115,7 @@ const QuranReader = () => {
         </Text>
       );
     },
-    [translationLanguage],
+    [showTranslation, showTransliteration, translationLanguage],
   );
 
   const renderHeader = (

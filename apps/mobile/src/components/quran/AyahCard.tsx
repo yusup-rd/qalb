@@ -6,11 +6,15 @@ import { Text, View } from "react-native";
 type AyahCardProps = {
   verse: QuranVerseWithContent;
   translation: string | null;
+  showTranslation?: boolean;
+  showTransliteration?: boolean;
 };
 
 export const AyahCard = memo(function AyahCard({
   verse,
   translation,
+  showTranslation = true,
+  showTransliteration = true,
 }: AyahCardProps) {
   return (
     <View className="bg-card gap-3 rounded-2xl p-4 shadow-md">
@@ -23,12 +27,12 @@ export const AyahCard = memo(function AyahCard({
       <Text className="text-primary font-sans-semibold writingDirection-rtl text-right text-2xl leading-10">
         {verse.textUthmani}
       </Text>
-      {verse.transliteration ? (
+      {showTransliteration && verse.transliteration ? (
         <Text className="text-secondary font-sans-regular italic">
           {verse.transliteration.text}
         </Text>
       ) : null}
-      {translation ? (
+      {showTranslation && translation ? (
         <Text className="text-card-foreground font-sans-regular">
           {translation}
         </Text>
