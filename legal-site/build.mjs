@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const siteDirectory = path.dirname(fileURLToPath(import.meta.url));
 const rootDirectory = path.resolve(siteDirectory, "..");
 const outputDirectory = path.join(siteDirectory, "dist");
-const basePath = "";
+const basePath = "/qalb";
 const currentYear = new Date().getFullYear();
 
 const documents = [
