@@ -31,6 +31,7 @@ interface NearbyMosquesResult {
 }
 
 const ROUTE_METRICS_LIMIT = 20;
+const EMPTY_MOSQUES: Mosque[] = [];
 
 const createNearbyMosques = (
   mosques: Mosque[],
@@ -75,7 +76,10 @@ export const useNearbyMosques = (
   const longitude = useLocationStore((state) => state.longitude);
   const locationLoading = useLocationStore((state) => state.locationLoading);
 
-  const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [mosquesState, setMosquesState] = useState<{
+    locationKey: string;
+    mosques: Mosque[];
+  } | null>(null);
   const [loadedLocationKey, setLoadedLocationKey] = useState<string | null>(
     null,
   );
@@ -99,7 +103,7 @@ export const useNearbyMosques = (
           return;
         }
 
-        setMosques(freshMosques);
+        setMosquesState({ locationKey, mosques: freshMosques });
       } catch (error) {
         console.error("[Mosques] Failed to fetch mosques:", error);
       } finally {
@@ -116,13 +120,18 @@ export const useNearbyMosques = (
     };
   }, [latitude, longitude, locationKey]);
 
+  const currentMosques =
+    mosquesState?.locationKey === locationKey
+      ? mosquesState.mosques
+      : EMPTY_MOSQUES;
+
   const nearbyMosques = useMemo(() => {
     if (latitude == null || longitude == null) {
       return [];
     }
 
-    return createNearbyMosques(mosques, latitude, longitude, radiusKm);
-  }, [mosques, latitude, longitude, radiusKm]);
+    return createNearbyMosques(currentMosques, latitude, longitude, radiusKm);
+  }, [currentMosques, latitude, longitude, radiusKm]);
 
   const routeMosques = useMemo(
     () => nearbyMosques.slice(0, ROUTE_METRICS_LIMIT),

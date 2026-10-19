@@ -27,7 +27,7 @@ export default function SupportSection() {
 
   return (
     <View>
-      <SettingsSection title={t("support.title")} icon="heart">
+      <SettingsSection title={t("support.title")} iconFamily="ant" icon="heart">
         {/* TODO: Donation feature to be implemented in future */}
         {/* <SettingsRow
           title={t("support.donate")}

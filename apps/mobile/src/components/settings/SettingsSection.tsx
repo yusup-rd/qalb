@@ -3,23 +3,26 @@ import type { ComponentProps, ReactNode } from "react";
 import { Text, View } from "react-native";
 
 type IconName = ComponentProps<typeof Fa>["name"];
+type AntIconName = ComponentProps<typeof Ant>["name"];
 
-export default function SettingsSection({
-  title,
-  icon,
-  children,
-}: {
+type SettingsSectionProps = {
   title: string;
-  icon: IconName;
   children: ReactNode;
-}) {
+} & (
+  | { icon: IconName; iconFamily?: "fontawesome6" }
+  | { icon: AntIconName; iconFamily: "ant" }
+);
+
+export default function SettingsSection(props: SettingsSectionProps) {
+  const { title, children } = props;
+
   return (
     <View className="gap-2">
       <View className="flex-row items-center gap-2">
-        {title === "Support" ? (
-          <Ant name={icon} size={14} className="text-secondary" />
+        {props.iconFamily === "ant" ? (
+          <Ant name={props.icon} size={14} className="text-secondary" />
         ) : (
-          <Fa name={icon} size={14} className="text-secondary" />
+          <Fa name={props.icon} size={14} className="text-secondary" />
         )}
         <Text className="font-sans-semibold text-secondary text-sm">
           {title}
