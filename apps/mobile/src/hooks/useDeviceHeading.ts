@@ -73,9 +73,8 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
             return;
           }
 
-          setSensorStatus((status) =>
-            status === "available" ? status : "checking",
-          );
+          setHeading(null);
+          setSensorStatus("checking");
           headingTimeout = setTimeout(() => {
             if (mounted) {
               setSensorStatus((status) =>

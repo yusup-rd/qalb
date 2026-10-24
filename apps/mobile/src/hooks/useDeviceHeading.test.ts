@@ -82,8 +82,15 @@ describe("useDeviceHeading", () => {
     act(() => {
       mockFocusCleanup = mockFocusCallback?.() || undefined;
     });
+    await waitFor(() =>
+      expect(mockedLocation.watchHeadingAsync).toHaveBeenCalledTimes(2),
+    );
+    expect(result.current.sensorStatus).toBe("checking");
+    expect(result.current.heading).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 110));
+    act(() => emitHeading?.({ trueHeading: 91, magHeading: 91, accuracy: 2 }));
     expect(result.current.sensorStatus).toBe("available");
-    expect(result.current.heading).toBe(90);
+    expect(result.current.heading).toBe(91);
 
     unmount();
 
