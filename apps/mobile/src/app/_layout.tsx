@@ -1,6 +1,9 @@
 import AppNavigator from "@/components/ui/AppNavigator";
 import AppStatusBar from "@/components/ui/AppStatusBar";
 import QuranBootstrapScreen from "@/components/quran/QuranBootstrapScreen";
+import QuranReadinessGate, {
+  QuranReadinessContext,
+} from "@/components/quran/QuranReadinessGate";
 import "@/global.css";
 import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
@@ -175,16 +178,21 @@ const RootLayout = () => {
           />
         )}
         {/* The provider withholds its children until onInit resolves. */}
-        <SQLiteProvider databaseName="quran-v2.db" onInit={initializeDatabase}>
-          {quranDatabaseReady && (
-            <QuranAudioProvider>
-              <QuranSyncInitializer />
-              <LocationInitializer />
-              <NotificationInitializer />
-              <AppNavigator />
-            </QuranAudioProvider>
-          )}
-        </SQLiteProvider>
+        <QuranReadinessContext.Provider value={quranDatabaseReady}>
+          <SQLiteProvider
+            databaseName="quran-v2.db"
+            onInit={initializeDatabase}
+          >
+            <QuranReadinessGate>
+              <QuranAudioProvider>
+                <QuranSyncInitializer />
+                <LocationInitializer />
+                <NotificationInitializer />
+                <AppNavigator />
+              </QuranAudioProvider>
+            </QuranReadinessGate>
+          </SQLiteProvider>
+        </QuranReadinessContext.Provider>
       </View>
     </ThemeProvider>
   );
