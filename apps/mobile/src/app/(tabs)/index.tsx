@@ -17,7 +17,6 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AppState,
-  type AppStateStatus,
   Linking,
   ScrollView,
 } from "react-native";
@@ -49,7 +48,9 @@ const Index = () => {
     handleAdjustmentChange,
   } = usePrayerTimeSettings();
 
-  const previousAppState = useRef<AppStateStatus>(AppState.currentState);
+  const previousAppState = useRef<string | null | undefined>(
+    AppState.currentState,
+  );
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {

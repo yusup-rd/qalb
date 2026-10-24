@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { apiRequest } from "./client";
 
-const originalFetch = global.fetch;
+const originalFetch = globalThis.fetch;
 
 async function flushMicrotasks() {
   for (let index = 0; index < 8; index += 1) {
@@ -13,7 +13,7 @@ describe("apiRequest retry policy", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.restoreAllMocks();
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
   });
 
   it("awaits 2-second and 8-second backoffs for retryable network errors", async () => {
@@ -29,7 +29,7 @@ describe("apiRequest retry policy", () => {
         status: 200,
         json: async () => ({ available: true }),
       } as Response);
-    global.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const events: {
       type: string;
@@ -90,7 +90,7 @@ describe("apiRequest retry policy", () => {
       status: 400,
       json: async () => ({ message: "Bad request" }),
     } as Response);
-    global.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(apiRequest("/api/mosques/nearby")).rejects.toMatchObject({
       kind: "http",

@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, AppState, type AppStateStatus } from "react-native";
+import { Alert, AppState } from "react-native";
 
 interface UserLocation {
   latitude: number;
@@ -20,7 +20,9 @@ export function useUserLocation() {
   const [error, setError] = useState<string | null>(null);
   const initialRequestComplete = useRef(false);
   const requestInFlight = useRef(false);
-  const previousAppState = useRef<AppStateStatus>(AppState.currentState);
+  const previousAppState = useRef<string | null | undefined>(
+    AppState.currentState,
+  );
 
   const getLocation = useCallback(async () => {
     if (requestInFlight.current) return;

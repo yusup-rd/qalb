@@ -1,6 +1,6 @@
 # Qalb mobile app
 
-The mobile app is an Expo SDK 57 / React Native app for iOS and Android. It
+The mobile app is an Expo SDK 58 / React Native app for iOS and Android. It
 owns the user interface, localization, local Quran SQLite database, device
 permissions, prayer calculations and reminders, compass, offline Quran reading
 and search, and user preferences.
@@ -18,7 +18,8 @@ and search, and user preferences.
 
 ## Setup and development
 
-Use Node.js 22.13 or newer and Yarn Classic (1.x). From the repository root:
+Use a supported Node.js release (22.13+, 24.3+, or 26+) and Yarn Classic
+(1.x). SDK 58 uses React Native 0.88 and React 19.3. From the repository root:
 
 ```sh
 yarn install --frozen-lockfile
@@ -70,6 +71,16 @@ yarn workspace qalb i18n:check
 yarn workspace qalb test
 yarn workspace qalb test:coverage
 ```
+
+After changing Expo dependencies, run `yarn workspace qalb expo install --fix`
+and `yarn workspace qalb expo install --check` from the repository root, then
+run `npx expo-doctor` from `apps/mobile`. Native tabs use the stable
+`expo-router/native-tabs` entry point. Keep `web.output` explicit in `app.json`;
+SDK 58 otherwise defaults Expo Router to server output. The `expo-router`
+plugin enables `apiRoutes` to retain SDK 57's static output behavior. The Metro
+config also registers `.wasm` as an asset for Expo SQLite's web bundle. Hosting
+that web bundle requires the `Cross-Origin-Embedder-Policy` and
+`Cross-Origin-Opener-Policy` headers for SQLite's `SharedArrayBuffer` support.
 
 Jest uses `jest-expo` and React Native Testing Library. Tests include Quran
 bootstrap/sync regressions, API request diagnostics, Qibla sensor state, and

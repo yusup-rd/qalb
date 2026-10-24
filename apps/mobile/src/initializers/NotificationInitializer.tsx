@@ -2,7 +2,7 @@ import { syncPrayerNotifications } from "@/lib/prayer-notifications";
 import { useLocationStore } from "@/store/locationStore";
 import { usePrayerStore } from "@/store/prayerStore";
 import { useEffect, useRef } from "react";
-import { AppState, type AppStateStatus } from "react-native";
+import { AppState } from "react-native";
 
 const NotificationInitializer = () => {
   const latitude = useLocationStore((state) => state.latitude);
@@ -16,7 +16,9 @@ const NotificationInitializer = () => {
     (state) => state.prayerTimeAdjustments,
   );
   const prayerStoreHydrated = useRef(usePrayerStore.persist.hasHydrated());
-  const previousAppState = useRef<AppStateStatus>(AppState.currentState);
+  const previousAppState = useRef<string | null | undefined>(
+    AppState.currentState,
+  );
 
   useEffect(() => {
     const syncIfReady = () => {

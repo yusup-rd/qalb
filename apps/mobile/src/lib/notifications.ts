@@ -1,4 +1,5 @@
 import i18n from "@/i18n";
+import { AndroidImportance } from "expo-notifications";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
@@ -29,7 +30,7 @@ export async function setupNotificationChannel() {
 
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
     name: i18n.t("notifications.prayerTime.title"),
-    importance: Notifications.AndroidImportance.HIGH,
+    importance: AndroidImportance.HIGH,
   });
 }
 

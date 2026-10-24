@@ -2,7 +2,7 @@ import { getNativeTabColors } from "@/constants/theme";
 import { useTheme } from "@/providers/ThemeProvider";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { NativeTabs } from "expo-router/native-tabs";
 import { useTranslation } from "react-i18next";
 import { Platform, useColorScheme } from "react-native";
 

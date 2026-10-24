@@ -1,14 +1,12 @@
 import { useTheme } from "@/providers/ThemeProvider";
-import { StatusBar } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 const AppStatusBar = () => {
-  const { resolvedMode, colors } = useTheme();
+  const { resolvedMode } = useTheme();
 
   return (
     <StatusBar
-      barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"}
-      backgroundColor={colors.background}
-      translucent={false}
+      style={resolvedMode === "dark" ? "light" : "dark"}
     />
   );
 };

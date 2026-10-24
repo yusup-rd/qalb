@@ -11,7 +11,6 @@ import { ImageBackground } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { ImageSourcePropType } from "react-native";
 import { Alert, Pressable, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
@@ -32,7 +31,7 @@ type SpiritualPauseConfig = {
     "subhanAllah" | "alhamdulillah" | "allahuAkbar" | "astaghfirullah"
   )[];
   icon: SpiritualPauseIcon;
-  backgroundImage: ImageSourcePropType;
+  backgroundImage: ComponentProps<typeof ImageBackground>["source"];
 };
 
 const spiritualPauseConfigs: Record<SpiritualPauseType, SpiritualPauseConfig> =
