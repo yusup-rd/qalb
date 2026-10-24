@@ -10,9 +10,14 @@ import { setupNotificationHandler } from "@/lib/notifications";
 import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { initializeQuranDatabase } from "@/lib/quran/sync";
+import {
+  getQuranBootstrapErrorKind,
+  type QuranBootstrapErrorKind,
+} from "@/lib/quran/bootstrap-error";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { SQLiteProvider, type SQLiteDatabase } from "expo-sqlite";
+import NetInfo from "@react-native-community/netinfo";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
@@ -26,8 +31,10 @@ const RootLayout = () => {
   const [languageLoaded, setLanguageLoaded] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
   const [quranDatabaseReady, setQuranDatabaseReady] = useState(false);
-  const [quranDatabaseError, setQuranDatabaseError] = useState(false);
+  const [quranDatabaseError, setQuranDatabaseError] =
+    useState<QuranBootstrapErrorKind | null>(null);
   const splashHidden = useRef(false);
+  const databaseInitializationInFlight = useRef(false);
   const databaseRef = useRef<SQLiteDatabase | null>(null);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -69,13 +76,15 @@ const RootLayout = () => {
   }, []);
 
   const initializeDatabase = useCallback(async (db: SQLiteDatabase) => {
+    if (databaseInitializationInFlight.current) return;
+    databaseInitializationInFlight.current = true;
     databaseRef.current = db;
     try {
       await initializeQuranDatabase(db);
-      setQuranDatabaseError(false);
+      setQuranDatabaseError(null);
       setQuranDatabaseReady(true);
     } catch (error) {
-      setQuranDatabaseError(true);
+      setQuranDatabaseError(getQuranBootstrapErrorKind(error));
       setQuranDatabaseReady(false);
       if (__DEV__) {
         console.warn(
@@ -83,16 +92,32 @@ const RootLayout = () => {
           error instanceof Error ? error.message : "Unknown error",
         );
       }
+    } finally {
+      databaseInitializationInFlight.current = false;
     }
   }, []);
 
   const retryDatabaseInitialization = useCallback(() => {
     const db = databaseRef.current;
     if (!db) return;
-    setQuranDatabaseError(false);
+    setQuranDatabaseError(null);
     setQuranDatabaseReady(false);
     void initializeDatabase(db);
   }, [initializeDatabase]);
+
+  useEffect(() => {
+    if (!quranDatabaseError) return;
+    let wasReachable: boolean | null = null;
+    const subscription = NetInfo.addEventListener((state) => {
+      const isReachable =
+        state.isConnected === true && state.isInternetReachable !== false;
+      if (wasReachable === false && isReachable) {
+        retryDatabaseInitialization();
+      }
+      wasReachable = isReachable;
+    });
+    return subscription;
+  }, [quranDatabaseError, retryDatabaseInitialization]);
 
   useEffect(() => {
     if (
@@ -129,7 +154,6 @@ const RootLayout = () => {
   return (
     <SQLiteProvider
       databaseName="quran-v2.db"
-      assetSource={{ assetId: require("@/assets/database/quran.db") }}
       onInit={initializeDatabase}
     >
       <ThemeProvider>
@@ -144,7 +168,7 @@ const RootLayout = () => {
             </QuranAudioProvider>
           ) : (
             <QuranBootstrapScreen
-              error={quranDatabaseError ? "bootstrap-failed" : null}
+              error={quranDatabaseError}
               onRetry={retryDatabaseInitialization}
             />
           )}

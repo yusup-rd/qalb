@@ -57,11 +57,16 @@ full snapshot. It never returns QF credentials or sync tokens.
 catch-up run in the background. `GET /api/quran/changes?revision=...` returns
 the insert/update/delete patch when the revision is the retained previous
 revision, or a full snapshot for new/stale clients. `GET /api/quran/snapshot`
-returns the current full projection. The mobile app applies updates to its own
-SQLite copy transactionally and can continue to read/search it offline. The
-bundled database supplies the first local copy, so reading does not depend on
-network availability; the API sync refreshes it when connectivity is available.
-Existing local data is kept when updates fail.
+returns the current full projection. The mobile app downloads a full first
+snapshot from this API and applies it to SQLite in one transaction. A new
+installation needs internet access for that first download; after a successful
+download, reading and search use the local database offline. Existing local
+data is kept when updates fail. The app checks on launch, when connectivity
+returns, and on foregrounding. It also registers an Expo background refresh
+with a 24-hour minimum interval. OS scheduling is best effort and can be
+deferred or stopped, especially after the user force-quits on iOS; it cannot
+promise an exact seven-day deadline. The API catches up with QF weekly when a
+sync is due and connectivity to QF permits.
 
 The current local development setup uses a Redis endpoint configured in
 `apps/api/.env.local`. Configure the same durable storage and QF variables in
@@ -76,15 +81,19 @@ Quran.Foundation terms and each content provider's rights before release.
 
 ### Mobile manual verification
 
-The mobile workspace has no configured test runner for native SQLite. Before a
-release, verify on iOS and Android: (1) install with network disabled and
-confirm the bundled Quran remains readable/searchable; (2) reconnect and
-confirm the API revision is applied without changing chapter/verse ordering;
-(3) test a changed row and a deletion through a test backend revision and
-confirm the local revision and rows change together; (4) interrupt or return a
-malformed patch and confirm the prior revision remains readable; and (5) launch
-offline again and confirm reading/search still works. Use a disposable test
-backend/database for destructive patch scenarios.
+The mobile workspace has a Node test for snapshot validation, but native SQLite
+behavior still needs device verification. Before a release, verify on iOS and
+Android: (1) install with network disabled and confirm the app explains that
+Quran reading is unavailable until the first download; (2) connect and confirm
+all required data is downloaded and chapter/verse ordering is correct; (3)
+reconnect after bootstrap and confirm the API revision is applied; (4) test a
+changed row and deletion through a test backend revision and confirm rows and
+revision change together; (5) interrupt a snapshot or return a malformed patch
+and confirm the last committed database remains readable; and (6) launch offline
+again and confirm reading/search work. Use a disposable test backend/database
+for destructive patch scenarios. Do not package a QF content database in the
+app binary: the Developer Terms state that Content Sync's storage exception
+does not authorize a prepackaged database or build-time bundle.
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 

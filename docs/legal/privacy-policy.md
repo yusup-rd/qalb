@@ -8,7 +8,7 @@ Qalb is a free, noncommercial Islamic companion app maintained as a personal hob
 
 **Location.** When Qalb starts, it asks for permission to use location while the app is in use. If you grant permission, the app reads your current coordinates. Prayer times and Qibla direction are calculated on your device; your coordinates are also sent to the Qalb API with your app language to look up the locality name. If that lookup fails, Qalb may send the coordinates to the device platform’s geocoder. When nearby mosques are shown on the home screen or in the mosque feature, Qalb sends your coordinates, search radius, and result limit to the Qalb API. Qalb then requests driving estimates for up to 20 nearby mosques, sending your coordinates and their coordinates to its routing provider. When you request directions, the route’s start and destination coordinates are sent for routing. Qalb does not request background location.
 
-**Device data.** Qalb stores your language, theme, prayer calculation and notification settings, Quran display preferences, tasbih and spiritual-pause progress, last-opened Surah, compass haptics setting, and cached API responses on your device. The cache keeps up to 100 recent entries. Its entries can include rounded coordinates in cache keys. The Quran text, English and Russian translations, English transliteration, and recitation metadata are in the app’s bundled SQLite database. Reading and searching use that database; Quran searches and reading activity are not sent to the Qalb API or Quran.Foundation.
+**Device data.** Qalb stores your language, theme, prayer calculation and notification settings, Quran display preferences, tasbih and spiritual-pause progress, last-opened Surah, compass haptics setting, and cached API responses on your device. The cache keeps up to 100 recent entries. Its entries can include rounded coordinates in cache keys. Quran text, English and Russian translations, English transliteration, and recitation metadata are downloaded from the Qalb API and saved in SQLite after a successful first sync. A new installation needs an internet connection before Quran reading and search become available; after that download, reading and search use the local database and work offline. Quran searches and reading activity are not sent to the Qalb API or Quran.Foundation.
 
 **Notifications.** If you enable prayer reminders and allow notifications, Qalb calculates prayer times on your device and schedules reminders locally through the operating system, up to seven days ahead. Qalb does not send your schedule to a remote push-notification service. Notification content may be visible to people with access to your device.
 
@@ -16,7 +16,7 @@ Qalb is a free, noncommercial Islamic companion app maintained as a personal hob
 
 ## Services that receive information
 
-Qalb is independent and is not an official Quran.Foundation or Quran.com app. Quran.Foundation APIs were used to prepare the Quran data bundled with Qalb; the current app reads that local copy and does not send Quran searches or reading activity to Quran.Foundation.
+Qalb is independent and is not an official Quran.Foundation or Quran.com app. The Qalb API uses Quran.Foundation Content Sync to maintain the Quran resources used in the app. The app downloads and refreshes its local copy through the Qalb API; it does not contact Quran.Foundation directly or send Quran searches or reading activity to either service.
 
 The Qalb API forwards request data to the service needed for the feature:
 
@@ -34,7 +34,7 @@ Qalb has no user accounts, advertising, analytics, crash-reporting SDK, remote p
 
 ## Storage and retention
 
-Preferences and the bundled Quran database remain on your device until you clear Qalb’s app data or uninstall the app. Cached API responses are considered fresh for 24 hours for locality results, mosque results, and metal prices; one hour for routes and route estimates; and 30 days for calendar events. The cache may retain older entries after they become stale until cache pruning, app-data removal, or uninstalling the app.
+Preferences and the downloaded Quran database remain on your device until you clear Qalb’s app data or uninstall the app. Cached API responses are considered fresh for 24 hours for locality results, mosque results, and metal prices; one hour for routes and route estimates; and 30 days for calendar events. The cache may retain older entries after they become stale until cache pruning, app-data removal, or uninstalling the app.
 
 When configured, Upstash Redis temporarily caches mosque results for 15 minutes; routes and route estimates for one hour; locality results and metal prices for 24 hours; and calendar events for 30 days. The API uses Redis as a cache, not for accounts or user histories. Render states that logs for a Hobby workspace are available in its dashboard for seven days; the actual deployment plan, settings, and any external log exports may change how long logs are available. Other providers set their own retention periods under their policies.
 

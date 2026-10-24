@@ -85,6 +85,7 @@
       "expo-localization",
       "@react-native-community/datetimepicker",
       "expo-sqlite",
+      "expo-background-task",
       "expo-audio"
     ],
     "experiments": {

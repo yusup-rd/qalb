@@ -1,15 +1,25 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { ActivityIndicator, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import type { QuranBootstrapErrorKind } from "@/lib/quran/bootstrap-error";
 
 export default function QuranBootstrapScreen({
   error,
   onRetry,
 }: {
-  error: string | null;
+  error: QuranBootstrapErrorKind | null;
   onRetry: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "quran.bootstrap" });
+  const errorMessage = error
+    ? t(
+        error === "storage"
+          ? "storageErrorMessage"
+          : error === "network"
+            ? "networkErrorMessage"
+            : "genericErrorMessage",
+      )
+    : null;
 
   return (
     <View className="bg-background flex-1 items-center justify-center gap-4 px-6">
@@ -17,7 +27,7 @@ export default function QuranBootstrapScreen({
         {error ? t("errorTitle") : t("loadingTitle")}
       </Text>
       <Text className="text-muted-foreground text-center font-sans text-sm">
-        {error ? t("errorMessage") : t("loadingMessage")}
+        {errorMessage ?? t("loadingMessage")}
       </Text>
       {error ? (
         <SmoothPressable

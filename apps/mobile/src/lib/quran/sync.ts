@@ -1,5 +1,6 @@
 import { apiRequest } from "@/api/client";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
+import { validateQuranSnapshot } from "./snapshot-validation";
 
 type QuranServerStatus = {
   available: true;
@@ -159,10 +160,11 @@ export async function refreshQuranDatabase(
   const current = await db.getFirstAsync<{ revision: string }>(
     "SELECT revision FROM quran_sync_state WHERE id = 1",
   );
-  if (current?.revision === status.revision) return false;
+  const localReady = await hasLocalQuran(db);
+  if (localReady && current?.revision === status.revision) return false;
 
   const changes = await apiRequest<QuranChanges | QuranSnapshot>(
-    `/api/quran/changes${current?.revision ? `?revision=${encodeURIComponent(current.revision)}` : ""}`,
+    `/api/quran/changes${localReady && current?.revision ? `?revision=${encodeURIComponent(current.revision)}` : ""}`,
     undefined,
     {
       timeoutMs: 45_000,
@@ -182,7 +184,7 @@ export async function refreshQuranDatabase(
     return true;
   }
   const snapshot = changes as QuranSnapshot;
-  validateSnapshot(snapshot);
+  validateQuranSnapshot(snapshot);
   await applySnapshotTransactionally(db, snapshot);
   return true;
 }
@@ -304,55 +306,27 @@ async function applyChangesTransactionally(
     const counts = await transaction.getFirstAsync<{
       chapters: number;
       verses: number;
+      english: number;
+      russian: number;
+      transliterations: number;
+      audio: number;
     }>(`SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses`);
-    if (counts?.chapters !== 114 || counts.verses !== 6236) {
+              (SELECT COUNT(*) FROM verses) AS verses,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
+              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
+              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`);
+    if (
+      counts?.chapters !== 114 ||
+      counts.verses !== 6236 ||
+      counts.english !== 6236 ||
+      counts.russian !== 6236 ||
+      counts.transliterations !== 6236 ||
+      counts.audio !== 6236
+    ) {
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
-}
-
-function validateSnapshot(snapshot: QuranSnapshot): void {
-  if (
-    !snapshot ||
-    typeof snapshot.revision !== "string" ||
-    !snapshot.revision ||
-    !Array.isArray(snapshot.chapters) ||
-    snapshot.chapters.length !== 114 ||
-    !Array.isArray(snapshot.verses) ||
-    snapshot.verses.length !== 6236 ||
-    !Array.isArray(snapshot.translations) ||
-    !Array.isArray(snapshot.transliterations) ||
-    !Array.isArray(snapshot.reciters) ||
-    !Array.isArray(snapshot.ayahAudio) ||
-    !Array.isArray(snapshot.chapterAudio)
-  ) {
-    throw new Error("The Quran server returned an incomplete dataset.");
-  }
-  const verseIds = new Set(snapshot.verses.map((verse) => verse.id));
-  const chapterIds = new Set(snapshot.chapters.map((chapter) => chapter.id));
-  if (
-    verseIds.size !== 6236 ||
-    chapterIds.size !== 114 ||
-    snapshot.verses.some(
-      (verse) =>
-        !verseIds.has(verse.id) ||
-        !chapterIds.has(verse.chapter_id) ||
-        !verse.text_uthmani ||
-        !verse.verse_key,
-    ) ||
-    [
-      ...snapshot.translations,
-      ...snapshot.transliterations,
-      ...snapshot.ayahAudio,
-    ].some((row) => !verseIds.has(row.verse_id)) ||
-    snapshot.ayahAudio.some(
-      (audio) =>
-        !snapshot.reciters.some((reciter) => reciter.id === audio.reciter_id),
-    )
-  ) {
-    throw new Error("The Quran server returned invalid content relationships.");
-  }
 }
 
 async function applySnapshotTransactionally(
@@ -468,9 +442,24 @@ async function applySnapshotTransactionally(
     const counts = await transaction.getFirstAsync<{
       chapters: number;
       verses: number;
+      english: number;
+      russian: number;
+      transliterations: number;
+      audio: number;
     }>(`SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses`);
-    if (counts?.chapters !== 114 || counts.verses !== 6236) {
+              (SELECT COUNT(*) FROM verses) AS verses,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
+              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
+              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`);
+    if (
+      counts?.chapters !== 114 ||
+      counts.verses !== 6236 ||
+      counts.english !== 6236 ||
+      counts.russian !== 6236 ||
+      counts.transliterations !== 6236 ||
+      counts.audio !== 6236
+    ) {
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
@@ -478,11 +467,29 @@ async function applySnapshotTransactionally(
 
 export async function hasLocalQuran(db: SQLiteDatabase): Promise<boolean> {
   try {
-    const counts = await db.getFirstAsync<{ chapters: number; verses: number }>(
+    const counts = await db.getFirstAsync<{
+      chapters: number;
+      verses: number;
+      english: number;
+      russian: number;
+      transliterations: number;
+      audio: number;
+    }>(
       `SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses`,
+              (SELECT COUNT(*) FROM verses) AS verses,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
+              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
+              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
+              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`,
     );
-    return counts?.chapters === 114 && counts.verses === 6236;
+    return (
+      counts?.chapters === 114 &&
+      counts.verses === 6236 &&
+      counts.english === 6236 &&
+      counts.russian === 6236 &&
+      counts.transliterations === 6236 &&
+      counts.audio === 6236
+    );
   } catch {
     return false;
   }
