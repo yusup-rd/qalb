@@ -38,7 +38,7 @@ export class RedisService implements OnModuleDestroy {
       return value ? (JSON.parse(value) as T) : null;
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.warn({ key, errorCode }, 'Redis read failed');
+      this.logger.warn({ errorCode }, 'Redis read failed');
       return null;
     }
   }
@@ -57,7 +57,7 @@ export class RedisService implements OnModuleDestroy {
       );
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.warn({ key, ttlSeconds, errorCode }, 'Redis write failed');
+      this.logger.warn({ ttlSeconds, errorCode }, 'Redis write failed');
       return false;
     }
   }
@@ -74,7 +74,7 @@ export class RedisService implements OnModuleDestroy {
       return value ? (JSON.parse(value) as T) : null;
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.warn({ key, errorCode }, 'Redis persistent read failed');
+      this.logger.warn({ errorCode }, 'Redis persistent read failed');
       throw error;
     }
   }
@@ -86,7 +86,7 @@ export class RedisService implements OnModuleDestroy {
       return (await this.client.set(key, JSON.stringify(value))) === 'OK';
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.error({ key, errorCode }, 'Redis persistent write failed');
+      this.logger.error({ errorCode }, 'Redis persistent write failed');
       throw error;
     }
   }
@@ -113,7 +113,7 @@ export class RedisService implements OnModuleDestroy {
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
       this.logger.error(
-        { key: dataKey, errorCode },
+        { errorCode },
         'Redis persistent conditional write failed',
       );
       throw error;
@@ -131,7 +131,7 @@ export class RedisService implements OnModuleDestroy {
       return (await this.client.set(key, value, 'PX', ttlMs, 'NX')) === 'OK';
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.error({ key, errorCode }, 'Redis lock acquisition failed');
+      this.logger.error({ errorCode }, 'Redis lock acquisition failed');
       throw error;
     }
   }
@@ -151,7 +151,7 @@ export class RedisService implements OnModuleDestroy {
       );
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.error({ key, errorCode }, 'Redis lock renewal failed');
+      this.logger.error({ errorCode }, 'Redis lock renewal failed');
       throw error;
     }
   }
@@ -168,7 +168,7 @@ export class RedisService implements OnModuleDestroy {
       );
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.warn({ key, errorCode }, 'Redis lock release failed');
+      this.logger.warn({ errorCode }, 'Redis lock release failed');
     }
   }
 

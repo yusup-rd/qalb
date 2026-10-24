@@ -1,3 +1,4 @@
+import { useLocationStore } from "@/store/locationStore";
 import type { DeviceHeading, HeadingPermissionStatus } from "@/types/qibla";
 import { useFocusEffect } from "expo-router";
 import * as Location from "expo-location";
@@ -10,6 +11,9 @@ interface UseDeviceHeadingOptions {
 const DISPLAY_UPDATE_INTERVAL = 100;
 
 const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
+  const locationPermission = useLocationStore(
+    (state) => state.locationPermissionStatus,
+  );
   const [heading, setHeading] = useState<number | null>(null);
   const [accuracy, setAccuracy] = useState(-1);
   const [hasSensor, setHasSensor] = useState(false);
@@ -30,29 +34,20 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
       let subscription: Location.LocationSubscription | null = null;
 
       const startWatching = async () => {
+        if (locationPermission !== "granted") {
+          setPermissionStatus(
+            locationPermission === "checking" ? "checking" : "denied",
+          );
+          return;
+        }
         try {
           const permission = await Location.getForegroundPermissionsAsync();
 
           if (!mounted) return;
 
-          let permissionGranted = permission.status === "granted";
-
-          if (!permissionGranted) {
-            const requestedPermission =
-              await Location.requestForegroundPermissionsAsync();
-
-            if (!mounted) return;
-
-            permissionGranted = requestedPermission.status === "granted";
-
-            if (!permissionGranted) {
-              setPermissionStatus("denied");
-              return;
-            }
-          }
-
-          if (!permissionGranted) {
-            setPermissionStatus("error");
+          // The shared location flow owns disclosure and permission requests.
+          if (!permission.granted) {
+            setPermissionStatus("denied");
             return;
           }
 
@@ -83,7 +78,12 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
 
               setHasSensor(true);
             },
-            () => {},
+            () => {
+              if (!mounted) return;
+              setHasSensor(false);
+              setHeading(null);
+              setPermissionStatus("error");
+            },
           );
 
           if (!mounted) {
@@ -105,9 +105,10 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
       return () => {
         mounted = false;
         setHeading(null);
+        setHasSensor(false);
         subscription?.remove();
       };
-    }, []),
+    }, [locationPermission]),
   );
 
   return {

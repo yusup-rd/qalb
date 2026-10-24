@@ -332,11 +332,13 @@ describe('RoutingService', () => {
     }
   });
   it.each(['route', 'metrics'] as const)(
-    'preserves the %s fetch error for structured logging',
+    'logs the %s failure without upstream messages or coordinates',
     async (operation) => {
       const { service, redis, logger } = createService();
       redis.get.mockResolvedValue(null);
-      const error = new Error('Upstream connection failed');
+      const error = new Error(
+        'Failed https://example.test/route/37.123,55.456?token=private',
+      );
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(error);
 
       try {
@@ -348,10 +350,18 @@ describe('RoutingService', () => {
           ServiceUnavailableException,
         );
         expect(logger.error).toHaveBeenCalledWith(
-          { event: 'upstream_error', provider: 'osrm', operation, err: error },
+          {
+            event: 'upstream_error',
+            provider: 'osrm',
+            operation,
+            errorCode: 'Error',
+          },
           expect.any(String),
         );
-        expect(logger.error.mock.calls[0]?.[0].err).toBe(error);
+        expect(JSON.stringify(logger.error.mock.calls)).not.toContain('37.123');
+        expect(JSON.stringify(logger.error.mock.calls)).not.toContain(
+          'private',
+        );
         expect(redis.set).not.toHaveBeenCalled();
       } finally {
         fetchMock.mockRestore();

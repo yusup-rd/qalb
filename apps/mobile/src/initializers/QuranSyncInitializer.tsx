@@ -23,8 +23,6 @@ const QURAN_BACKGROUND_SYNC_TASK = "qalb-quran-content-sync";
 const QURAN_DATABASE_NAME = "quran-v2.db";
 const BACKGROUND_SYNC_INTERVAL_MINUTES = 24 * 60;
 
-let lastRefreshAttemptAt = 0;
-
 defineTask(QURAN_BACKGROUND_SYNC_TASK, async () => {
   let database: SQLiteDatabase | undefined;
   try {
@@ -53,8 +51,6 @@ export default function QuranSyncInitializer() {
 
   useEffect(() => {
     let active = true;
-    let refreshInFlight = false;
-    let refreshRequestedWhileInFlight = false;
     void (async () => {
       try {
         if ((await getStatusAsync()) !== BackgroundTaskStatus.Available) return;
@@ -73,41 +69,26 @@ export default function QuranSyncInitializer() {
       }
     })();
 
-    const refresh = (force = false) => {
-      if (refreshInFlight) {
-        if (force) refreshRequestedWhileInFlight = true;
-        return;
-      }
-      if (!force && Date.now() - lastRefreshAttemptAt < 60_000) return;
-      lastRefreshAttemptAt = Date.now();
-      refreshInFlight = true;
-      void refreshQuranDatabase(db)
-        .catch((error: unknown) => {
-          if (active && __DEV__) {
-            console.warn(
-              "Quran update unavailable; continuing with the saved database.",
-              error instanceof Error ? error.message : "Unknown error",
-            );
-          }
-        })
-        .finally(() => {
-          refreshInFlight = false;
-          if (refreshRequestedWhileInFlight && active) {
-            refreshRequestedWhileInFlight = false;
-            refresh(true);
-          }
-        });
+    const refresh = () => {
+      void refreshQuranDatabase(db).catch((error: unknown) => {
+        if (active && __DEV__) {
+          console.warn(
+            "Quran update unavailable; continuing with the saved database.",
+            error instanceof Error ? error.message : "Unknown error",
+          );
+        }
+      });
     };
 
     refresh();
     const refreshInterval = setInterval(refresh, 24 * 60 * 60 * 1000);
     const networkSubscription = NetInfo.addEventListener((state) => {
-      if (state.isConnected && state.isInternetReachable !== false) refresh(true);
+      if (state.isConnected && state.isInternetReachable !== false) refresh();
     });
     const appStateSubscription = AppState.addEventListener(
       "change",
       (state) => {
-        if (state === "active") refresh(true);
+        if (state === "active") refresh();
       },
     );
 

@@ -47,11 +47,22 @@ function database({
   failWrite = false,
   failValidation = false,
   failCommit = false,
+  failRelationships = false,
+  lastSuccessfulCheckAt = null,
+  lastAttemptAt = null,
+  revision = null,
   beforeCommit = () => {},
 } = {}) {
   let writes = 0;
   let committed = false;
   let rolledBack = false;
+  let updateCheckState =
+    lastSuccessfulCheckAt || lastAttemptAt
+      ? {
+          last_successful_check_at: lastSuccessfulCheckAt,
+          last_attempt_at: lastAttemptAt,
+        }
+      : null;
   return {
     get committed() {
       return committed;
@@ -61,11 +72,30 @@ function database({
     },
     async execAsync() {},
     async getFirstAsync(sql) {
+      if (sql.includes("quran_update_check_state")) return updateCheckState;
       return sql.includes("SELECT revision")
-        ? null
+        ? revision
+          ? { revision }
+          : null
         : ready
           ? counts
           : { ...counts, verses: 0 };
+    },
+    async runAsync(sql, ...values) {
+      if (sql.includes("quran_update_check_state")) {
+        updateCheckState = {
+          last_successful_check_at: sql.includes(
+            "last_successful_check_at, last_attempt_at",
+          )
+            ? values[0]
+            : (updateCheckState?.last_successful_check_at ?? null),
+          last_attempt_at: sql.includes(
+            "last_successful_check_at, last_attempt_at",
+          )
+            ? values[1]
+            : values[0],
+        };
+      }
     },
     async withExclusiveTransactionAsync(action) {
       try {
@@ -82,7 +112,9 @@ function database({
             };
           },
           async runAsync() {},
-          async getFirstAsync() {
+          async getFirstAsync(sql) {
+            if (sql === "PRAGMA foreign_key_check")
+              return failRelationships ? { table: "verses", rowid: 1 } : null;
             return failValidation ? { ...counts, verses: 0 } : counts;
           },
         });
@@ -101,6 +133,109 @@ const successfulApi = async (path) =>
   path === "/api/quran/status"
     ? { available: true, revision: "test-revision" }
     : completeSnapshot();
+
+const DAY = 24 * 60 * 60 * 1000;
+const now = Date.now();
+
+test("seven-day check interval is due at the boundary and for missing timestamps", () => {
+  const { isQuranUpdateCheckDue } = loadSync(successfulApi);
+  assert.equal(isQuranUpdateCheckDue(null, null, now), true);
+  assert.equal(
+    isQuranUpdateCheckDue(new Date(now - 7 * DAY + 1).toISOString(), null, now),
+    false,
+  );
+  assert.equal(
+    isQuranUpdateCheckDue(new Date(now - 7 * DAY).toISOString(), null, now),
+    true,
+  );
+  assert.equal(
+    isQuranUpdateCheckDue(
+      new Date(now - 30 * DAY).toISOString(),
+      new Date(now).toISOString(),
+      now,
+    ),
+    false,
+  );
+});
+
+test("valid local Quran with a recent successful check makes no request", async () => {
+  let requests = 0;
+  const db = database({
+    ready: true,
+    lastSuccessfulCheckAt: new Date(now - DAY).toISOString(),
+  });
+  const { refreshQuranDatabase } = loadSync(async () => {
+    requests++;
+    return successfulApi("/api/quran/status");
+  });
+  assert.equal(await refreshQuranDatabase(db), false);
+  assert.equal(requests, 0);
+});
+
+test("unchanged status after seven days records the successful content check", async () => {
+  const db = database({
+    ready: true,
+    revision: "test-revision",
+    lastSuccessfulCheckAt: new Date(now - 8 * DAY).toISOString(),
+  });
+  const requests = [];
+  const { refreshQuranDatabase } = loadSync(async (path) => {
+    requests.push(path);
+    return successfulApi(path);
+  });
+  assert.equal(await refreshQuranDatabase(db), false);
+  assert.deepEqual(requests, ["/api/quran/status"]);
+});
+
+test("failed status keeps the last success and suppresses reload retries for seven days", async () => {
+  const lastSuccessfulCheckAt = new Date(now - 8 * DAY).toISOString();
+  const db = database({ ready: true, lastSuccessfulCheckAt });
+  let requests = 0;
+  const { refreshQuranDatabase } = loadSync(async () => {
+    requests++;
+    throw new Error("HTTP 404");
+  });
+  await assert.rejects(refreshQuranDatabase(db), /404/);
+  assert.equal(await refreshQuranDatabase(db), false);
+  assert.equal(requests, 1);
+  assert.equal(db.committed, false);
+});
+
+test("concurrent refresh invocations share the same Quran request", async () => {
+  const db = database({
+    ready: true,
+    revision: "test-revision",
+    lastSuccessfulCheckAt: new Date(now - 8 * DAY).toISOString(),
+  });
+  let resolveStatus;
+  let requests = 0;
+  const { refreshQuranDatabase } = loadSync(() => {
+    requests++;
+    return new Promise((resolve) => {
+      resolveStatus = resolve;
+    });
+  });
+  const first = refreshQuranDatabase(db);
+  const second = refreshQuranDatabase(db);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(requests, 1);
+  resolveStatus({
+    available: true,
+    revision: "test-revision",
+    lastSuccessfulSyncAt: "2026-10-24T00:00:00Z",
+  });
+  assert.deepEqual(await Promise.all([first, second]), [false, false]);
+});
+
+test("relationship violations abort bootstrap before committing readiness", async () => {
+  const db = database({ failRelationships: true });
+  await assert.rejects(
+    loadSync(successfulApi).initializeQuranDatabase(db),
+    /invalid relationships/,
+  );
+  assert.equal(db.committed, false);
+  assert.equal(db.rolledBack, true);
+});
 
 test("bootstrap reports real stages, bounded row progress and completion only after commit", async () => {
   const events = [];

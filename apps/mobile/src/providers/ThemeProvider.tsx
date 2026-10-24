@@ -44,12 +44,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setModeState(value);
       }
     };
-    void loadTheme();
+    void loadTheme().catch(() => {
+      // Keep the system theme when persisted preferences cannot be read.
+    });
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    Appearance.setColorScheme(mode === "system" ? "unspecified" : mode);
+  }, [mode]);
 
   const resolvedMode: "light" | "dark" =
     mode === "system"
@@ -61,9 +67,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setMode = useCallback((nextMode: ThemeMode) => {
     setModeState(nextMode);
 
-    Appearance.setColorScheme(nextMode === "system" ? "unspecified" : nextMode);
-
-    void AsyncStorage.setItem(STORAGE_KEY, nextMode);
+    void AsyncStorage.setItem(STORAGE_KEY, nextMode).catch(() => {
+      // The selected theme remains active for this session.
+    });
   }, []);
 
   const colors: ThemeColors =

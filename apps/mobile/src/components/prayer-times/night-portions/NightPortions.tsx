@@ -31,7 +31,7 @@ const NightPortions = ({
 
   const nightDuration = fajrTime - sunsetTime;
 
-  if (nightDuration <= 0) {
+  if (!Number.isFinite(nightDuration) || nightDuration <= 0) {
     return null;
   }
 

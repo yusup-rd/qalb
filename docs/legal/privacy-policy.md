@@ -1,6 +1,6 @@
 # Qalb Privacy Policy
 
-**Last updated: 19 October 2026**
+**Last updated: 24 October 2026**
 
 Qalb is a free, noncommercial Islamic companion app maintained as a personal hobby project by an independent developer. For privacy questions or requests, contact [yusuprd@icloud.com](mailto:yusuprd@icloud.com).
 
@@ -36,7 +36,7 @@ Qalb has no user accounts, advertising, analytics, crash-reporting SDK, remote p
 
 Preferences and the downloaded Quran database remain on your device until you clear Qalb’s app data or uninstall the app. Cached API responses are considered fresh for 24 hours for locality results, mosque results, and metal prices; one hour for routes and route estimates; and 30 days for calendar events. The cache may retain older entries after they become stale until cache pruning, app-data removal, or uninstalling the app.
 
-When configured, Upstash Redis temporarily caches mosque results for 15 minutes; routes and route estimates for one hour; locality results and metal prices for 24 hours; and calendar events for 30 days. The API uses Redis as a cache, not for accounts or user histories. Render states that logs for a Hobby workspace are available in its dashboard for seven days; the actual deployment plan, settings, and any external log exports may change how long logs are available. Other providers set their own retention periods under their policies.
+When configured, Upstash Redis temporarily caches mosque results for 15 minutes; routes and route estimates for one hour; locality results and metal prices for 24 hours; and calendar events for 30 days. The API also retains the shared Quran Content Sync dataset and its revision in Redis until replaced by a successful synchronization or removed by the operator. This dataset is provider content, not personal reading history. Redis is not used for user accounts or activity histories. Render states that logs for a Hobby workspace are available in its dashboard for seven days; the actual deployment plan, settings, and any external log exports may change how long logs are available. Other providers set their own retention periods under their policies.
 
 ## Your choices and privacy requests
 

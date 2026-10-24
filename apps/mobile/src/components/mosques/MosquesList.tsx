@@ -5,12 +5,16 @@ import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Linking, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
+import ErrorCard from "@/components/ui/ErrorCard";
+import { useLocationStore } from "@/store/locationStore";
 
 interface MosquesListProps {
   mosques: NearbyMosque[];
   loading: boolean;
+  error: boolean;
+  onRetry: () => void;
   radiusKm: number;
   selectedMosqueId: string | null;
   onSelectMosque: (mosqueId: string) => void;
@@ -24,6 +28,8 @@ interface MosquesListProps {
 const MosquesList = ({
   mosques,
   loading,
+  error,
+  onRetry,
   radiusKm,
   selectedMosqueId,
   onSelectMosque,
@@ -37,6 +43,12 @@ const MosquesList = ({
     keyPrefix: "mosques.list",
   });
   const kilometerUnit = i18n.t("units.kilometer");
+  const latitude = useLocationStore((state) => state.latitude);
+  const permission = useLocationStore(
+    (state) => state.locationPermissionStatus,
+  );
+  const retryLocation = useLocationStore((state) => state.retryLocation);
+  const unavailable = !loading && latitude === null;
 
   const listRef = useRef<FlatList<NearbyMosque>>(null);
   const retryRef = useRef(0);
@@ -103,9 +115,11 @@ const MosquesList = ({
               </Text>
 
               <Text className="font-sans-regular text-muted-foreground text-sm">
-                {loading && mosques.length === 0
-                  ? t("loading")
-                  : t("found", { count: mosques.length })}
+                {error || unavailable
+                  ? t("unavailable")
+                  : loading && mosques.length === 0
+                    ? t("loading")
+                    : t("found", { count: mosques.length })}
               </Text>
             </View>
 
@@ -149,7 +163,30 @@ const MosquesList = ({
             <MosqueCardSkeleton />
             <MosqueCardSkeleton />
           </View>
-        ) : null
+        ) : error || unavailable ? (
+          <ErrorCard
+            title={t("unavailable")}
+            message={unavailable ? t("locationRequired") : t("loadFailed")}
+            actionLabel={
+              unavailable && permission === "blocked"
+                ? i18n.t("prayerTimes.locationError.openSettings")
+                : i18n.t("prayerTimes.locationError.tryAgain")
+            }
+            onActionPress={
+              unavailable
+                ? () => {
+                    if (permission === "blocked")
+                      void Linking.openSettings().catch(() => undefined);
+                    else void retryLocation();
+                  }
+                : onRetry
+            }
+          />
+        ) : (
+          <Text className="text-muted-foreground font-sans text-sm">
+            {t("empty")}
+          </Text>
+        )
       }
       onScrollToIndexFailed={handleScrollToIndexFailed}
       contentContainerStyle={{

@@ -2,9 +2,8 @@ import type { NearbyMosque } from "@/hooks/useNearbyMosques";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
-import { useTranslation } from "react-i18next";
 import { useEffect, useRef, type ComponentRef } from "react";
-import { Linking, Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
 
@@ -122,7 +121,6 @@ const MosqueMap = ({
   onSelectMosque,
   route,
 }: MosqueMapProps) => {
-  const { t } = useTranslation();
   const { colors } = useTheme();
 
   const mapRef = useRef<MapView>(null);
@@ -256,17 +254,6 @@ const MosqueMap = ({
           />
         ))}
       </MapView>
-      <View className="bg-background/90 absolute bottom-2 left-2 rounded px-2 py-1">
-        <Text
-          accessibilityRole="link"
-          className="text-foreground font-sans text-xs"
-          onPress={() =>
-            void Linking.openURL("https://www.openstreetmap.org/copyright")
-          }
-        >
-          {t("mosques.mapAttribution")}
-        </Text>
-      </View>
     </View>
   );
 };

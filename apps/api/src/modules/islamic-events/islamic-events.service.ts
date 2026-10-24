@@ -48,13 +48,15 @@ export class IslamicEventsService {
     let response: Response;
 
     try {
-      response = await fetch(`${base}/${month}/${year}`);
+      response = await fetch(`${base}/${month}/${year}`, {
+        signal: AbortSignal.timeout(10_000),
+      });
     } catch (error) {
       this.logger.error(
         {
           event: 'upstream_error',
           provider: 'aladhan',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Islamic events upstream request failed',
       );
@@ -92,7 +94,7 @@ export class IslamicEventsService {
           event: 'upstream_error',
           provider: 'aladhan',
           statusCode: response.status,
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Islamic events upstream returned invalid JSON',
       );

@@ -134,6 +134,11 @@ CREATE TABLE IF NOT EXISTS quran_sync_state (
   id INTEGER PRIMARY KEY CHECK (id = 1), revision TEXT NOT NULL,
   synced_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS quran_update_check_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  last_successful_check_at TEXT,
+  last_attempt_at TEXT
+);
 CREATE INDEX IF NOT EXISTS verses_chapter_id ON verses(chapter_id);
 CREATE INDEX IF NOT EXISTS verses_key ON verses(verse_key);
 CREATE INDEX IF NOT EXISTS translations_verse_id ON translations(verse_id);
@@ -144,6 +149,21 @@ CREATE INDEX IF NOT EXISTS chapter_audio_chapter_id ON chapter_audio(chapter_id)
 CREATE INDEX IF NOT EXISTS chapter_audio_reciter_id ON chapter_audio(reciter_id);
 `;
 
+const QURAN_UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+const refreshesInFlight = new WeakMap<SQLiteDatabase, Promise<boolean>>();
+
+export function isQuranUpdateCheckDue(
+  lastSuccessfulCheckAt: string | null | undefined,
+  lastAttemptAt: string | null | undefined,
+  now = Date.now(),
+): boolean {
+  const timestamps = [lastSuccessfulCheckAt, lastAttemptAt]
+    .map((value) => (value ? Date.parse(value) : Number.NaN))
+    .filter(Number.isFinite);
+  if (timestamps.length === 0) return true;
+  return now - Math.max(...timestamps) >= QURAN_UPDATE_CHECK_INTERVAL_MS;
+}
+
 export async function initializeQuranDatabase(
   db: SQLiteDatabase,
   onProgress?: QuranBootstrapObserver,
@@ -152,9 +172,8 @@ export async function initializeQuranDatabase(
   try {
     await db.execAsync(schema);
     const localReady = await hasLocalQuran(db);
-    reporter.log("local_checked", { localReady });
     if (!localReady) {
-      await refreshQuranDatabase(db, reporter);
+      await refreshQuranDatabase(db, reporter, true);
     }
     reporter.complete();
   } catch (error) {
@@ -166,12 +185,51 @@ export async function initializeQuranDatabase(
 export async function refreshQuranDatabase(
   db: SQLiteDatabase,
   reporter?: QuranBootstrapReporter,
+  force = false,
 ): Promise<boolean> {
+  const inFlight = refreshesInFlight.get(db);
+  if (inFlight) return inFlight;
+  const refresh = refreshQuranDatabaseOnce(db, reporter, force).finally(() => {
+    refreshesInFlight.delete(db);
+  });
+  refreshesInFlight.set(db, refresh);
+  return refresh;
+}
+
+async function refreshQuranDatabaseOnce(
+  db: SQLiteDatabase,
+  reporter?: QuranBootstrapReporter,
+  force = false,
+): Promise<boolean> {
+  await db.execAsync(schema);
+  const localReady = await hasLocalQuran(db);
+  const checkState = await db.getFirstAsync<{
+    last_successful_check_at: string | null;
+    last_attempt_at: string | null;
+  }>(
+    "SELECT last_successful_check_at, last_attempt_at FROM quran_update_check_state WHERE id = 1",
+  );
+  if (
+    localReady &&
+    !force &&
+    !isQuranUpdateCheckDue(
+      checkState?.last_successful_check_at,
+      checkState?.last_attempt_at,
+    )
+  ) {
+    return false;
+  }
+
+  const attemptedAt = new Date().toISOString();
+  await db.runAsync(
+    `INSERT INTO quran_update_check_state (id, last_attempt_at) VALUES (1, ?)
+     ON CONFLICT(id) DO UPDATE SET last_attempt_at = excluded.last_attempt_at`,
+    attemptedAt,
+  );
   reporter?.stage("connecting");
   const status = await apiRequest<QuranServerStatus>(
     "/api/quran/status",
     undefined,
-    { onEvent: reporter?.request },
   );
   if (!status.available || !status.revision) {
     throw new Error(
@@ -182,8 +240,10 @@ export async function refreshQuranDatabase(
   const current = await db.getFirstAsync<{ revision: string }>(
     "SELECT revision FROM quran_sync_state WHERE id = 1",
   );
-  const localReady = await hasLocalQuran(db);
-  if (localReady && current?.revision === status.revision) return false;
+  if (localReady && current?.revision === status.revision) {
+    await recordSuccessfulQuranCheck(db);
+    return false;
+  }
 
   reporter?.stage("downloading");
   const changes = await apiRequest<QuranChanges | QuranSnapshot>(
@@ -192,7 +252,6 @@ export async function refreshQuranDatabase(
     {
       timeoutMs: 45_000,
       maxAttempts: 3,
-      onEvent: reporter?.request,
     },
   );
   reporter?.stage("validating");
@@ -207,13 +266,28 @@ export async function refreshQuranDatabase(
     }
     reporter?.stage("saving");
     await applyChangesTransactionally(db, changes);
+    await recordSuccessfulQuranCheck(db);
     return true;
   }
   const snapshot = changes as QuranSnapshot;
   validateQuranSnapshot(snapshot);
   reporter?.stage("saving");
   await applySnapshotTransactionally(db, snapshot, reporter);
+  await recordSuccessfulQuranCheck(db);
   return true;
+}
+
+async function recordSuccessfulQuranCheck(db: SQLiteDatabase): Promise<void> {
+  const checkedAt = new Date().toISOString();
+  await db.runAsync(
+    `INSERT INTO quran_update_check_state (id, last_successful_check_at, last_attempt_at)
+     VALUES (1, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       last_successful_check_at = excluded.last_successful_check_at,
+       last_attempt_at = excluded.last_attempt_at`,
+    checkedAt,
+    checkedAt,
+  );
 }
 
 const tableColumns: Record<string, { table: string; key: string }> = {
@@ -330,6 +404,11 @@ async function applyChangesTransactionally(
       batch.revision,
       batch.syncedAt,
     );
+    // Exclusive transactions use another native connection. Foreign-key
+    // enforcement on the provider connection alone cannot protect these writes.
+    if (await transaction.getFirstAsync("PRAGMA foreign_key_check")) {
+      throw new Error("The Quran dataset contains invalid relationships.");
+    }
     const counts = await transaction.getFirstAsync<{
       chapters: number;
       verses: number;
@@ -371,7 +450,6 @@ async function applySnapshotTransactionally(
     snapshot.chapterAudio.length;
   let completedRows = 0;
   reporter?.rows(0, totalRows);
-  reporter?.log("transaction_started", { totalRows });
   await db.withExclusiveTransactionAsync(async (transaction) => {
     await transaction.execAsync(`
       DELETE FROM ayah_audio;
@@ -480,6 +558,9 @@ async function applySnapshotTransactionally(
       ]),
     );
     reporter?.stage("finishing");
+    if (await transaction.getFirstAsync("PRAGMA foreign_key_check")) {
+      throw new Error("The Quran dataset contains invalid relationships.");
+    }
     await transaction.runAsync(
       `INSERT INTO quran_sync_state (id, revision, synced_at) VALUES (1, ?, ?)
        ON CONFLICT(id) DO UPDATE SET revision = excluded.revision, synced_at = excluded.synced_at`,
@@ -510,7 +591,6 @@ async function applySnapshotTransactionally(
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
-  reporter?.log("transaction_committed", { completedRows, totalRows });
 }
 
 export async function hasLocalQuran(db: SQLiteDatabase): Promise<boolean> {

@@ -86,7 +86,6 @@ describe('RedisService', () => {
     expect(result).toBeNull();
     expect(loggerMock.warn).toHaveBeenCalledWith(
       {
-        key: 'some-key',
         errorCode: 'Error',
       },
       'Redis read failed',
@@ -105,7 +104,6 @@ describe('RedisService', () => {
 
     expect(loggerMock.warn).toHaveBeenCalledWith(
       {
-        key: 'some-key',
         ttlSeconds: 300,
         errorCode: 'Error',
       },

@@ -25,6 +25,7 @@ import {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { useTranslation } from "react-i18next";
 
 interface TasbihArtworkProps {
   initialCount: number;
@@ -32,6 +33,7 @@ interface TasbihArtworkProps {
 }
 
 const TasbihArtwork = ({ initialCount, onTap }: TasbihArtworkProps) => {
+  const { t } = useTranslation(undefined, { keyPrefix: "tasbih.counter" });
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   /*
@@ -189,6 +191,8 @@ const TasbihArtwork = ({ initialCount, onTap }: TasbihArtworkProps) => {
     >
       <Pressable
         onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={t("increment")}
         style={{
           width: artworkWidth,
           height: artworkHeight,

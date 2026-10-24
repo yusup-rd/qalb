@@ -148,6 +148,7 @@ export function formatHijriDate(
  * Russian → "17:42"
  */
 export function formatTime(date: Date, language = i18n.language) {
+  if (!Number.isFinite(date.getTime())) return "—";
   const { intlLocale, hour12 } = getLocaleConfig(language);
 
   return date.toLocaleTimeString(intlLocale, {
@@ -235,6 +236,7 @@ export function formatUpdatedAt(
  * instead of showing "0 min" before the target time is reached.
  */
 export function formatDuration(milliseconds: number) {
+  if (!Number.isFinite(milliseconds)) return "—";
   const totalMinutes = Math.max(0, Math.ceil(milliseconds / 60_000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -261,6 +263,7 @@ export function formatDuration(milliseconds: number) {
  * 5056000 → "01:24:16"
  */
 export function formatDurationClock(milliseconds: number) {
+  if (!Number.isFinite(milliseconds)) return "—";
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);

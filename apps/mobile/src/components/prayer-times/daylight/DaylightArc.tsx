@@ -27,6 +27,16 @@ const DaylightArc = ({
   const sunsetTime = sunset.getTime();
   const nowTime = now.getTime();
 
+  if (!Number.isFinite(sunriseTime) || !Number.isFinite(sunsetTime)) {
+    return (
+      <View className="bg-card rounded-2xl p-5">
+        <Text className="text-muted-foreground font-sans text-sm">
+          {t("unavailable")}
+        </Text>
+      </View>
+    );
+  }
+
   const daylightDuration = sunsetTime - sunriseTime;
 
   const rawProgress =

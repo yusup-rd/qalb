@@ -1,3 +1,4 @@
+import { useTheme } from "@/providers/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 
 import { Text, TextInput, View } from "react-native";
@@ -15,6 +16,7 @@ const ZakatInput = ({
   value,
   onChange,
 }: ZakatInputProps) => {
+  const { colors } = useTheme();
   const [text, setText] = useState(value === 0 ? "" : String(value));
   const [isFocused, setIsFocused] = useState(false);
   const lastEmittedValue = useRef(value);
@@ -80,7 +82,9 @@ const ZakatInput = ({
         onChangeText={handleChange}
         keyboardType="decimal-pad"
         placeholder="0"
-        placeholderTextColor="text-muted-foreground"
+        placeholderTextColor={colors.mutedForeground}
+        accessibilityLabel={label}
+        accessibilityHint={description}
         className="border-border bg-card font-sans-medium text-foreground focus:border-primary rounded-xl border p-3"
       />
     </View>

@@ -69,14 +69,15 @@ test("malformed JSON emits invalid_response rather than JSON completion", async 
       throw new SyntaxError("Invalid JSON");
     },
   }));
-  const result = await apiRequest("/api/quran/changes", undefined, {
-    onEvent: (event) => events.push(event),
-  });
-  // Preserve the client's existing null-result behavior; snapshot validation rejects it.
-  assert.equal(result, null);
+  await assert.rejects(
+    apiRequest("/api/quran/changes", undefined, {
+      onEvent: (event) => events.push(event),
+    }),
+    /invalid JSON/,
+  );
   assert.deepEqual(
     events.map((event) => event.type),
-    ["start", "response", "invalid_response"],
+    ["start", "response", "invalid_response", "failure"],
   );
 });
 
@@ -97,3 +98,20 @@ test("optional diagnostics cannot turn a successful request into a failure", asy
     { available: true },
   );
 });
+
+for (const [method, status] of [
+  ["HEAD", 200],
+  ["GET", 204],
+  ["POST", 205],
+]) {
+  test(`${method} ${status} succeeds without parsing a body`, async () => {
+    const { apiRequest } = loadClient(async () => ({
+      ok: true,
+      status,
+      json() {
+        assert.fail("A bodyless response must not be parsed");
+      },
+    }));
+    assert.equal(await apiRequest("/api/example", { method }), undefined);
+  });
+}

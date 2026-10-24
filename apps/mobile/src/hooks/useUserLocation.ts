@@ -1,4 +1,5 @@
 import type { LocationPermissionStatus } from "@/store/locationStore";
+import { withTimeout } from "@/lib/with-timeout";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
@@ -18,9 +19,12 @@ export function useUserLocation() {
     useState<LocationPermissionStatus>("checking");
   const [error, setError] = useState<string | null>(null);
   const initialRequestComplete = useRef(false);
+  const requestInFlight = useRef(false);
   const previousAppState = useRef<AppStateStatus>(AppState.currentState);
 
   const getLocation = useCallback(async () => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     setLoading(true);
     setError(null);
 
@@ -65,9 +69,7 @@ export function useUserLocation() {
         if (!permission.canAskAgain) {
           setPermissionStatus("blocked");
 
-          setError(
-            "Location permission is disabled. Please enable it in Settings.",
-          );
+          setError(t("prayerTimes.locationError.permissionBlockedTitle"));
 
           return;
         }
@@ -79,8 +81,8 @@ export function useUserLocation() {
 
           setError(
             permission.canAskAgain
-              ? "Location permission was not granted."
-              : "Location permission is disabled. Please enable it in Settings.",
+              ? t("prayerTimes.locationError.permissionNotGranted")
+              : t("prayerTimes.locationError.permissionBlockedTitle"),
           );
 
           return;
@@ -90,9 +92,12 @@ export function useUserLocation() {
       setPermissionStatus("granted");
       permissionConfirmed = true;
 
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      const currentLocation = await withTimeout(
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }),
+        20_000,
+      );
 
       setLocation({
         latitude: currentLocation.coords.latitude,
@@ -105,8 +110,9 @@ export function useUserLocation() {
         setPermissionStatus("granted");
       }
 
-      setError("Unable to get your current location.");
+      setError(t("prayerTimes.locationError.unavailableMessage"));
     } finally {
+      requestInFlight.current = false;
       initialRequestComplete.current = true;
       setLoading(false);
     }

@@ -44,6 +44,19 @@ const RootLayout = () => {
   const splashHidden = useRef(false);
   const databaseInitializationInFlight = useRef(false);
   const databaseRef = useRef<SQLiteDatabase | null>(null);
+  const [databaseOpenAttempt, setDatabaseOpenAttempt] = useState(0);
+  const reportedOpenError = useRef<Error | null>(null);
+
+  const handleDatabaseOpenError = useCallback((error: Error) => {
+    if (reportedOpenError.current === error) return;
+    reportedOpenError.current = error;
+    // SDK 57 invokes onError during render. Update the parent after rendering.
+    queueMicrotask(() => {
+      databaseRef.current = null;
+      setQuranDatabaseError(getQuranBootstrapErrorKind(error));
+      setQuranDatabaseReady(false);
+    });
+  }, []);
 
   const [fontsLoaded, fontError] = useFonts({
     "sans-regular": require("@/assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -101,9 +114,14 @@ const RootLayout = () => {
 
   const retryDatabaseInitialization = useCallback(() => {
     const db = databaseRef.current;
-    if (!db || databaseInitializationInFlight.current) return;
+    if (databaseInitializationInFlight.current) return;
     setQuranDatabaseError(null);
     setQuranDatabaseReady(false);
+    if (!db) {
+      reportedOpenError.current = null;
+      setDatabaseOpenAttempt((attempt) => attempt + 1);
+      return;
+    }
     void initializeDatabase(db);
   }, [initializeDatabase]);
 
@@ -180,8 +198,10 @@ const RootLayout = () => {
         {/* The provider withholds its children until onInit resolves. */}
         <QuranReadinessContext.Provider value={quranDatabaseReady}>
           <SQLiteProvider
+            key={databaseOpenAttempt}
             databaseName="quran-v2.db"
             onInit={initializeDatabase}
+            onError={handleDatabaseOpenError}
           >
             <QuranReadinessGate>
               <QuranAudioProvider>

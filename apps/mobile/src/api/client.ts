@@ -239,6 +239,16 @@ async function sendRequest<T>(
     });
     notify({ type: "response", status: response.status });
 
+    if (
+      response.ok &&
+      ((init?.method ?? "GET").toUpperCase() === "HEAD" ||
+        response.status === 204 ||
+        response.status === 205)
+    ) {
+      notify({ type: "complete", status: response.status });
+      return undefined as T;
+    }
+
     let jsonParsed = true;
     const data = (await response.json().catch(() => {
       if (controller.signal.aborted) {
@@ -266,6 +276,14 @@ async function sendRequest<T>(
       type: jsonParsed ? "complete" : "invalid_response",
       status: response.status,
     });
+    if (!jsonParsed) {
+      throw new ApiClientError(
+        response.status,
+        "The server returned invalid JSON.",
+        "http",
+        false,
+      );
+    }
     return data as T;
   } catch (error) {
     if (callerSignal?.aborted) {

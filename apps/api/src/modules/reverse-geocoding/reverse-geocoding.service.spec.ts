@@ -7,6 +7,7 @@ describe('ReverseGeocodingService', () => {
     const redis = {
       get: vi.fn(),
       set: vi.fn(),
+      acquireLock: vi.fn().mockResolvedValue(true),
     };
     const logger = {
       setContext: vi.fn(),
@@ -37,6 +38,27 @@ describe('ReverseGeocodingService', () => {
 
       expect(result).toEqual(cached);
       expect(redis.get).toHaveBeenCalledWith('qalb:geocode:3.1390:101.6869:en');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(redis.acquireLock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
+  it('does not send public Nominatim requests without a shared rate-limit slot', async () => {
+    const { service, redis } = createService();
+    redis.get.mockResolvedValue(null);
+    redis.acquireLock.mockResolvedValue(false);
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    try {
+      await expect(service.reverse(3, 101, 'en')).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+      expect(redis.acquireLock).toHaveBeenCalledWith(
+        'qalb:nominatim:request-slot',
+        'reserved',
+        1100,
+      );
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       fetchMock.mockRestore();

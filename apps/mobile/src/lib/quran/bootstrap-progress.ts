@@ -1,5 +1,3 @@
-import type { ApiRequestEvent } from "@/api/client";
-
 export const QURAN_PREPARATION_STEPS = [
   "connecting",
   "downloading",
@@ -69,17 +67,6 @@ export function createQuranBootstrapReporter(
   onProgress?: QuranBootstrapObserver,
 ) {
   let progress = initialQuranBootstrapProgress();
-  const log = (event: string, fields: Record<string, unknown> = {}) => {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.info("[QuranBootstrap]", {
-        event,
-        stage: progress.stage,
-        elapsedMs: Date.now() - progress.startedAt,
-        stageElapsedMs: Date.now() - progress.stageStartedAt,
-        ...fields,
-      });
-    }
-  };
   const emit = () => {
     // Observability must never change transaction success or retry behavior.
     try {
@@ -88,43 +75,39 @@ export function createQuranBootstrapReporter(
       /* Ignore observer errors. */
     }
   };
-  log("start");
   emit();
   return {
     stage(stage: QuranBootstrapStage) {
-      log("stage_complete");
       progress = {
         ...progress,
         stage,
         stageStartedAt: Date.now(),
         rows: undefined,
       };
-      log("stage_started");
       emit();
     },
     rows(completed: number, total: number) {
       progress = { ...progress, rows: { completed, total } };
       emit();
     },
-    log,
-    request(event: ApiRequestEvent) {
-      const { elapsedMs: requestElapsedMs, ...fields } = event;
-      log(`request_${event.type}`, { ...fields, requestElapsedMs });
-    },
     complete() {
-      log("stage_complete");
       progress = {
         ...progress,
         stage: "complete",
         status: "complete",
         rows: undefined,
       };
-      log("success");
       emit();
     },
     fail(kind: string) {
       progress = { ...progress, status: "failed", rows: undefined };
-      log("failure", { kind });
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.warn("[QuranBootstrap] failed", {
+          stage: progress.stage,
+          elapsedMs: Date.now() - progress.startedAt,
+          kind,
+        });
+      }
       emit();
     },
   };
