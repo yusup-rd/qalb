@@ -199,6 +199,7 @@
     },
     "locationError": {
       "permissionBlockedTitle": "Location permission is disabled",
+      "permissionNotGranted": "Location access was not enabled.",
       "unavailableTitle": "Location unavailable",
       "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
@@ -206,7 +207,13 @@
     },
     "location": {
       "loading": "Locating...",
-      "unavailable": "Location unavailable"
+      "unavailable": "Location unavailable",
+      "disclosure": {
+        "title": "How Qalb uses your location",
+        "message": "Qalb uses your location for prayer times, Qibla, locality names, nearby mosques, and route estimates. Coordinates are sent to Qalb's server and the service providers needed for these features. If locality lookup through Qalb is unavailable, your device's geocoder may receive them. You can continue without location access.",
+        "continue": "Continue",
+        "notNow": "Not now"
+      }
     },
     "prayerCalculation": {
       "title": "Prayer Calculation",
@@ -472,6 +479,7 @@
     }
   },
   "mosques": {
+    "mapAttribution": "Locality data © OpenStreetMap contributors",
     "list": {
       "title": "Mosques nearby",
       "found": "{{count}} found nearby",
@@ -547,7 +555,12 @@
         "free": "Qalb is intended to remain free to use.",
         "version": "Version {{version}}",
         "credits": "Quran data provided by Quran.Foundation. Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio.",
-        "noticesPending": "Software and content license notices are being finalized."
+        "softwareNotices": "Open-source software notices",
+        "licenseExpo": "Expo and Expo modules — MIT License",
+        "licenseReactNative": "React Native — MIT License",
+        "licenseMapsAndStorage": "React Native Maps and AsyncStorage — MIT License",
+        "licensePluralRules": "intl-pluralrules — ISC License",
+        "contentRightsNote": "Quran text, translations, transliteration, and recitation have separate content rights; attribution here does not claim that those rights have been cleared."
       },
       "copyright": "© Yusup Rejebov {{year}}"
     }

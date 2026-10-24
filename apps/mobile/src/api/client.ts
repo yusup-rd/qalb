@@ -1,6 +1,44 @@
-const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000"
-).replace(/\/$/, "");
+function resolveApiBaseUrl(): string {
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const localDevelopmentFallback =
+    typeof __DEV__ !== "undefined" && __DEV__
+      ? "http://localhost:3000"
+      : undefined;
+  const value = configuredUrl || localDevelopmentFallback;
+
+  if (!value) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL is required in release builds. Set it to the HTTPS base URL of the Qalb API.",
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL must be a valid absolute HTTPS URL in release builds.",
+    );
+  }
+
+  const isDevelopmentHttp =
+    typeof __DEV__ !== "undefined" && __DEV__ && parsed.protocol === "http:";
+  if (
+    (parsed.protocol !== "https:" && !isDevelopmentHttp) ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL must use HTTPS and must not contain credentials, a query, or a fragment.",
+    );
+  }
+
+  return value.replace(/\/+$/, "");
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const REQUEST_TIMEOUTS_MS = [15_000, 20_000, 45_000] as const;
 const RETRY_DELAYS_MS = [2_000, 8_000] as const;

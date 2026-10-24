@@ -69,12 +69,43 @@ export default function AboutSection() {
           <Text className="text-muted-foreground font-sans text-xs">
             {t("about.credits")}
           </Text>
+          <Text className="text-foreground font-sans-semibold text-sm">
+            {t("about.softwareNotices")}
+          </Text>
+          <LicenseLink
+            label={t("about.licenseExpo")}
+            url="https://github.com/expo/expo/blob/main/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licenseReactNative")}
+            url="https://github.com/facebook/react-native/blob/main/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licenseMapsAndStorage")}
+            url="https://github.com/react-native-maps/react-native-maps/blob/master/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licensePluralRules")}
+            url="https://github.com/eemeli/intl-pluralrules/blob/main/LICENSE"
+          />
           <Text className="text-muted-foreground font-sans text-xs">
-            {t("about.noticesPending")}
+            {t("about.contentRightsNote")}
           </Text>
         </View>
       </SheetWrapper>
     </View>
+  );
+}
+
+function LicenseLink({ label, url }: { label: string; url: string }) {
+  return (
+    <SmoothPressable
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      onPress={() => void Linking.openURL(url)}
+    >
+      <Text className="text-primary font-sans text-xs underline">{label}</Text>
+    </SmoothPressable>
   );
 }
 
