@@ -79,7 +79,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "i18n:check": "node scripts/check-i18n.js",
-    "test:quran": "node --experimental-strip-types --test scripts/quran-snapshot.test.mjs"
+    "test:quran": "node --experimental-strip-types --test scripts/quran-*.test.mjs"
   },
   "private": true
 }

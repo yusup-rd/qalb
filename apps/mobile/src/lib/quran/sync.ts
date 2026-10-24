@@ -1,6 +1,12 @@
 import { apiRequest } from "@/api/client";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
 import { validateQuranSnapshot } from "./snapshot-validation";
+import { getQuranBootstrapErrorKind } from "./bootstrap-error";
+import {
+  createQuranBootstrapReporter,
+  type QuranBootstrapObserver,
+  type QuranBootstrapReporter,
+} from "./bootstrap-progress";
 
 type QuranServerStatus = {
   available: true;
@@ -140,17 +146,33 @@ CREATE INDEX IF NOT EXISTS chapter_audio_reciter_id ON chapter_audio(reciter_id)
 
 export async function initializeQuranDatabase(
   db: SQLiteDatabase,
+  onProgress?: QuranBootstrapObserver,
 ): Promise<void> {
-  await db.execAsync(schema);
-  if (!(await hasLocalQuran(db))) {
-    await refreshQuranDatabase(db);
+  const reporter = createQuranBootstrapReporter(onProgress);
+  try {
+    await db.execAsync(schema);
+    const localReady = await hasLocalQuran(db);
+    reporter.log("local_checked", { localReady });
+    if (!localReady) {
+      await refreshQuranDatabase(db, reporter);
+    }
+    reporter.complete();
+  } catch (error) {
+    reporter.fail(getQuranBootstrapErrorKind(error));
+    throw error;
   }
 }
 
 export async function refreshQuranDatabase(
   db: SQLiteDatabase,
+  reporter?: QuranBootstrapReporter,
 ): Promise<boolean> {
-  const status = await apiRequest<QuranServerStatus>("/api/quran/status");
+  reporter?.stage("connecting");
+  const status = await apiRequest<QuranServerStatus>(
+    "/api/quran/status",
+    undefined,
+    { onEvent: reporter?.request },
+  );
   if (!status.available || !status.revision) {
     throw new Error(
       "Quran content is still being prepared. Please try again shortly.",
@@ -163,14 +185,17 @@ export async function refreshQuranDatabase(
   const localReady = await hasLocalQuran(db);
   if (localReady && current?.revision === status.revision) return false;
 
+  reporter?.stage("downloading");
   const changes = await apiRequest<QuranChanges | QuranSnapshot>(
     `/api/quran/changes${localReady && current?.revision ? `?revision=${encodeURIComponent(current.revision)}` : ""}`,
     undefined,
     {
       timeoutMs: 45_000,
       maxAttempts: 3,
+      onEvent: reporter?.request,
     },
   );
+  reporter?.stage("validating");
   if ("kind" in changes && changes.kind === "incremental") {
     if (
       !current?.revision ||
@@ -180,12 +205,14 @@ export async function refreshQuranDatabase(
     ) {
       throw new Error("The Quran server returned an invalid change batch.");
     }
+    reporter?.stage("saving");
     await applyChangesTransactionally(db, changes);
     return true;
   }
   const snapshot = changes as QuranSnapshot;
   validateQuranSnapshot(snapshot);
-  await applySnapshotTransactionally(db, snapshot);
+  reporter?.stage("saving");
+  await applySnapshotTransactionally(db, snapshot, reporter);
   return true;
 }
 
@@ -332,7 +359,19 @@ async function applyChangesTransactionally(
 async function applySnapshotTransactionally(
   db: SQLiteDatabase,
   snapshot: QuranSnapshot,
+  reporter?: QuranBootstrapReporter,
 ): Promise<void> {
+  const totalRows =
+    snapshot.chapters.length +
+    snapshot.verses.length +
+    snapshot.translations.length +
+    snapshot.transliterations.length +
+    snapshot.reciters.length +
+    snapshot.ayahAudio.length +
+    snapshot.chapterAudio.length;
+  let completedRows = 0;
+  reporter?.rows(0, totalRows);
+  reporter?.log("transaction_started", { totalRows });
   await db.withExclusiveTransactionAsync(async (transaction) => {
     await transaction.execAsync(`
       DELETE FROM ayah_audio;
@@ -350,7 +389,14 @@ async function applySnapshotTransactionally(
     ): Promise<void> => {
       const statement = await transaction.prepareAsync(sql);
       try {
-        for (const values of rows) await statement.executeAsync(values);
+        for (const values of rows) {
+          await statement.executeAsync(values);
+          completedRows += 1;
+          // Bound React updates while counting only successful native writes.
+          if (completedRows % 250 === 0 || completedRows === totalRows) {
+            reporter?.rows(completedRows, totalRows);
+          }
+        }
       } finally {
         await statement.finalizeAsync();
       }
@@ -433,6 +479,7 @@ async function applySnapshotTransactionally(
         row.updated_at,
       ]),
     );
+    reporter?.stage("finishing");
     await transaction.runAsync(
       `INSERT INTO quran_sync_state (id, revision, synced_at) VALUES (1, ?, ?)
        ON CONFLICT(id) DO UPDATE SET revision = excluded.revision, synced_at = excluded.synced_at`,
@@ -463,6 +510,7 @@ async function applySnapshotTransactionally(
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
+  reporter?.log("transaction_committed", { completedRows, totalRows });
 }
 
 export async function hasLocalQuran(db: SQLiteDatabase): Promise<boolean> {

@@ -410,7 +410,28 @@
     "title": "Quran",
     "bootstrap": {
       "loadingTitle": "Preparing Quran content",
-      "loadingMessage": "Qalb is downloading and checking Quran content. A new installation needs an internet connection before Quran reading is available. After the first successful download, reading and search work offline.",
+      "loadingMessage": "Preparing the Quran and translations for offline reading.",
+      "offlineHint": "Keep Qalb open for this first download. Once preparation is complete, reading and search will work offline.",
+      "inProgress": "In progress",
+      "writingProgress": "{{percent}}% written",
+      "takingLonger": "This step is taking a little longer. Keep Qalb open. If preparation fails, you can try again.",
+      "stageElapsed": "Time on this step: {{seconds}} s",
+      "stoppedAt": "Could not finish: {{stage}}",
+      "stages": {
+        "checking": "Checking saved content",
+        "connecting": "Connecting to the server",
+        "downloading": "Downloading Quran content",
+        "validating": "Checking downloaded content",
+        "saving": "Writing content to your device",
+        "finishing": "Finishing preparation",
+        "complete": "Ready for offline reading"
+      },
+      "states": {
+        "completed": "Completed",
+        "active": "In progress",
+        "pending": "Not started",
+        "failed": "Could not complete"
+      },
       "errorTitle": "Quran content is unavailable",
       "networkErrorMessage": "Quran content has not been downloaded to this installation yet. Connect to the internet and try again. Once the first download succeeds, reading and search will work offline.",
       "storageErrorMessage": "There is not enough free space to save Quran content. Free up space on your device, then try again. Any previously saved Quran database remains unchanged.",

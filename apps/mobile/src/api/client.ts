@@ -73,7 +73,25 @@ export class ApiClientError extends Error {
 export interface ApiRequestOptions {
   timeoutMs?: number;
   maxAttempts?: number;
+  onEvent?: (event: ApiRequestEvent) => void;
 }
+
+export type ApiRequestEvent = {
+  type:
+    | "start"
+    | "response"
+    | "complete"
+    | "invalid_response"
+    | "retry"
+    | "failure";
+  path: string;
+  attempt: number;
+  elapsedMs: number;
+  status?: number;
+  timeoutMs?: number;
+  retryDelayMs?: number;
+  kind?: ApiErrorKind;
+};
 
 function pathForLogs(path: string): string {
   const queryIndex = path.indexOf("?");
@@ -188,6 +206,7 @@ async function sendRequest<T>(
   path: string,
   init: RequestInit | undefined,
   timeoutMs: number,
+  notify: (event: Pick<ApiRequestEvent, "type" | "status">) => void,
 ): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init?.signal;
@@ -218,12 +237,15 @@ async function sendRequest<T>(
       },
       signal: controller.signal,
     });
+    notify({ type: "response", status: response.status });
 
+    let jsonParsed = true;
     const data = (await response.json().catch(() => {
       if (controller.signal.aborted) {
         throw new Error("The request was aborted.");
       }
 
+      jsonParsed = false;
       return null;
     })) as { message?: string } | null;
 
@@ -240,6 +262,10 @@ async function sendRequest<T>(
       );
     }
 
+    notify({
+      type: jsonParsed ? "complete" : "invalid_response",
+      status: response.status,
+    });
     return data as T;
   } catch (error) {
     if (callerSignal?.aborted) {
@@ -279,9 +305,25 @@ export async function apiRequest<T>(
     const timeoutMs =
       options.timeoutMs ??
       REQUEST_TIMEOUTS_MS[Math.min(attempt, REQUEST_TIMEOUTS_MS.length) - 1];
+    const startedAt = Date.now();
+    const notify = (
+      event: Pick<ApiRequestEvent, "type"> & Partial<ApiRequestEvent>,
+    ) => {
+      try {
+        options.onEvent?.({
+          path: pathForLogs(path),
+          attempt,
+          elapsedMs: Date.now() - startedAt,
+          ...event,
+        });
+      } catch {
+        /* Observers must not affect the request. */
+      }
+    };
+    notify({ type: "start", timeoutMs });
 
     try {
-      return await sendRequest<T>(path, init, timeoutMs);
+      return await sendRequest<T>(path, init, timeoutMs, notify);
     } catch (error) {
       lastError = toApiClientError(error, false);
 
@@ -299,11 +341,13 @@ export async function apiRequest<T>(
       logRequestFailure(path, method, lastError, attempt, willRetry);
 
       if (!willRetry) {
+        notify({ type: "failure", kind: lastError.kind });
         throw lastError;
       }
 
       const delayMs =
         RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS.at(-1) ?? 2_000;
+      notify({ type: "retry", kind: lastError.kind, retryDelayMs: delayMs });
 
       await wait(delayMs, init?.signal);
     }

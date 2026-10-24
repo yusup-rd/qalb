@@ -10,6 +10,7 @@ import { setupNotificationHandler } from "@/lib/notifications";
 import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { initializeQuranDatabase } from "@/lib/quran/sync";
+import { initialQuranBootstrapProgress } from "@/lib/quran/bootstrap-progress";
 import {
   getQuranBootstrapErrorKind,
   type QuranBootstrapErrorKind,
@@ -31,6 +32,10 @@ const RootLayout = () => {
   const [languageLoaded, setLanguageLoaded] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
   const [quranDatabaseReady, setQuranDatabaseReady] = useState(false);
+  const [bootstrapProgress, setBootstrapProgress] = useState(
+    initialQuranBootstrapProgress,
+  );
+  const [bootstrapDelayElapsed, setBootstrapDelayElapsed] = useState(false);
   const [quranDatabaseError, setQuranDatabaseError] =
     useState<QuranBootstrapErrorKind | null>(null);
   const splashHidden = useRef(false);
@@ -80,18 +85,12 @@ const RootLayout = () => {
     databaseInitializationInFlight.current = true;
     databaseRef.current = db;
     try {
-      await initializeQuranDatabase(db);
+      await initializeQuranDatabase(db, setBootstrapProgress);
       setQuranDatabaseError(null);
       setQuranDatabaseReady(true);
     } catch (error) {
       setQuranDatabaseError(getQuranBootstrapErrorKind(error));
       setQuranDatabaseReady(false);
-      if (__DEV__) {
-        console.warn(
-          "Quran database initialization failed.",
-          error instanceof Error ? error.message : "Unknown error",
-        );
-      }
     } finally {
       databaseInitializationInFlight.current = false;
     }
@@ -99,7 +98,7 @@ const RootLayout = () => {
 
   const retryDatabaseInitialization = useCallback(() => {
     const db = databaseRef.current;
-    if (!db) return;
+    if (!db || databaseInitializationInFlight.current) return;
     setQuranDatabaseError(null);
     setQuranDatabaseReady(false);
     void initializeDatabase(db);
@@ -119,12 +118,25 @@ const RootLayout = () => {
     return subscription;
   }, [quranDatabaseError, retryDatabaseInitialization]);
 
+  // Avoid flashing setup UI for an already complete local database.
+  useEffect(() => {
+    if (!fontsLoaded || !languageLoaded || quranDatabaseReady) return;
+    const timer = setTimeout(() => setBootstrapDelayElapsed(true), 300);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded, languageLoaded, quranDatabaseReady]);
+
+  const showBootstrap =
+    !quranDatabaseReady &&
+    (bootstrapDelayElapsed ||
+      quranDatabaseError !== null ||
+      bootstrapProgress.stage !== "checking");
+
   useEffect(() => {
     if (
       !fontsLoaded ||
       !languageLoaded ||
       !rootLaidOut ||
-      (!quranDatabaseReady && !quranDatabaseError) ||
+      (!quranDatabaseReady && !showBootstrap) ||
       splashHidden.current
     ) {
       return;
@@ -139,7 +151,7 @@ const RootLayout = () => {
     fontsLoaded,
     languageLoaded,
     quranDatabaseReady,
-    quranDatabaseError,
+    showBootstrap,
     rootLaidOut,
   ]);
 
@@ -152,29 +164,29 @@ const RootLayout = () => {
   }
 
   return (
-    <SQLiteProvider
-      databaseName="quran-v2.db"
-      onInit={initializeDatabase}
-    >
-      <ThemeProvider>
-        <View className="flex-1" onLayout={handleRootLayout}>
-          {quranDatabaseReady ? (
+    <ThemeProvider>
+      <View className="flex-1" onLayout={handleRootLayout}>
+        <AppStatusBar />
+        {showBootstrap && (
+          <QuranBootstrapScreen
+            progress={bootstrapProgress}
+            error={quranDatabaseError}
+            onRetry={retryDatabaseInitialization}
+          />
+        )}
+        {/* The provider withholds its children until onInit resolves. */}
+        <SQLiteProvider databaseName="quran-v2.db" onInit={initializeDatabase}>
+          {quranDatabaseReady && (
             <QuranAudioProvider>
-              <AppStatusBar />
               <QuranSyncInitializer />
               <LocationInitializer />
               <NotificationInitializer />
               <AppNavigator />
             </QuranAudioProvider>
-          ) : (
-            <QuranBootstrapScreen
-              error={quranDatabaseError}
-              onRetry={retryDatabaseInitialization}
-            />
           )}
-        </View>
-      </ThemeProvider>
-    </SQLiteProvider>
+        </SQLiteProvider>
+      </View>
+    </ThemeProvider>
   );
 };
 
