@@ -9,6 +9,7 @@ interface UseDeviceHeadingOptions {
 }
 
 const DISPLAY_UPDATE_INTERVAL = 100;
+const HEADING_STARTUP_TIMEOUT_MS = 5_000;
 
 const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
   const locationPermission = useLocationStore(
@@ -31,6 +32,11 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
     useCallback(() => {
       let mounted = true;
       let subscription: Location.LocationSubscription | null = null;
+      let headingTimeout: ReturnType<typeof setTimeout> | undefined;
+      const clearHeadingTimeout = () => {
+        if (headingTimeout) clearTimeout(headingTimeout);
+        headingTimeout = undefined;
+      };
 
       const startWatching = async () => {
         if (locationPermission !== "granted") {
@@ -67,8 +73,20 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
             return;
           }
 
+          setSensorStatus((status) =>
+            status === "available" ? status : "checking",
+          );
+          headingTimeout = setTimeout(() => {
+            if (mounted) {
+              setSensorStatus((status) =>
+                status === "checking" ? "unavailable" : status,
+              );
+            }
+            headingTimeout = undefined;
+          }, HEADING_STARTUP_TIMEOUT_MS);
           const nextSubscription = await Location.watchHeadingAsync(
             (headingData) => {
+              clearHeadingTimeout();
               if (!mounted) return;
 
               const rawHeading =
@@ -86,9 +104,9 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
                 setHeading(rawHeading);
                 setAccuracy(headingData.accuracy);
               }
-
             },
             () => {
+              clearHeadingTimeout();
               if (!mounted) return;
               setSensorStatus("error");
               setHeading(null);
@@ -103,6 +121,7 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
 
           subscription = nextSubscription;
         } catch (error) {
+          clearHeadingTimeout();
           if (!mounted) return;
 
           console.warn("Failed to initialize compass:", error);
@@ -116,6 +135,7 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
 
       return () => {
         mounted = false;
+        clearHeadingTimeout();
         subscription?.remove();
       };
     }, [locationPermission]),

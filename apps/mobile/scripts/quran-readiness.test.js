@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -17,25 +18,40 @@ function loadModule(file, modules) {
     },
   });
   const exports = {};
+  const moduleRequire = createRequire(file instanceof URL ? file : pathToFileURL(file).href);
   new Function("exports", "require", outputText)(exports, (name) => {
-    if (name === "react" || name === "react/jsx-runtime") return require(name);
-    assert.ok(name in modules, `Unexpected native dependency: ${name}`);
-    return modules[name];
+    if (name === "react" || name === "react/jsx-runtime")
+      return moduleRequire(name);
+    if (name in modules) return modules[name];
+    if (
+      name === "react-native" ||
+      name.startsWith("expo-") ||
+      name.startsWith("@react-native/")
+    ) {
+      assert.fail("Unexpected native dependency: " + name);
+    }
+    try {
+      return moduleRequire(name);
+    } catch {
+      assert.fail("Unexpected native dependency: " + name);
+    }
   });
   return exports;
 }
 
-const { SQLiteProvider } = loadModule(
-  new URL("../../../node_modules/expo-sqlite/src/hooks.tsx", pathToFileURL(__filename).href),
-  {
-    "expo-asset": {},
-    "./ExpoSQLite": {},
-    "./SQLiteDatabase": {},
-    "./pathUtils": {},
-  },
-);
+const sqlitePackagePath = require.resolve("expo-sqlite/package.json");
+const sqliteHooksPath = join(dirname(sqlitePackagePath), "src", "hooks.tsx");
+const { SQLiteProvider } = loadModule(sqliteHooksPath, {
+  "expo-asset": {},
+  "./ExpoSQLite": {},
+  "./SQLiteDatabase": {},
+  "./pathUtils": {},
+});
 const { default: QuranReadinessGate, QuranReadinessContext } = loadModule(
-  new URL("../src/components/quran/QuranReadinessGate.tsx", pathToFileURL(__filename).href),
+  new URL(
+    "../src/components/quran/QuranReadinessGate.tsx",
+    pathToFileURL(__filename).href,
+  ),
   {},
 );
 

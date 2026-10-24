@@ -22,7 +22,7 @@ export function setupNotificationHandler() {
   });
 }
 
-async function setupNotificationChannel() {
+export async function setupNotificationChannel() {
   if (Platform.OS !== "android") {
     return;
   }

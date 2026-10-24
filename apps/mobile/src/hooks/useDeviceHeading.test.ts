@@ -53,18 +53,18 @@ describe("useDeviceHeading", () => {
   });
 
   afterEach(() => {
+    mockJestApi.useRealTimers();
     mockJestApi.clearAllMocks();
   });
 
   it("starts in a non-error state, then reports availability from a reading", async () => {
     let emitHeading:
-      | ((heading: Location.LocationHeadingObject) => void)
-      | undefined;
+      ((heading: Location.LocationHeadingObject) => void) | undefined;
     const remove = mockJestApi.fn();
     mockedLocation.watchHeadingAsync.mockImplementation(
       async (callback: (heading: Location.LocationHeadingObject) => void) => {
-      emitHeading = callback;
-      return { remove } as Location.LocationSubscription;
+        emitHeading = callback;
+        return { remove } as Location.LocationSubscription;
       },
     );
 
@@ -72,9 +72,7 @@ describe("useDeviceHeading", () => {
     expect(result.current.sensorStatus).toBe("checking");
 
     await waitFor(() => expect(emitHeading).toBeDefined());
-    act(() =>
-      emitHeading?.({ trueHeading: 90, magHeading: 90, accuracy: 2 }),
-    );
+    act(() => emitHeading?.({ trueHeading: 90, magHeading: 90, accuracy: 2 }));
 
     expect(result.current.sensorStatus).toBe("available");
     expect(result.current.heading).toBe(90);
@@ -92,6 +90,25 @@ describe("useDeviceHeading", () => {
     const remounted = renderHook(() => useDeviceHeading({}));
     expect(remounted.result.current.sensorStatus).toBe("checking");
     remounted.unmount();
+  });
+
+  it("reports unavailable when the sensor never emits its first heading", async () => {
+    mockJestApi.useFakeTimers();
+    const { result, unmount } = renderHook(() => useDeviceHeading({}));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockedLocation.watchHeadingAsync).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await mockJestApi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(result.current.sensorStatus).toBe("unavailable");
+    unmount();
   });
 
   it("reports unavailable when device location services are disabled", async () => {

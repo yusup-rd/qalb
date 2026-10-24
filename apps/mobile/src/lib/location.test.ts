@@ -19,7 +19,10 @@ jest.mock("expo-location", () => ({
 }));
 
 describe("reverseGeocode", () => {
+  let warning: { mockRestore: () => void } | undefined;
+
   afterEach(() => {
+    warning?.mockRestore();
     mockJestApi.clearAllMocks();
   });
 
@@ -35,9 +38,7 @@ describe("reverseGeocode", () => {
         country: "Turkmenistan",
       } as unknown as Location.LocationGeocodedAddress,
     ]);
-    const warning = mockJestApi
-      .spyOn(console, "warn")
-      .mockImplementation(() => {});
+    warning = mockJestApi.spyOn(console, "warn").mockImplementation(() => {});
 
     const first = reverseGeocode(37.95, 58.38, "en");
     const second = reverseGeocode(37.95, 58.38, "en");

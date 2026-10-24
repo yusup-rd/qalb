@@ -357,7 +357,16 @@ describe('QuranContentSyncService', () => {
     const oldDataset = {
       chapters: [{ id: 1, name_simple: 'Old' }],
       verses: [],
-      translations: [],
+      translations: [
+        {
+          id: 5,
+          verse_id: 1,
+          verse_key: '1:1',
+          language: 'en',
+          resource_id: 85,
+          text: 'Old',
+        },
+      ],
       transliterations: [],
       reciters: [{ id: 6, name: 'Reciter' }],
       ayahAudio: [],
@@ -366,6 +375,16 @@ describe('QuranContentSyncService', () => {
     const newDataset = {
       ...oldDataset,
       chapters: [{ id: 1, name_simple: 'New' }],
+      translations: [
+        {
+          id: 5,
+          verse_id: 1,
+          verse_key: '1:1',
+          language: 'en',
+          resource_id: 85,
+          text: 'New',
+        },
+      ],
     };
     const { service } = createService({
       schemaVersion: 1,
@@ -388,6 +407,17 @@ describe('QuranContentSyncService', () => {
     ).toMatchObject({
       table: 'chapters',
       upserts: [{ id: 1, name_simple: 'New' }],
+    });
+    const translationChange =
+      incremental.kind === 'incremental'
+        ? incremental.changes.find((change) => change.table === 'translations')
+        : undefined;
+    expect(translationChange?.upserts[0]).toEqual({
+      id: 5,
+      verse_id: 1,
+      language: 'en',
+      resource_id: 85,
+      text: 'New',
     });
     await expect(service.getChanges('stale-revision')).resolves.toMatchObject({
       kind: 'full',

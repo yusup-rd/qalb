@@ -1,6 +1,17 @@
 import { apiRequest } from "@/api/client";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
-import { validateQuranSnapshot } from "./snapshot-validation";
+import {
+  isSecureAudioUrl,
+  validateQuranSnapshot,
+  type QuranSnapshot,
+  type Chapter,
+  type Verse,
+  type Translation,
+  type Transliteration,
+  type Reciter,
+  type Audio,
+  type ChapterAudio,
+} from "./snapshot-validation";
 import { getQuranBootstrapErrorKind } from "./bootstrap-error";
 import {
   createQuranBootstrapReporter,
@@ -14,18 +25,6 @@ type QuranServerStatus = {
   lastSuccessfulSyncAt: string;
 };
 
-type QuranSnapshot = {
-  revision: string;
-  syncedAt: string;
-  chapters: Chapter[];
-  verses: Verse[];
-  translations: Translation[];
-  transliterations: Transliteration[];
-  reciters: Reciter[];
-  ayahAudio: Audio[];
-  chapterAudio: ChapterAudio[];
-};
-
 type QuranChanges = {
   kind: "incremental";
   fromRevision: string;
@@ -36,63 +35,6 @@ type QuranChanges = {
     upserts: Record<string, SQLiteBindValue>[];
     deletes: SQLiteBindValue[];
   }[];
-};
-
-type Chapter = {
-  id: number;
-  chapter_number: number;
-  name_simple: string;
-  name_arabic: string;
-  name_complex: string | null;
-  translated_name: string | null;
-  revelation_place: string | null;
-  revelation_order: number | null;
-  verses_count: number;
-};
-type Verse = {
-  id: number;
-  chapter_id: number;
-  verse_number: number;
-  verse_index: number | null;
-  verse_key: string;
-  text_uthmani: string;
-};
-type Translation = {
-  id: number;
-  verse_id: number;
-  language: "en" | "ru";
-  resource_id: number;
-  text: string;
-  foot_notes: string | null;
-};
-type Transliteration = {
-  id: number;
-  verse_id: number;
-  resource_id: number;
-  text: string;
-};
-type Reciter = { id: number; name: string };
-type Audio = {
-  id: number;
-  verse_id: number;
-  reciter_id: number;
-  url: string;
-  duration: number | null;
-  format: string | null;
-  mime_type: string | null;
-  segments_json: string | null;
-  updated_at: string | null;
-};
-type ChapterAudio = {
-  id: number;
-  chapter_id: number;
-  reciter_id: number;
-  url: string;
-  duration: number | null;
-  format: string | null;
-  mime_type: string | null;
-  segments_json: string | null;
-  updated_at: string | null;
 };
 
 const schema = `
@@ -379,6 +321,12 @@ async function applyChangesTransactionally(
       if (!spec)
         throw new Error("The Quran server returned an invalid table change.");
       for (const row of change.upserts) {
+        if (
+          (change.table === "ayah_audio" || change.table === "chapter_audio") &&
+          !isSecureAudioUrl(row.url)
+        ) {
+          throw new Error("The Quran server returned an insecure audio URL.");
+        }
         const columns = Object.keys(row);
         if (
           !columns.includes(spec.key) ||
@@ -409,27 +357,8 @@ async function applyChangesTransactionally(
     if (await transaction.getFirstAsync("PRAGMA foreign_key_check")) {
       throw new Error("The Quran dataset contains invalid relationships.");
     }
-    const counts = await transaction.getFirstAsync<{
-      chapters: number;
-      verses: number;
-      english: number;
-      russian: number;
-      transliterations: number;
-      audio: number;
-    }>(`SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
-              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
-              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`);
-    if (
-      counts?.chapters !== 114 ||
-      counts.verses !== 6236 ||
-      counts.english !== 6236 ||
-      counts.russian !== 6236 ||
-      counts.transliterations !== 6236 ||
-      counts.audio !== 6236
-    ) {
+    const counts = await getQuranReadinessCounts(transaction);
+    if (!isQuranDatasetReady(counts)) {
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
@@ -567,57 +496,42 @@ async function applySnapshotTransactionally(
       snapshot.revision,
       snapshot.syncedAt,
     );
-    const counts = await transaction.getFirstAsync<{
-      chapters: number;
-      verses: number;
-      english: number;
-      russian: number;
-      transliterations: number;
-      audio: number;
-    }>(`SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
-              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
-              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`);
-    if (
-      counts?.chapters !== 114 ||
-      counts.verses !== 6236 ||
-      counts.english !== 6236 ||
-      counts.russian !== 6236 ||
-      counts.transliterations !== 6236 ||
-      counts.audio !== 6236
-    ) {
+    const counts = await getQuranReadinessCounts(transaction);
+    if (!isQuranDatasetReady(counts)) {
       throw new Error("The Quran dataset failed local database validation.");
     }
   });
 }
 
+const QURAN_READINESS_COUNTS_SQL = `SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
+  (SELECT COUNT(*) FROM verses) AS verses,
+  (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
+  (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
+  (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
+  (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`;
+
+type QuranReadinessCounts = {
+  chapters: number;
+  verses: number;
+  english: number;
+  russian: number;
+  transliterations: number;
+  audio: number;
+};
+const isQuranDatasetReady = (counts: QuranReadinessCounts | null) =>
+  counts?.chapters === 114 &&
+  counts.verses === 6236 &&
+  counts.english === 6236 &&
+  counts.russian === 6236 &&
+  counts.transliterations === 6236 &&
+  counts.audio === 6236;
+const getQuranReadinessCounts = (db: SQLiteDatabase) =>
+  db.getFirstAsync<QuranReadinessCounts>(QURAN_READINESS_COUNTS_SQL);
+
 export async function hasLocalQuran(db: SQLiteDatabase): Promise<boolean> {
   try {
-    const counts = await db.getFirstAsync<{
-      chapters: number;
-      verses: number;
-      english: number;
-      russian: number;
-      transliterations: number;
-      audio: number;
-    }>(
-      `SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
-              (SELECT COUNT(*) FROM verses) AS verses,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 85 AND language = 'en') AS english,
-              (SELECT COUNT(*) FROM translations WHERE resource_id = 45 AND language = 'ru') AS russian,
-              (SELECT COUNT(*) FROM transliterations WHERE resource_id = 57) AS transliterations,
-              (SELECT COUNT(*) FROM ayah_audio WHERE reciter_id = 6) AS audio`,
-    );
-    return (
-      counts?.chapters === 114 &&
-      counts.verses === 6236 &&
-      counts.english === 6236 &&
-      counts.russian === 6236 &&
-      counts.transliterations === 6236 &&
-      counts.audio === 6236
-    );
+    const counts = await getQuranReadinessCounts(db);
+    return isQuranDatasetReady(counts);
   } catch {
     return false;
   }

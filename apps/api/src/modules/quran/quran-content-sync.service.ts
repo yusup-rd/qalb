@@ -11,6 +11,7 @@ import { RedisService } from '../../common/redis.service.js';
 export const QURAN_RESOURCE_FILTER =
   'quran_core:1;translations:45,57,85;recitations:6';
 const STATE_KEY = 'qalb:quran:content-sync:v1';
+const STATUS_KEY = 'qalb:quran:content-sync:status:v1';
 const LOCK_KEY = 'qalb:quran:content-sync:lock';
 const LOCK_TTL_MS = 15 * 60 * 1000;
 const EXPECTED_VERSES = 6236;
@@ -35,6 +36,18 @@ interface QuranSyncState {
   revision: string;
   dataset: QuranDataset;
   previous?: { revision: string; dataset: QuranDataset } | null;
+}
+
+interface QuranSyncMetadata {
+  revision: string;
+  lastSuccessfulSyncAt: string;
+  counts: {
+    chapters: number;
+    verses: number;
+    translations: number;
+    transliterations: number;
+    ayahAudio: number;
+  };
 }
 
 interface SyncEnvelope {
@@ -329,7 +342,7 @@ const mergeSnapshot = (
   bootstrap = false,
 ) => {
   const projected = projectSnapshot(snapshot);
-  validateResourceSnapshot(snapshot, projected, bootstrap);
+  validateResourceSnapshot(snapshot, projected);
   if (snapshot.resource_group === 'quran_core') {
     dataset.chapters = projected.chapters;
     dataset.verses = projected.verses;
@@ -350,7 +363,6 @@ const mergeSnapshot = (
 function validateResourceSnapshot(
   snapshot: QfSnapshot,
   projected: QuranDataset,
-  bootstrap: boolean,
 ): void {
   if (
     !Number.isInteger(snapshot.schema_version) ||
@@ -383,9 +395,7 @@ function validateResourceSnapshot(
         ? projected.transliterations
         : projected.translations
       : projected.ayahAudio;
-  const validCount = bootstrap
-    ? rows.length === EXPECTED_VERSES
-    : rows.length > 0 && rows.length <= EXPECTED_VERSES;
+  const validCount = rows.length === EXPECTED_VERSES;
   if (
     !validCount ||
     !uniqueBy(rows, 'id') ||
@@ -502,6 +512,12 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
   private retryAt = 0;
   private failures = 0;
   private closing = false;
+  private lastCatchUpRequestAt = 0;
+  private cachedState: QuranSyncState | null = null;
+  private readonly cachedDiffs = new Map<
+    string,
+    { fromRevision: string; changes: ReturnType<typeof diffDatasets> }
+  >();
 
   constructor(
     private readonly redis: RedisService,
@@ -522,41 +538,45 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getStatus() {
-    const state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
-    if (!state) {
+    const metadata =
+      await this.redis.getPersistent<QuranSyncMetadata>(STATUS_KEY);
+    if (!metadata)
       return {
         available: false,
         revision: null,
         lastSuccessfulSyncAt: null,
         counts: null,
       };
-    }
-    return {
-      available: true,
-      revision: state.revision,
-      lastSuccessfulSyncAt: state.lastSuccessfulSyncAt,
-      counts: {
-        chapters: state.dataset.chapters.length,
-        verses: state.dataset.verses.length,
-        translations: state.dataset.translations.length,
-        transliterations: state.dataset.transliterations.length,
-        ayahAudio: state.dataset.ayahAudio.length,
-      },
-    };
+    return { available: true, ...metadata };
   }
 
   requestCatchUp(): void {
+    const now = Date.now();
+    if (now - this.lastCatchUpRequestAt < 5 * 60_000) return;
+    this.lastCatchUpRequestAt = now;
     void this.syncIfDue();
   }
 
   async getDataset(): Promise<
     QuranDataset & { revision: string; syncedAt: string }
   > {
-    const state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
-    if (!state) {
+    const metadata =
+      await this.redis.getPersistent<QuranSyncMetadata>(STATUS_KEY);
+    if (!metadata)
       throw new ServiceUnavailableException(
         'Quran content is not available yet.',
       );
+    let state =
+      this.cachedState?.revision === metadata.revision
+        ? this.cachedState
+        : null;
+    if (!state) {
+      state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
+      if (!state)
+        throw new ServiceUnavailableException(
+          'Quran content is not available yet.',
+        );
+      this.cachedState = state;
     }
     return {
       ...state.dataset,
@@ -566,27 +586,48 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getChanges(revision: string | null) {
-    const state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
-    if (!state) {
+    const metadata =
+      await this.redis.getPersistent<QuranSyncMetadata>(STATUS_KEY);
+    if (!metadata)
       throw new ServiceUnavailableException(
         'Quran content is not available yet.',
       );
+    let state =
+      this.cachedState?.revision === metadata.revision
+        ? this.cachedState
+        : null;
+    if (!state) {
+      state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
+      if (!state)
+        throw new ServiceUnavailableException(
+          'Quran content is not available yet.',
+        );
+      this.cachedState = state;
     }
-    const syncedAt = state.lastSuccessfulSyncAt;
     if (revision && state.previous?.revision === revision) {
+      let cached = this.cachedDiffs.get(state.revision);
+      if (!cached || cached.fromRevision !== revision) {
+        cached = {
+          fromRevision: revision,
+          changes: diffDatasets(state.previous.dataset, state.dataset),
+        };
+        this.cachedDiffs.set(state.revision, cached);
+        if (this.cachedDiffs.size > 2)
+          this.cachedDiffs.delete(this.cachedDiffs.keys().next().value!);
+      }
       return {
         kind: 'incremental' as const,
         fromRevision: revision,
         revision: state.revision,
-        syncedAt,
-        changes: diffDatasets(state.previous.dataset, state.dataset),
+        syncedAt: state.lastSuccessfulSyncAt,
+        changes: cached.changes,
       };
     }
     return {
       kind: 'full' as const,
       ...state.dataset,
       revision: state.revision,
-      syncedAt,
+      syncedAt: state.lastSuccessfulSyncAt,
     };
   }
 
@@ -651,9 +692,8 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     }, 60_000);
     lockRenewalTimer.unref?.();
     try {
-      const previous = await this.redis.getPersistent<QuranSyncState>(
-        this.stateKey,
-      );
+      const metadata =
+        await this.redis.getPersistent<QuranSyncMetadata>(STATUS_KEY);
       const timeZone = process.env.QURAN_SYNC_TIMEZONE ?? 'UTC';
       const scheduleHour = Number(process.env.QURAN_SYNC_HOUR ?? 3);
       if (
@@ -669,11 +709,13 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         scheduleHour,
       );
       if (
-        previous &&
-        Date.parse(previous.lastSuccessfulSyncAt) >= dueAt.getTime()
-      ) {
+        metadata &&
+        Date.parse(metadata.lastSuccessfulSyncAt) >= dueAt.getTime()
+      )
         return;
-      }
+      const previous = await this.redis.getPersistent<QuranSyncState>(
+        this.stateKey,
+      );
 
       const token = await this.getAccessToken(clientId, clientSecret);
       let dataset: QuranDataset;
@@ -753,6 +795,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
           }
         }
         validateDatasetIntegrity(dataset);
+        validateCompleteDataset(dataset);
       }
 
       const lastSuccessfulSyncAt = new Date().toISOString();
@@ -767,7 +810,9 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         revision,
         dataset,
         previous: previous
-          ? { revision: previous.revision, dataset: previous.dataset }
+          ? revision === previous.revision
+            ? (previous.previous ?? null)
+            : { revision: previous.revision, dataset: previous.dataset }
           : null,
       };
       if (
@@ -784,10 +829,26 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
           nextState,
           LOCK_KEY,
           lockValue,
+          {
+            key: STATUS_KEY,
+            value: {
+              revision,
+              lastSuccessfulSyncAt,
+              counts: {
+                chapters: dataset.chapters.length,
+                verses: dataset.verses.length,
+                translations: dataset.translations.length,
+                transliterations: dataset.transliterations.length,
+                ayahAudio: dataset.ayahAudio.length,
+              },
+            } satisfies QuranSyncMetadata,
+          },
         ))
       ) {
         throw new Error('Durable Quran dataset commit failed.');
       }
+      this.cachedState = nextState;
+      this.cachedDiffs.clear();
       this.pino.info(
         {
           event: previous ? 'incremental_sync_complete' : 'bootstrap_complete',
@@ -1043,10 +1104,16 @@ function diffDatasets(previous: QuranDataset, current: QuranDataset) {
     const after = current[property] as Record<string, unknown>[];
     const beforeById = new Map(before.map((row) => [String(row[key]), row]));
     const afterById = new Map(after.map((row) => [String(row[key]), row]));
-    const upserts = after.filter((row) => {
-      const old = beforeById.get(String(row[key]));
-      return !old || JSON.stringify(old) !== JSON.stringify(row);
-    });
+    const upserts = after
+      .filter((row) => {
+        const old = beforeById.get(String(row[key]));
+        return !old || JSON.stringify(old) !== JSON.stringify(row);
+      })
+      .map((row) => {
+        if (table === 'verses' || !('verse_key' in row)) return row;
+        const { verse_key: _serverOnlyVerseKey, ...mobileRow } = row;
+        return mobileRow;
+      });
     const deletes = before
       .filter((row) => !afterById.has(String(row[key])))
       .map((row) => row[key]);

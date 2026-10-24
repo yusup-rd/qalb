@@ -10,7 +10,7 @@ export type QuranSnapshot = {
   chapterAudio: ChapterAudio[];
 };
 
-type Chapter = {
+export type Chapter = {
   id: number;
   chapter_number: number;
   name_simple: string;
@@ -21,7 +21,7 @@ type Chapter = {
   revelation_order: number | null;
   verses_count: number;
 };
-type Verse = {
+export type Verse = {
   id: number;
   chapter_id: number;
   verse_number: number;
@@ -29,7 +29,7 @@ type Verse = {
   verse_key: string;
   text_uthmani: string;
 };
-type Translation = {
+export type Translation = {
   id: number;
   verse_id: number;
   language: "en" | "ru";
@@ -37,14 +37,14 @@ type Translation = {
   text: string;
   foot_notes: string | null;
 };
-type Transliteration = {
+export type Transliteration = {
   id: number;
   verse_id: number;
   resource_id: number;
   text: string;
 };
-type Reciter = { id: number; name: string };
-type Audio = {
+export type Reciter = { id: number; name: string };
+export type Audio = {
   id: number;
   verse_id: number;
   reciter_id: number;
@@ -55,7 +55,7 @@ type Audio = {
   segments_json: string | null;
   updated_at: string | null;
 };
-type ChapterAudio = {
+export type ChapterAudio = {
   id: number;
   chapter_id: number;
   reciter_id: number;
@@ -70,8 +70,10 @@ type ChapterAudio = {
 const EXPECTED_CHAPTERS = 114;
 const EXPECTED_VERSES = 6236;
 
-const hasUniqueValues = <T>(values: T[]) => new Set(values).size === values.length;
-const isSecureAudioUrl = (value: string) => {
+const hasUniqueValues = <T>(values: T[]) =>
+  new Set(values).size === values.length;
+export const isSecureAudioUrl = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
   try {
     return new URL(value).protocol === "https:";
   } catch {

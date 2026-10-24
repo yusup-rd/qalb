@@ -96,18 +96,21 @@ export class RedisService implements OnModuleDestroy {
     value: T,
     lockKey: string,
     lockValue: string,
+    additionalWrite?: { key: string; value: unknown },
   ): Promise<boolean> {
     if (!this.client) return false;
 
     try {
       return (
         (await this.client.eval(
-          "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[2], ARGV[2]); return 1 else return 0 end",
-          2,
+          "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[2], ARGV[2]); if KEYS[3] then redis.call('set', KEYS[3], ARGV[3]); end; return 1 else return 0 end",
+          additionalWrite ? 3 : 2,
           lockKey,
           dataKey,
+          ...(additionalWrite ? [additionalWrite.key] : []),
           lockValue,
           JSON.stringify(value),
+          ...(additionalWrite ? [JSON.stringify(additionalWrite.value)] : []),
         )) === 1
       );
     } catch (error) {

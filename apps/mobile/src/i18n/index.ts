@@ -53,6 +53,8 @@ export const changeLanguage = async (language: string) => {
   }
 
   await i18n.changeLanguage(language);
+  const { setupNotificationChannel } = await import("@/lib/notifications");
+  await setupNotificationChannel();
 
   try {
     await AsyncStorage.setItem(I18N_STORAGE_KEY, language);

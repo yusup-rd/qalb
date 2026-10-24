@@ -118,7 +118,12 @@ export const useNearbyMosques = (
         setMosquesState({ locationKey, mosques: freshMosques });
         setFailedLocationKey(null);
       } catch (error) {
-        if (!cancelled) setFailedLocationKey(locationKey);
+        if (!cancelled) {
+          setMosquesState((current) =>
+            current?.locationKey === locationKey ? null : current,
+          );
+          setFailedLocationKey(locationKey);
+        }
         console.error("[Mosques] Failed to fetch mosques:", error);
       } finally {
         if (!cancelled) {
