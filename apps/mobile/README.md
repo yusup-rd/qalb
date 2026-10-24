@@ -77,10 +77,20 @@ and `yarn workspace qalb expo install --check` from the repository root, then
 run `npx expo-doctor` from `apps/mobile`. Native tabs use the stable
 `expo-router/native-tabs` entry point. Keep `web.output` explicit in `app.json`;
 SDK 58 otherwise defaults Expo Router to server output. The `expo-router`
-plugin enables `apiRoutes` to retain SDK 57's static output behavior. The Metro
-config also registers `.wasm` as an asset for Expo SQLite's web bundle. Hosting
-that web bundle requires the `Cross-Origin-Embedder-Policy` and
+plugin enables `apiRoutes` to retain SDK 57's static output behavior. Metro
+resolves `expo-asset` directly to React Native so Expo SDK 58 can access the
+React Native 0.88 `AssetRegistry` export through Nativewind's resolver. It also
+registers `.wasm` as an asset for Expo SQLite's web bundle. Hosting that web
+bundle requires the `Cross-Origin-Embedder-Policy` and
 `Cross-Origin-Opener-Policy` headers for SQLite's `SharedArrayBuffer` support.
+Theme colors are declared with concrete values in `@theme` and overridden in
+`:root` for dark mode so Tailwind can generate color opacity modifiers such as
+`bg-primary/10`. `react-native-css@3.1.0-rc.0` currently drops optional
+percentages when parsing the `color-mix()` generated for these modifiers. The
+root `postinstall` script applies the fix in
+[`patches/react-native-css+3.1.0-rc.0.patch`](../../patches/react-native-css+3.1.0-rc.0.patch)
+with `patch-package`; keep slash opacity utilities and retain the patch until
+the upstream release includes the fix.
 
 Jest uses `jest-expo` and React Native Testing Library. Tests include Quran
 bootstrap/sync regressions, API request diagnostics, Qibla sensor state, and

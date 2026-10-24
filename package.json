@@ -3,5 +3,11 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "patch-package": "8.0.1"
+  },
+  "scripts": {
+    "postinstall": "patch-package"
+  }
 }

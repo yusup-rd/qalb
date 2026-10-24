@@ -1,0 +1,77 @@
+diff --git a/node_modules/react-native-css/dist/commonjs/compiler/declarations.js b/node_modules/react-native-css/dist/commonjs/compiler/declarations.js
+index 12ec942..cdebec4 100644
+--- a/node_modules/react-native-css/dist/commonjs/compiler/declarations.js
++++ b/node_modules/react-native-css/dist/commonjs/compiler/declarations.js
+@@ -2004,7 +2004,16 @@ function parseColorMix(tokens, builder, property) {
+   if (nextToken) {
+     return;
+   }
+-  return [{}, "colorMix", [colorSpaceArg, leftColorArg, leftColorPercentage, rightColorArg, rightColorPercentage]];
++  // TODO: Remove this workaround after https://github.com/nativewind/nativewind/issues/1870 is fixed upstream.
++  const colorMixArgs = [colorSpaceArg, leftColorArg];
++  if (leftColorPercentage !== undefined) {
++    colorMixArgs.push(leftColorPercentage);
++  }
++  colorMixArgs.push(rightColorArg);
++  if (rightColorPercentage !== undefined) {
++    colorMixArgs.push(rightColorPercentage);
++  }
++  return [{}, "colorMix", colorMixArgs];
+ }
+ function parseCalcArguments([...args], builder, property) {
+   const parsed = [];
+diff --git a/node_modules/react-native-css/dist/module/compiler/declarations.js b/node_modules/react-native-css/dist/module/compiler/declarations.js
+index 8d9f6de..eb7a1e7 100644
+--- a/node_modules/react-native-css/dist/module/compiler/declarations.js
++++ b/node_modules/react-native-css/dist/module/compiler/declarations.js
+@@ -1923,7 +1923,16 @@ export function parseColorMix(tokens, builder, property) {
+   if (nextToken) {
+     return;
+   }
+-  return [{}, "colorMix", [colorSpaceArg, leftColorArg, leftColorPercentage, rightColorArg, rightColorPercentage]];
++  // TODO: Remove this workaround after https://github.com/nativewind/nativewind/issues/1870 is fixed upstream.
++  const colorMixArgs = [colorSpaceArg, leftColorArg];
++  if (leftColorPercentage !== undefined) {
++    colorMixArgs.push(leftColorPercentage);
++  }
++  colorMixArgs.push(rightColorArg);
++  if (rightColorPercentage !== undefined) {
++    colorMixArgs.push(rightColorPercentage);
++  }
++  return [{}, "colorMix", colorMixArgs];
+ }
+ export function parseCalcArguments([...args], builder, property) {
+   const parsed = [];
+diff --git a/node_modules/react-native-css/src/compiler/declarations.ts b/node_modules/react-native-css/src/compiler/declarations.ts
+index 9ca2aab..6fa924f 100644
+--- a/node_modules/react-native-css/src/compiler/declarations.ts
++++ b/node_modules/react-native-css/src/compiler/declarations.ts
+@@ -2801,17 +2801,17 @@ export function parseColorMix(
+     return;
+   }
+ 
+-  return [
+-    {},
+-    "colorMix",
+-    [
+-      colorSpaceArg,
+-      leftColorArg,
+-      leftColorPercentage,
+-      rightColorArg,
+-      rightColorPercentage,
+-    ],
+-  ];
++  // TODO: Remove this workaround after https://github.com/nativewind/nativewind/issues/1870 is fixed upstream.
++  const colorMixArgs: unknown[] = [colorSpaceArg, leftColorArg];
++  if (leftColorPercentage !== undefined) {
++    colorMixArgs.push(leftColorPercentage);
++  }
++  colorMixArgs.push(rightColorArg);
++  if (rightColorPercentage !== undefined) {
++    colorMixArgs.push(rightColorPercentage);
++  }
++
++  return [{}, "colorMix", colorMixArgs];
+ }
+ 
+ export function parseCalcArguments(
