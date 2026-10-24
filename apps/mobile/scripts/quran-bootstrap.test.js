@@ -1,17 +1,17 @@
+import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import test from "node:test";
 import ts from "typescript";
 import * as progressModule from "../src/lib/quran/bootstrap-progress.ts";
 import * as errorModule from "../src/lib/quran/bootstrap-error.ts";
 import * as validationModule from "../src/lib/quran/snapshot-validation.ts";
-import { completeSnapshot } from "./quran-snapshot-fixture.mjs";
+import { completeSnapshot } from "./quran-snapshot-fixture.js";
 
 // Exercise the production orchestration with explicit API/native-boundary mocks.
 // This verifies callback ordering, not native SQLite's commit/rollback behavior.
 function loadSync(apiRequest) {
   const source = readFileSync(
-    new URL("../src/lib/quran/sync.ts", import.meta.url),
+    new URL("../src/lib/quran/sync.ts", pathToFileURL(__filename).href),
     "utf8",
   );
   const { outputText } = ts.transpileModule(source, {

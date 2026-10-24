@@ -16,7 +16,8 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
   );
   const [heading, setHeading] = useState<number | null>(null);
   const [accuracy, setAccuracy] = useState(-1);
-  const [hasSensor, setHasSensor] = useState(false);
+  const [sensorStatus, setSensorStatus] =
+    useState<DeviceHeading["sensorStatus"]>("checking");
   const [permissionStatus, setPermissionStatus] =
     useState<HeadingPermissionStatus>("checking");
   const onHeadingRef = useRef(options?.onHeading);
@@ -26,8 +27,6 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
   }, [options?.onHeading]);
 
   const lastDisplayUpdate = useRef(0);
-  const servicesEnabledRef = useRef(true);
-
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
@@ -38,6 +37,10 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
           setPermissionStatus(
             locationPermission === "checking" ? "checking" : "denied",
           );
+          if (locationPermission !== "checking") {
+            setHeading(null);
+            setSensorStatus("unavailable");
+          }
           return;
         }
         try {
@@ -48,14 +51,21 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
           // The shared location flow owns disclosure and permission requests.
           if (!permission.granted) {
             setPermissionStatus("denied");
+            setHeading(null);
+            setSensorStatus("unavailable");
             return;
           }
 
-          servicesEnabledRef.current = await Location.hasServicesEnabledAsync();
+          const servicesEnabled = await Location.hasServicesEnabledAsync();
 
           if (!mounted) return;
 
           setPermissionStatus("granted");
+          if (!servicesEnabled) {
+            setHeading(null);
+            setSensorStatus("unavailable");
+            return;
+          }
 
           const nextSubscription = await Location.watchHeadingAsync(
             (headingData) => {
@@ -67,6 +77,7 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
                   : headingData.magHeading;
 
               onHeadingRef.current?.(rawHeading);
+              setSensorStatus("available");
 
               const now = Date.now();
 
@@ -76,11 +87,10 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
                 setAccuracy(headingData.accuracy);
               }
 
-              setHasSensor(true);
             },
             () => {
               if (!mounted) return;
-              setHasSensor(false);
+              setSensorStatus("error");
               setHeading(null);
               setPermissionStatus("error");
             },
@@ -96,7 +106,9 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
           if (!mounted) return;
 
           console.warn("Failed to initialize compass:", error);
+          setSensorStatus("error");
           setPermissionStatus("error");
+          setHeading(null);
         }
       };
 
@@ -104,8 +116,6 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
 
       return () => {
         mounted = false;
-        setHeading(null);
-        setHasSensor(false);
         subscription?.remove();
       };
     }, [locationPermission]),
@@ -114,7 +124,7 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
   return {
     heading,
     accuracy,
-    hasSensor,
+    sensorStatus,
     permissionStatus,
   };
 };

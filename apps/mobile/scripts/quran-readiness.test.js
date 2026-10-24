@@ -1,12 +1,12 @@
+import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 
-const require = createRequire(import.meta.url);
+const require = createRequire(pathToFileURL(__filename).href);
 function loadModule(file, modules) {
   const { outputText } = ts.transpileModule(readFileSync(file, "utf8"), {
     compilerOptions: {
@@ -26,7 +26,7 @@ function loadModule(file, modules) {
 }
 
 const { SQLiteProvider } = loadModule(
-  new URL("../../../node_modules/expo-sqlite/src/hooks.tsx", import.meta.url),
+  new URL("../../../node_modules/expo-sqlite/src/hooks.tsx", pathToFileURL(__filename).href),
   {
     "expo-asset": {},
     "./ExpoSQLite": {},
@@ -35,7 +35,7 @@ const { SQLiteProvider } = loadModule(
   },
 );
 const { default: QuranReadinessGate, QuranReadinessContext } = loadModule(
-  new URL("../src/components/quran/QuranReadinessGate.tsx", import.meta.url),
+  new URL("../src/components/quran/QuranReadinessGate.tsx", pathToFileURL(__filename).href),
   {},
 );
 

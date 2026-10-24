@@ -1,13 +1,13 @@
+import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import test from "node:test";
 import ts from "typescript";
 import { withTimeout } from "../src/lib/with-timeout.ts";
 
 // Native APIs are mocked. These tests exercise production hook logic, not
 // native permission dialogs, GPS, SQLite, or React's rendering lifecycle.
 function load(file, modules) {
-  const source = readFileSync(new URL(file, import.meta.url), "utf8");
+  const source = readFileSync(new URL(file, pathToFileURL(__filename).href), "utf8");
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -207,7 +207,7 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
     };
   // Font assets aren't loaded by this harness.
   const source = readFileSync(
-    new URL("../src/app/_layout.tsx", import.meta.url),
+    new URL("../src/app/_layout.tsx", pathToFileURL(__filename).href),
     "utf8",
   );
   for (const [, asset] of source.matchAll(/require\("([^"]+)"\)/g))

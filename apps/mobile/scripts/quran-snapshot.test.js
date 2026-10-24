@@ -1,9 +1,9 @@
+import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
-import test from "node:test";
 import { getQuranBootstrapErrorKind } from "../src/lib/quran/bootstrap-error.ts";
 import { validateQuranSnapshot } from "../src/lib/quran/snapshot-validation.ts";
 
-import { completeSnapshot } from "./quran-snapshot-fixture.mjs";
+import { completeSnapshot } from "./quran-snapshot-fixture.js";
 
 test("accepts a complete first-install Quran snapshot", () => {
   assert.doesNotThrow(() => validateQuranSnapshot(completeSnapshot()));

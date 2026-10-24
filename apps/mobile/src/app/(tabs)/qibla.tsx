@@ -50,7 +50,7 @@ const Qibla = () => {
   const {
     heading,
     qibla,
-    hasSensor,
+    sensorStatus,
     permissionStatus,
     showCalibration,
     isFacingQibla,
@@ -87,7 +87,8 @@ const Qibla = () => {
             {t("permission.requiredDescription")}
           </Text>
         </View>
-      ) : heading === null && !hasSensor ? (
+      ) : heading === null &&
+        (sensorStatus === "unavailable" || sensorStatus === "error") ? (
         <View className="flex-1 items-center justify-center">
           <NoSensorFallback />
         </View>

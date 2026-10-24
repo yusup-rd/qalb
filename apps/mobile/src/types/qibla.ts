@@ -1,10 +1,16 @@
 export type HeadingPermissionStatus =
   "checking" | "granted" | "denied" | "error";
 
+export type HeadingSensorStatus =
+  | "checking"
+  | "available"
+  | "unavailable"
+  | "error";
+
 export interface DeviceHeading {
   heading: number | null;
   accuracy: number;
-  hasSensor: boolean;
+  sensorStatus: HeadingSensorStatus;
   permissionStatus: HeadingPermissionStatus;
 }
 

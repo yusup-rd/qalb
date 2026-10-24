@@ -1,11 +1,11 @@
+import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import test from "node:test";
 import ts from "typescript";
 
 function loadClient(fetch) {
   const source = readFileSync(
-    new URL("../src/api/client.ts", import.meta.url),
+    new URL("../src/api/client.ts", pathToFileURL(__filename).href),
     "utf8",
   );
   const { outputText } = ts.transpileModule(source, {
