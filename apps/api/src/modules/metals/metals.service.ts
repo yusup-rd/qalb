@@ -56,13 +56,13 @@ export class MetalsService {
     let response: Response;
 
     try {
-      response = await fetch(url);
+      response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     } catch (error) {
       this.logger.error(
         {
           event: 'upstream_error',
           provider: 'metals.dev',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Metals upstream request failed',
       );
@@ -92,7 +92,7 @@ export class MetalsService {
           event: 'upstream_error',
           provider: 'metals.dev',
           statusCode: response.status,
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Metals upstream returned invalid JSON',
       );

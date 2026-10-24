@@ -1,56 +1,74 @@
-# Welcome to your Expo app 👋
+# Qalb
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Qalb is an English and Russian Islamic companion for iOS and Android. The Expo
+mobile app provides Quran reading and search, recitation, prayer times and
+reminders, Qibla direction, nearby mosques and routes, tasbih, spiritual-pause
+counters, and a USD zakat calculator.
 
-## Get started
+## Repository
 
-1. Install dependencies
+- `apps/mobile` — Expo Router app and local Quran database.
+- `apps/api` — NestJS API and Quran Content Sync service.
+- `packages/shared` — shared API types.
+- `docs/legal` — canonical English and Russian privacy and terms documents.
+- `legal-site` — static GitHub Pages renderer for the legal documents.
+- `.expo-shared` — Expo asset optimization metadata shared with the project.
 
-   ```bash
-   npm install
-   ```
+See the [mobile app guide](apps/mobile/README.md) and [API guide](apps/api/README.md)
+for setup and workspace-specific commands.
 
-2. Start the app
+## How the app and API work together
 
-   ```bash
-   npx expo start
-   ```
+The mobile app calls the API for Quran content, mosque search, reverse
+geocoding, route estimates, Islamic calendar data, and gold/silver prices.
+Quran chapters, verses, translations, transliteration, and audio metadata are
+stored in SQLite after the first online bootstrap. Reading and search then work
+offline; provider-backed features and uncached audio require connectivity. The
+API keeps provider credentials server-side and stores its Quran dataset and
+sync state in Redis.
 
-In the output, you'll find options to open the app in a
+## Prerequisites and setup
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Use Node.js 22.13 or newer and Yarn Classic (1.x). From the repository root:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+yarn install --frozen-lockfile
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Configure `apps/api/.env.local` from `apps/api/.env.example` and
+`apps/mobile/.env.local` from `apps/mobile/.env.example`. Start the API and
+mobile app in separate terminals:
 
-### Other setup steps
+```sh
+yarn workspace api start:dev
+yarn workspace qalb start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+For a physical device, set `EXPO_PUBLIC_API_URL` to an API address reachable
+from that device; `localhost` points to the device itself. Production mobile
+builds require an HTTPS API URL. Android builds also need a restricted
+`GOOGLE_MAPS_API_KEY`. Use development builds to verify native release behavior;
+Expo Go is useful for supported development flows but does not represent
+production notification, background-task, or signing behavior.
 
-## Learn more
+## Project checks
 
-To learn more about developing your project with Expo, look at the following resources:
+```sh
+yarn workspace qalb lint
+yarn workspace qalb tsc --noEmit
+yarn workspace qalb i18n:check
+yarn workspace qalb test
+yarn workspace api lint
+yarn workspace api test
+yarn workspace api test:e2e
+yarn workspace api build
+yarn tsc --noEmit -p apps/api/tsconfig.json
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The legal site has its own lockfile and build commands. Run them from
+`legal-site/` with `npm ci` and `npm run build`; generated output is in `dist/`.
+The site is configured for the `/qalb/` GitHub Pages base path. Its source
+documents remain in `docs/legal/`. The builder creates English and Russian
+home pages plus privacy and terms routes in both languages. The GitHub Actions
+workflow deploys after relevant pushes to `main` or a manual workflow run, once
+GitHub Pages is configured to use Actions.

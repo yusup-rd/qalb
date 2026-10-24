@@ -3,7 +3,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
 import { useEffect, useRef, type ComponentRef } from "react";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import MosqueMarker from "./MosqueMarker";
 
@@ -223,36 +223,38 @@ const MosqueMap = ({
   const initialRegion = getRegionForRadius(latitude, longitude, radiusKm);
 
   return (
-    <MapView
-      ref={mapRef}
-      style={StyleSheet.absoluteFill}
-      onMapReady={handleMapReady}
-      showsUserLocation
-      showsMyLocationButton
-      showsCompass={false}
-      toolbarEnabled={false}
-      rotateEnabled
-      pitchEnabled={false}
-      initialRegion={initialRegion}
-    >
-      {route ? (
-        <Polyline
-          coordinates={route.coordinates}
-          strokeColor={colors.secondary}
-          strokeWidth={5}
-        />
-      ) : null}
+    <View style={StyleSheet.absoluteFill}>
+      <MapView
+        ref={mapRef}
+        style={StyleSheet.absoluteFill}
+        onMapReady={handleMapReady}
+        showsUserLocation
+        showsMyLocationButton
+        showsCompass={false}
+        toolbarEnabled={false}
+        rotateEnabled
+        pitchEnabled={false}
+        initialRegion={initialRegion}
+      >
+        {route ? (
+          <Polyline
+            coordinates={route.coordinates}
+            strokeColor={colors.secondary}
+            strokeWidth={5}
+          />
+        ) : null}
 
-      {mosques.map((mosque) => (
-        <MosqueMapMarker
-          key={mosque.id}
-          mosque={mosque}
-          selected={mosque.id === selectedMosqueId}
-          onSelect={onSelectMosque}
-          registerMarker={registerMarker}
-        />
-      ))}
-    </MapView>
+        {mosques.map((mosque) => (
+          <MosqueMapMarker
+            key={mosque.id}
+            mosque={mosque}
+            selected={mosque.id === selectedMosqueId}
+            onSelect={onSelectMosque}
+            registerMarker={registerMarker}
+          />
+        ))}
+      </MapView>
+    </View>
   );
 };
 

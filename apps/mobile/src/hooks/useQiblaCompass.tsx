@@ -76,7 +76,7 @@ const useQiblaCompass = ({
     [initialized, rotation, targetRotation, velocity],
   );
 
-  const { heading, accuracy, hasSensor, permissionStatus } = useDeviceHeading({
+  const { heading, accuracy, sensorStatus, permissionStatus } = useDeviceHeading({
     onHeading: handleHeading,
   });
 
@@ -161,7 +161,7 @@ const useQiblaCompass = ({
   return {
     heading,
     qibla,
-    hasSensor,
+    sensorStatus,
     permissionStatus,
     showCalibration,
     isFacingQibla,

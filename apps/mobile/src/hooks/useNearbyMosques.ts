@@ -4,7 +4,8 @@ import { getDistanceMeters } from "@/lib/mosque-distance";
 import { useLocationStore } from "@/store/locationStore";
 import type { Mosque } from "@/types/mosque";
 import type { RouteMetrics } from "@/types/routing";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import NetInfo from "@react-native-community/netinfo";
 
 interface RouteMetricsState {
   requestKey: string;
@@ -28,6 +29,8 @@ export interface NearbyMosque extends Mosque {
 interface NearbyMosquesResult {
   mosques: NearbyMosque[];
   loading: boolean;
+  error: boolean;
+  retry: () => void;
 }
 
 const ROUTE_METRICS_LIMIT = 20;
@@ -75,6 +78,10 @@ export const useNearbyMosques = (
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
   const locationLoading = useLocationStore((state) => state.locationLoading);
+  const [attempt, setAttempt] = useState(0);
+  const [failedLocationKey, setFailedLocationKey] = useState<string | null>(
+    null,
+  );
 
   const [mosquesState, setMosquesState] = useState<{
     locationKey: string;
@@ -83,6 +90,11 @@ export const useNearbyMosques = (
   const [loadedLocationKey, setLoadedLocationKey] = useState<string | null>(
     null,
   );
+  const retry = useCallback(() => {
+    setLoadedLocationKey(null);
+    setFailedLocationKey(null);
+    setAttempt((value) => value + 1);
+  }, []);
   const [routeMetricsState, setRouteMetricsState] =
     useState<RouteMetricsState | null>(null);
   const locationKey =
@@ -104,7 +116,14 @@ export const useNearbyMosques = (
         }
 
         setMosquesState({ locationKey, mosques: freshMosques });
+        setFailedLocationKey(null);
       } catch (error) {
+        if (!cancelled) {
+          setMosquesState((current) =>
+            current?.locationKey === locationKey ? null : current,
+          );
+          setFailedLocationKey(locationKey);
+        }
         console.error("[Mosques] Failed to fetch mosques:", error);
       } finally {
         if (!cancelled) {
@@ -118,7 +137,18 @@ export const useNearbyMosques = (
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude, locationKey]);
+  }, [latitude, longitude, locationKey, attempt]);
+
+  useEffect(() => {
+    if (failedLocationKey === null) return;
+    let wasOffline = false;
+    return NetInfo.addEventListener((state) => {
+      const online =
+        state.isConnected === true && state.isInternetReachable !== false;
+      if (wasOffline && online) retry();
+      wasOffline = !online;
+    });
+  }, [failedLocationKey, retry]);
 
   const currentMosques =
     mosquesState?.locationKey === locationKey
@@ -273,6 +303,8 @@ export const useNearbyMosques = (
 
   return {
     mosques: nearbyMosquesWithMetrics,
+    error: locationKey !== null && failedLocationKey === locationKey,
+    retry,
     loading:
       locationLoading ||
       (locationKey !== null && loadedLocationKey !== locationKey),

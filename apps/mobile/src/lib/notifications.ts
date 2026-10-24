@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
@@ -21,13 +22,13 @@ export function setupNotificationHandler() {
   });
 }
 
-async function setupNotificationChannel() {
+export async function setupNotificationChannel() {
   if (Platform.OS !== "android") {
     return;
   }
 
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
-    name: "Prayer times",
+    name: i18n.t("notifications.prayerTime.title"),
     importance: Notifications.AndroidImportance.HIGH,
   });
 }
@@ -58,7 +59,7 @@ export async function scheduleNotification({
   date,
   data,
 }: ScheduleNotificationInput) {
-  if (date <= new Date()) {
+  if (!Number.isFinite(date.getTime()) || date <= new Date()) {
     return null;
   }
 

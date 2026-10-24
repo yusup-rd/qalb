@@ -2,6 +2,8 @@ import { reverseGeocodeWithAPI } from "@/api/reverse-geocoding-api";
 import type { LocationAddress } from "@/types/location";
 import * as Location from "expo-location";
 
+const reverseGeocodeRequests = new Map<string, Promise<LocationAddress>>();
+
 async function reverseGeocodeWithExpo(
   latitude: number,
   longitude: number,
@@ -31,7 +33,7 @@ async function reverseGeocodeWithExpo(
   };
 }
 
-export async function reverseGeocode(
+async function reverseGeocodeOnce(
   latitude: number,
   longitude: number,
   language: string,
@@ -45,4 +47,24 @@ export async function reverseGeocode(
     );
     return reverseGeocodeWithExpo(latitude, longitude);
   }
+}
+
+export function reverseGeocode(
+  latitude: number,
+  longitude: number,
+  language: string,
+): Promise<LocationAddress> {
+  const key = `${latitude}:${longitude}:${language}`;
+  const existing = reverseGeocodeRequests.get(key);
+  if (existing) return existing;
+
+  const pending = reverseGeocodeOnce(latitude, longitude, language).finally(
+    () => {
+      if (reverseGeocodeRequests.get(key) === pending) {
+        reverseGeocodeRequests.delete(key);
+      }
+    },
+  );
+  reverseGeocodeRequests.set(key, pending);
+  return pending;
 }

@@ -8,7 +8,8 @@ import NetInfo from "@react-native-community/netinfo";
 import { styled } from "nativewind";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, View } from "react-native";
+import { Alert, Linking, Text, View } from "react-native";
+import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
@@ -22,7 +23,12 @@ const Mosques = () => {
   const [radiusSheetVisible, setRadiusSheetVisible] = useState(false);
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
 
-  const { mosques, loading: mosquesLoading } = useNearbyMosques(radiusKm);
+  const {
+    mosques,
+    loading: mosquesLoading,
+    error: mosquesError,
+    retry,
+  } = useNearbyMosques(radiusKm);
 
   const {
     route,
@@ -75,12 +81,30 @@ const Mosques = () => {
             onSelectMosque={handleSelectMosque}
             route={route}
           />
+          {route && (
+            <SmoothPressable
+              accessibilityRole="link"
+              accessibilityLabel={t("routeCredits")}
+              className="bg-background px-5 py-1"
+              onPress={() =>
+                void Linking.openURL(
+                  "https://www.openstreetmap.org/copyright",
+                ).catch(() => Alert.alert(t("title"), t("creditLinkError")))
+              }
+            >
+              <Text className="text-muted-foreground font-sans text-xs underline">
+                {t("routeCredits")}
+              </Text>
+            </SmoothPressable>
+          )}
         </View>
 
         <View className="flex-2/3">
           <MosquesList
             mosques={mosques}
             loading={mosquesLoading}
+            error={mosquesError}
+            onRetry={retry}
             radiusKm={radiusKm}
             selectedMosqueId={selectedMosqueId}
             onSelectMosque={handleSelectMosque}

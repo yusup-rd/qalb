@@ -7,6 +7,7 @@ import { MetalsModule } from './modules/metals/metals.module.js';
 import { MosquesModule } from './modules/mosques/mosques.module.js';
 import { ReverseGeocodingModule } from './modules/reverse-geocoding/reverse-geocoding.module.js';
 import { RoutingModule } from './modules/routing/routing.module.js';
+import { QuranContentModule } from './modules/quran/quran-content.module.js';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { RoutingModule } from './modules/routing/routing.module.js';
     MosquesModule,
     ReverseGeocodingModule,
     RoutingModule,
+    QuranContentModule,
   ],
 })
 export class AppModule {}

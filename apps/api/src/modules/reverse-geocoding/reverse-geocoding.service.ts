@@ -38,6 +38,18 @@ export class ReverseGeocodingService {
         'https://nominatim.openstreetmap.org/reverse',
     );
 
+    // Public Nominatim limits the whole application to one request/second.
+    // A shared, expiring Redis slot also covers multiple API instances. Never
+    // release it early; if Redis is down, use the client's geocoder fallback.
+    if (url.hostname === 'nominatim.openstreetmap.org') {
+      const reserved = await this.redis
+        .acquireLock('qalb:nominatim:request-slot', 'reserved', 1100)
+        .catch(() => false);
+      if (!reserved) {
+        throw new ServiceUnavailableException('Location lookup is busy.');
+      }
+    }
+
     url.search = new URLSearchParams({
       lat: String(lat),
       lon: String(lon),
@@ -59,6 +71,7 @@ export class ReverseGeocodingService {
 
     try {
       response = await fetch(url, {
+        signal: AbortSignal.timeout(10_000),
         headers: { 'User-Agent': 'Qalb/1.0 (prayer times app)' },
       });
     } catch (error) {
@@ -66,7 +79,7 @@ export class ReverseGeocodingService {
         {
           event: 'upstream_error',
           provider: 'nominatim',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Reverse geocoding upstream request failed',
       );
@@ -105,7 +118,7 @@ export class ReverseGeocodingService {
           event: 'upstream_error',
           provider: 'nominatim',
           statusCode: response.status,
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Reverse geocoding upstream returned invalid JSON',
       );

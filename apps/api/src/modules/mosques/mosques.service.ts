@@ -80,13 +80,13 @@ export class MosquesService {
     let response: Response;
 
     try {
-      response = await fetch(url);
+      response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     } catch (error) {
       this.logger.error(
         {
           event: 'upstream_error',
           provider: 'takbeertime',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Mosques upstream request failed',
       );

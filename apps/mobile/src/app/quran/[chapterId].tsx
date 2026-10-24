@@ -91,6 +91,8 @@ const QuranReader = () => {
         return;
       }
       await playQueue(audioUrls);
+    } catch {
+      Alert.alert(t("audioTitle"), t("audioError"));
     } finally {
       setListenRequesting(false);
     }

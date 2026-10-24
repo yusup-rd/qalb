@@ -177,21 +177,25 @@ describe('MosquesService', () => {
         expect.objectContaining({
           search: expect.stringContaining('lat=3.139'),
         }),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
       expect(fetchMock).toHaveBeenCalledWith(
         expect.objectContaining({
           search: expect.stringContaining('lng=101.6869'),
         }),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
       expect(fetchMock).toHaveBeenCalledWith(
         expect.objectContaining({
           search: expect.stringContaining('radius=5000'),
         }),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
       expect(fetchMock).toHaveBeenCalledWith(
         expect.objectContaining({
           search: expect.stringContaining('limit=10'),
         }),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     } finally {
       fetchMock.mockRestore();

@@ -1,5 +1,7 @@
 import type { AudioPlayer, AudioStatus } from "expo-audio";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import i18n from "@/i18n";
+import { Alert } from "react-native";
 import {
   createContext,
   useCallback,
@@ -28,6 +30,7 @@ export function QuranAudioProvider({
   const playerRef = useRef<AudioPlayer | null>(null);
   const queueRef = useRef<string[]>([]);
   const queueIndexRef = useRef(-1);
+  const lastPlaybackError = useRef<string | null>(null);
   const [status, setStatus] = useState<AudioStatus | null>(null);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [queueActive, setQueueActive] = useState(false);
@@ -46,6 +49,18 @@ export function QuranAudioProvider({
       "playbackStatusUpdate",
       (nextStatus) => {
         setStatus(nextStatus);
+        if (!nextStatus.error) lastPlaybackError.current = null;
+        if (nextStatus.error) {
+          if (lastPlaybackError.current === nextStatus.error) return;
+          lastPlaybackError.current = nextStatus.error;
+          queueRef.current = [];
+          queueIndexRef.current = -1;
+          setQueueActive(false);
+          setActiveUrl(null);
+          player.pause();
+          Alert.alert(i18n.t("quran.audioTitle"), i18n.t("quran.audioError"));
+          return;
+        }
 
         if (
           !nextStatus.didJustFinish ||
@@ -66,7 +81,16 @@ export function QuranAudioProvider({
         queueIndexRef.current = nextIndex;
         setActiveUrl(nextUrl);
         player.replace(nextUrl);
-        void player.seekTo(0).then(() => player.play());
+        void player
+          .seekTo(0)
+          .then(() => player.play())
+          .catch(() => {
+            queueRef.current = [];
+            queueIndexRef.current = -1;
+            setQueueActive(false);
+            setActiveUrl(null);
+            Alert.alert(i18n.t("quran.audioTitle"), i18n.t("quran.audioError"));
+          });
       },
     );
 
@@ -94,8 +118,13 @@ export function QuranAudioProvider({
       setQueueActive(false);
       setActiveUrl(url);
       player.replace(url);
-      await player.seekTo(0);
-      player.play();
+      try {
+        await player.seekTo(0);
+        player.play();
+      } catch (error) {
+        setActiveUrl(null);
+        throw error;
+      }
     },
     [activeUrl],
   );
@@ -120,8 +149,16 @@ export function QuranAudioProvider({
     setQueueActive(true);
     setActiveUrl(urls[0]);
     player.replace(urls[0]);
-    await player.seekTo(0);
-    player.play();
+    try {
+      await player.seekTo(0);
+      player.play();
+    } catch (error) {
+      queueRef.current = [];
+      queueIndexRef.current = -1;
+      setQueueActive(false);
+      setActiveUrl(null);
+      throw error;
+    }
   }, []);
 
   const pause = useCallback(async () => {

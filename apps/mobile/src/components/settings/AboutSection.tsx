@@ -7,7 +7,13 @@ import * as Linking from "expo-linking";
 import type { ComponentProps } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Text, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 
 type IconName = ComponentProps<typeof Fa>["name"];
 
@@ -16,6 +22,7 @@ export default function AboutSection() {
     keyPrefix: "settings.more",
   });
   const [aboutSheetVisible, setAboutSheetVisible] = useState(false);
+  const { height } = useWindowDimensions();
   const version = Constants.expoConfig?.version ?? "—";
   const language = (i18n.resolvedLanguage ?? i18n.language).startsWith("ru")
     ? "ru"
@@ -23,6 +30,11 @@ export default function AboutSection() {
   const legalUrls = {
     privacy: `https://yusup-rd.github.io/qalb/privacy/${language === "ru" ? "ru/" : ""}`,
     terms: `https://yusup-rd.github.io/qalb/terms/${language === "ru" ? "ru/" : ""}`,
+  };
+  const openLegalUrl = (url: string) => {
+    void Linking.openURL(url).catch(() =>
+      Alert.alert(t("about.linkErrorTitle"), t("about.linkErrorMessage")),
+    );
   };
 
   return (
@@ -37,14 +49,14 @@ export default function AboutSection() {
         <SettingsRow
           title={t("about.privacy")}
           icon="shield-halved"
-          onPress={() => Linking.openURL(legalUrls.privacy)}
+          onPress={() => openLegalUrl(legalUrls.privacy)}
           accessibilityRole="link"
         />
         <View className="border-border border-t" />
         <SettingsRow
           title={t("about.terms")}
           icon="file-lines"
-          onPress={() => Linking.openURL(legalUrls.terms)}
+          onPress={() => openLegalUrl(legalUrls.terms)}
           accessibilityRole="link"
         />
       </SettingsSection>
@@ -53,7 +65,10 @@ export default function AboutSection() {
         onClose={() => setAboutSheetVisible(false)}
         snapPoints={["full"]}
       >
-        <View className="gap-3 py-6">
+        <ScrollView
+          style={{ maxHeight: height * 0.8 }}
+          contentContainerStyle={{ gap: 12, paddingVertical: 24 }}
+        >
           <Text className="text-foreground font-sans-bold text-xl">
             {t("about.aboutQalb")}
           </Text>
@@ -66,15 +81,63 @@ export default function AboutSection() {
           <Text className="text-secondary font-sans-medium text-sm">
             {t("about.version", { version })}
           </Text>
+          <Text className="text-foreground font-sans-semibold text-sm">
+            {t("about.dataCredits")}
+          </Text>
           <Text className="text-muted-foreground font-sans text-xs">
             {t("about.credits")}
           </Text>
+          <LicenseLink
+            label={t("about.locationCredits")}
+            url="https://www.openstreetmap.org/copyright"
+          />
           <Text className="text-muted-foreground font-sans text-xs">
-            {t("about.noticesPending")}
+            {t("about.locationServices")}
           </Text>
-        </View>
+          <Text className="text-foreground font-sans-semibold text-sm">
+            {t("about.softwareNotices")}
+          </Text>
+          <LicenseLink
+            label={t("about.licenseExpo")}
+            url="https://github.com/expo/expo/blob/main/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licenseReactNative")}
+            url="https://github.com/facebook/react-native/blob/main/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licenseMapsAndStorage")}
+            url="https://github.com/react-native-maps/react-native-maps/blob/master/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licensePluralRules")}
+            url="https://github.com/eemeli/intl-pluralrules/blob/main/LICENSE"
+          />
+          <Text className="text-muted-foreground font-sans text-xs">
+            {t("about.contentRightsNote")}
+          </Text>
+        </ScrollView>
       </SheetWrapper>
     </View>
+  );
+}
+
+function LicenseLink({ label, url }: { label: string; url: string }) {
+  const { t: tLicense } = useTranslation(undefined, {
+    keyPrefix: "settings.more.about",
+  });
+  return (
+    <SmoothPressable
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      onPress={() =>
+        void Linking.openURL(url).catch(() =>
+          Alert.alert(tLicense("linkErrorTitle"), tLicense("linkErrorMessage")),
+        )
+      }
+    >
+      <Text className="text-primary font-sans text-xs underline">{label}</Text>
+    </SmoothPressable>
   );
 }
 

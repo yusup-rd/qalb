@@ -51,6 +51,8 @@ export const AudioButton = ({ audio }: { audio: AyahAudio | null }) => {
           }
 
           await play(audio.url);
+        } catch {
+          Alert.alert(t("audioTitle"), t("audioError"));
         } finally {
           setRequesting(false);
         }

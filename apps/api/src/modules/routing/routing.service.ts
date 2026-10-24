@@ -57,6 +57,7 @@ export class RoutingService {
     try {
       response = await fetch(
         `${this.base}/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
+        { signal: AbortSignal.timeout(10_000) },
       );
     } catch (error) {
       this.logger.error(
@@ -64,7 +65,7 @@ export class RoutingService {
           event: 'upstream_error',
           provider: 'osrm',
           operation: 'route',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Route upstream request failed',
       );
@@ -104,7 +105,7 @@ export class RoutingService {
           provider: 'osrm',
           operation: 'route',
           statusCode: response.status,
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Route upstream returned invalid JSON',
       );
@@ -220,6 +221,7 @@ export class RoutingService {
     try {
       response = await fetch(
         `${this.base}/table/v1/driving/${coordinates}?${params}`,
+        { signal: AbortSignal.timeout(10_000) },
       );
     } catch (error) {
       this.logger.error(
@@ -227,7 +229,7 @@ export class RoutingService {
           event: 'upstream_error',
           provider: 'osrm',
           operation: 'metrics',
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Route metrics upstream request failed',
       );
@@ -269,7 +271,7 @@ export class RoutingService {
           provider: 'osrm',
           operation: 'metrics',
           statusCode: response.status,
-          err: error,
+          errorCode: error instanceof Error ? error.name : 'UnknownError',
         },
         'Route metrics upstream returned invalid JSON',
       );

@@ -7,7 +7,7 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 
 const Tasbih = () => {
   const { colors } = useTheme();
@@ -43,15 +43,12 @@ const Tasbih = () => {
           if (success) {
             setResetKey((value) => value + 1);
           } else {
-            Alert.alert(
-              t("failedTitle"),
-              persistenceError ?? t("failedDescription"),
-            );
+            Alert.alert(t("failedTitle"), t("failedDescription"));
           }
         },
       },
     ]);
-  }, [persistenceError, reset, t]);
+  }, [reset, t]);
 
   return (
     <>
@@ -65,7 +62,12 @@ const Tasbih = () => {
           headerTitle: "",
           headerShadowVisible: false,
           headerRight: () => (
-            <Pressable onPress={handleReset} hitSlop={12}>
+            <Pressable
+              onPress={handleReset}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t("title")}
+            >
               <Fa
                 name="arrow-rotate-left"
                 size={17}
@@ -77,6 +79,14 @@ const Tasbih = () => {
       />
 
       <View className="bg-card flex-1">
+        {persistenceError && (
+          <Text
+            accessibilityRole="alert"
+            className="text-destructive px-5 pt-5 font-sans text-sm"
+          >
+            {t("storageFailed")}
+          </Text>
+        )}
         <View className="flex-1 items-center justify-center">
           {isHydrated && (
             <TasbihArtwork

@@ -199,6 +199,7 @@
     },
     "locationError": {
       "permissionBlockedTitle": "Location permission is disabled",
+      "permissionNotGranted": "Location access was not enabled.",
       "unavailableTitle": "Location unavailable",
       "unavailableMessage": "We couldn't determine your location. Please check your location settings and try again.",
       "openSettings": "Open Settings",
@@ -206,7 +207,13 @@
     },
     "location": {
       "loading": "Locating...",
-      "unavailable": "Location unavailable"
+      "unavailable": "Location unavailable",
+      "disclosure": {
+        "title": "How Qalb uses your location",
+        "message": "Qalb uses your location for prayer times, Qibla, locality names, nearby mosques, and route estimates. Coordinates are sent to Qalb's server and the service providers needed for these features. If locality lookup through Qalb is unavailable, your device's geocoder may receive them. You can continue without location access.",
+        "continue": "Continue",
+        "notNow": "Not now"
+      }
     },
     "prayerCalculation": {
       "title": "Prayer Calculation",
@@ -296,6 +303,7 @@
       }
     },
     "daylightArc": {
+      "unavailable": "Sunrise or sunset cannot be calculated for this date and location. Some prayer times may also be unavailable; consult your local mosque for high-latitude guidance.",
       "title": "Daylight",
       "titleWithDate": "Daylight · {{date}}",
       "description": "Sun's journey across the sky",
@@ -401,11 +409,42 @@
   },
   "quran": {
     "title": "Quran",
+    "bootstrap": {
+      "loadingTitle": "Preparing Quran content",
+      "loadingMessage": "Preparing the Quran and translations for offline reading.",
+      "offlineHint": "Keep Qalb open for this first download. Once preparation is complete, reading and search will work offline.",
+      "inProgress": "In progress",
+      "writingProgress": "{{percent}}% written",
+      "takingLonger": "This step is taking a little longer. Keep Qalb open. If preparation fails, you can try again.",
+      "stageElapsed": "Time on this step: {{seconds}} s",
+      "stoppedAt": "Could not finish: {{stage}}",
+      "stages": {
+        "checking": "Checking saved content",
+        "connecting": "Connecting to the server",
+        "downloading": "Downloading Quran content",
+        "validating": "Checking downloaded content",
+        "saving": "Writing content to your device",
+        "finishing": "Finishing preparation",
+        "complete": "Ready for offline reading"
+      },
+      "states": {
+        "completed": "Completed",
+        "active": "In progress",
+        "pending": "Not started",
+        "failed": "Could not complete"
+      },
+      "errorTitle": "Quran content is unavailable",
+      "networkErrorMessage": "Quran content has not been downloaded to this installation yet. Connect to the internet and try again. Once the first download succeeds, reading and search will work offline.",
+      "storageErrorMessage": "There is not enough free space to save Quran content. Free up space on your device, then try again. Any previously saved Quran database remains unchanged.",
+      "genericErrorMessage": "Quran content could not be verified or saved. Check your connection and available device storage, then try again. Any previously saved Quran database remains unchanged.",
+      "retry": "Try again"
+    },
     "search": "Search Quran",
     "surahs": "Surahs",
     "ayahsTitle": "Ayahs",
     "noResults": "No Quran results found.",
     "databaseError": "Quran database could not be opened.",
+    "audioError": "Audio could not be played. Check your connection and try again.",
     "audioTitle": "Audio unavailable",
     "audioOffline": "Ayah audio cannot be loaded while offline. Please check your internet connection and try again.",
     "audioLoading": "Loading ayah audio",
@@ -459,6 +498,7 @@
   },
   "tasbih": {
     "reset": {
+      "storageFailed": "Could not read or save your counter. Please try again after checking device storage.",
       "title": "Reset Tasbih?",
       "description": "This will reset your current count, rounds, and total count.",
       "cancel": "Cancel",
@@ -467,12 +507,17 @@
       "failedDescription": "Unable to reset the Tasbih. Please try again."
     },
     "counter": {
+      "increment": "Count one dhikr",
       "rounds": "Rounds",
       "total": "Total"
     }
   },
   "mosques": {
     "list": {
+      "unavailable": "Mosques unavailable",
+      "loadFailed": "We could not load nearby mosques. Check your connection and try again.",
+      "locationRequired": "Enable location access to find mosques near you.",
+      "empty": "No mosques found within this radius. Try a larger search radius.",
       "title": "Mosques nearby",
       "found": "{{count}} found nearby",
       "loading": "Finding nearby mosques...",
@@ -493,6 +538,8 @@
       "maximum": "{{radius}} {{unit}}"
     },
     "directions": {
+      "routeCredits": "Route data © OpenStreetMap contributors",
+      "creditLinkError": "Could not open the attribution link. Please try again.",
       "title": "Directions",
       "error": "Unable to calculate a route.",
       "offline": "Unable to calculate a route while offline. Please check your internet connection and try again."
@@ -529,16 +576,13 @@
       },
       "support": {
         "title": "Support",
-        "donate": "Support the Developer",
-        "donateDescription": "Qalb is free to use; contributions are optional.",
         "contact": "Contact the Developer",
-        "sheetTitle": "Support Qalb",
-        "sheetBody": "Qalb is free to use. Optional contributions help support its continued development, and never unlock features.",
-        "unavailable": "In-app contributions are not available yet.",
         "emailUnavailableTitle": "Email unavailable",
         "emailUnavailableMessage": "No email app could be opened. Please email yusuprd@icloud.com."
       },
       "about": {
+        "linkErrorTitle": "Link unavailable",
+        "linkErrorMessage": "Could not open this link. Check your browser settings and try again.",
         "title": "About",
         "aboutQalb": "About Qalb",
         "privacy": "Privacy Policy",
@@ -546,8 +590,16 @@
         "description": "Qalb is a free Islamic companion designed to make Quran reading and everyday worship tools easy to access.",
         "free": "Qalb is intended to remain free to use.",
         "version": "Version {{version}}",
+        "dataCredits": "Data sources and credits",
         "credits": "Quran data provided by Quran.Foundation. Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio.",
-        "noticesPending": "Software and content license notices are being finalized."
+        "locationCredits": "Locality and routing data © OpenStreetMap contributors · ODbL",
+        "locationServices": "Locality lookup via Nominatim. Routes calculated with OSRM.",
+        "softwareNotices": "Open-source software notices",
+        "licenseExpo": "Expo and Expo modules — MIT License",
+        "licenseReactNative": "React Native — MIT License",
+        "licenseMapsAndStorage": "React Native Maps and AsyncStorage — MIT License",
+        "licensePluralRules": "intl-pluralrules — ISC License",
+        "contentRightsNote": "Quran text, translations, transliteration, and recitation have separate content rights; attribution here does not claim that those rights have been cleared."
       },
       "copyright": "© Yusup Rejebov {{year}}"
     }

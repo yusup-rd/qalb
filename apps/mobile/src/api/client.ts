@@ -1,6 +1,44 @@
-const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000"
-).replace(/\/$/, "");
+function resolveApiBaseUrl(): string {
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const localDevelopmentFallback =
+    typeof __DEV__ !== "undefined" && __DEV__
+      ? "http://localhost:3000"
+      : undefined;
+  const value = configuredUrl || localDevelopmentFallback;
+
+  if (!value) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL is required in release builds. Set it to the HTTPS base URL of the Qalb API.",
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL must be a valid absolute HTTPS URL in release builds.",
+    );
+  }
+
+  const isDevelopmentHttp =
+    typeof __DEV__ !== "undefined" && __DEV__ && parsed.protocol === "http:";
+  if (
+    (parsed.protocol !== "https:" && !isDevelopmentHttp) ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL must use HTTPS and must not contain credentials, a query, or a fragment.",
+    );
+  }
+
+  return value.replace(/\/+$/, "");
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const REQUEST_TIMEOUTS_MS = [15_000, 20_000, 45_000] as const;
 const RETRY_DELAYS_MS = [2_000, 8_000] as const;
@@ -35,7 +73,25 @@ export class ApiClientError extends Error {
 export interface ApiRequestOptions {
   timeoutMs?: number;
   maxAttempts?: number;
+  onEvent?: (event: ApiRequestEvent) => void;
 }
+
+export type ApiRequestEvent = {
+  type:
+    | "start"
+    | "response"
+    | "complete"
+    | "invalid_response"
+    | "retry"
+    | "failure";
+  path: string;
+  attempt: number;
+  elapsedMs: number;
+  status?: number;
+  timeoutMs?: number;
+  retryDelayMs?: number;
+  kind?: ApiErrorKind;
+};
 
 function pathForLogs(path: string): string {
   const queryIndex = path.indexOf("?");
@@ -150,6 +206,7 @@ async function sendRequest<T>(
   path: string,
   init: RequestInit | undefined,
   timeoutMs: number,
+  notify: (event: Pick<ApiRequestEvent, "type" | "status">) => void,
 ): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init?.signal;
@@ -180,12 +237,25 @@ async function sendRequest<T>(
       },
       signal: controller.signal,
     });
+    notify({ type: "response", status: response.status });
 
+    if (
+      response.ok &&
+      ((init?.method ?? "GET").toUpperCase() === "HEAD" ||
+        response.status === 204 ||
+        response.status === 205)
+    ) {
+      notify({ type: "complete", status: response.status });
+      return undefined as T;
+    }
+
+    let jsonParsed = true;
     const data = (await response.json().catch(() => {
       if (controller.signal.aborted) {
         throw new Error("The request was aborted.");
       }
 
+      jsonParsed = false;
       return null;
     })) as { message?: string } | null;
 
@@ -202,6 +272,18 @@ async function sendRequest<T>(
       );
     }
 
+    notify({
+      type: jsonParsed ? "complete" : "invalid_response",
+      status: response.status,
+    });
+    if (!jsonParsed) {
+      throw new ApiClientError(
+        response.status,
+        "The server returned invalid JSON.",
+        "http",
+        false,
+      );
+    }
     return data as T;
   } catch (error) {
     if (callerSignal?.aborted) {
@@ -241,9 +323,25 @@ export async function apiRequest<T>(
     const timeoutMs =
       options.timeoutMs ??
       REQUEST_TIMEOUTS_MS[Math.min(attempt, REQUEST_TIMEOUTS_MS.length) - 1];
+    const startedAt = Date.now();
+    const notify = (
+      event: Pick<ApiRequestEvent, "type"> & Partial<ApiRequestEvent>,
+    ) => {
+      try {
+        options.onEvent?.({
+          path: pathForLogs(path),
+          attempt,
+          elapsedMs: Date.now() - startedAt,
+          ...event,
+        });
+      } catch {
+        /* Observers must not affect the request. */
+      }
+    };
+    notify({ type: "start", timeoutMs });
 
     try {
-      return await sendRequest<T>(path, init, timeoutMs);
+      return await sendRequest<T>(path, init, timeoutMs, notify);
     } catch (error) {
       lastError = toApiClientError(error, false);
 
@@ -261,11 +359,13 @@ export async function apiRequest<T>(
       logRequestFailure(path, method, lastError, attempt, willRetry);
 
       if (!willRetry) {
+        notify({ type: "failure", kind: lastError.kind });
         throw lastError;
       }
 
       const delayMs =
         RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS.at(-1) ?? 2_000;
+      notify({ type: "retry", kind: lastError.kind, retryDelayMs: delayMs });
 
       await wait(delayMs, init?.signal);
     }

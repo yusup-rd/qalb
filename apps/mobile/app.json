@@ -8,7 +8,33 @@
     "scheme": "qalb",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/app/icon.png"
+      "icon": "./assets/images/app/icon.png",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+          }
+        ],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePreciseLocation",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ],
+        "NSPrivacyTracking": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -53,12 +79,13 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to calculate accurate prayer times."
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location for prayer times and Qibla, and to find nearby mosques and routes."
         }
       ],
       "expo-localization",
       "@react-native-community/datetimepicker",
       "expo-sqlite",
+      "expo-background-task",
       "expo-audio"
     ],
     "experiments": {
