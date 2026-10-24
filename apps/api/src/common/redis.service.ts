@@ -91,6 +91,35 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async setPersistentWithLock<T>(
+    dataKey: string,
+    value: T,
+    lockKey: string,
+    lockValue: string,
+  ): Promise<boolean> {
+    if (!this.client) return false;
+
+    try {
+      return (
+        (await this.client.eval(
+          "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[2], ARGV[2]); return 1 else return 0 end",
+          2,
+          lockKey,
+          dataKey,
+          lockValue,
+          JSON.stringify(value),
+        )) === 1
+      );
+    } catch (error) {
+      const errorCode = error instanceof Error ? error.name : 'UnknownError';
+      this.logger.error(
+        { key: dataKey, errorCode },
+        'Redis persistent conditional write failed',
+      );
+      throw error;
+    }
+  }
+
   async acquireLock(
     key: string,
     value: string,
@@ -103,6 +132,26 @@ export class RedisService implements OnModuleDestroy {
     } catch (error) {
       const errorCode = error instanceof Error ? error.name : 'UnknownError';
       this.logger.error({ key, errorCode }, 'Redis lock acquisition failed');
+      throw error;
+    }
+  }
+
+  async renewLock(key: string, value: string, ttlMs: number): Promise<boolean> {
+    if (!this.client) return false;
+
+    try {
+      return (
+        (await this.client.eval(
+          "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('pexpire', KEYS[1], ARGV[2]) else return 0 end",
+          1,
+          key,
+          value,
+          String(ttlMs),
+        )) === 1
+      );
+    } catch (error) {
+      const errorCode = error instanceof Error ? error.name : 'UnknownError';
+      this.logger.error({ key, errorCode }, 'Redis lock renewal failed');
       throw error;
     }
   }

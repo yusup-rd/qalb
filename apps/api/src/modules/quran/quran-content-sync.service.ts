@@ -290,6 +290,14 @@ function validateCompleteDataset(dataset: QuranDataset): void {
     }
   }
   if (
+    !uniqueBy(
+      dataset.translations as (Record<string, unknown> & { id: unknown })[],
+      'id',
+    )
+  ) {
+    throw new Error('Translation snapshot IDs are not globally unique.');
+  }
+  if (
     dataset.ayahAudio.length !== EXPECTED_VERSES ||
     !uniqueBy(dataset.ayahAudio, 'id') ||
     !uniqueBy(dataset.ayahAudio, 'verse_key') ||
@@ -630,6 +638,18 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     const lockValue = randomUUID();
     if (!(await this.redis.acquireLock(LOCK_KEY, lockValue, LOCK_TTL_MS)))
       return;
+    let lockLost = false;
+    const lockRenewalTimer = setInterval(() => {
+      void this.redis
+        .renewLock(LOCK_KEY, lockValue, LOCK_TTL_MS)
+        .then((renewed) => {
+          if (!renewed) lockLost = true;
+        })
+        .catch(() => {
+          lockLost = true;
+        });
+    }, 60_000);
+    lockRenewalTimer.unref?.();
     try {
       const previous = await this.redis.getPersistent<QuranSyncState>(
         this.stateKey,
@@ -750,7 +770,22 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
           ? { revision: previous.revision, dataset: previous.dataset }
           : null,
       };
-      if (!(await this.redis.setPersistent(this.stateKey, nextState))) {
+      if (
+        lockLost ||
+        !(await this.redis.renewLock(LOCK_KEY, lockValue, LOCK_TTL_MS))
+      ) {
+        throw new Error(
+          'Quran Content Sync lost its Redis lock before commit; retaining the last committed dataset and cursor.',
+        );
+      }
+      if (
+        !(await this.redis.setPersistentWithLock(
+          this.stateKey,
+          nextState,
+          LOCK_KEY,
+          lockValue,
+        ))
+      ) {
         throw new Error('Durable Quran dataset commit failed.');
       }
       this.pino.info(
@@ -767,6 +802,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         'Quran Content Sync committed',
       );
     } finally {
+      clearInterval(lockRenewalTimer);
       await this.redis.releaseLock(LOCK_KEY, lockValue);
     }
   }
@@ -986,6 +1022,9 @@ function validateDatasetIntegrity(dataset: QuranDataset): void {
     if (!uniqueBy(rows, 'id') || !uniqueBy(rows, 'verse_key')) {
       throw new Error('Incremental sync produced duplicate translation rows.');
     }
+  }
+  if (!uniqueBy(dataset.translations, 'id')) {
+    throw new Error('Incremental sync produced duplicate translation IDs.');
   }
 }
 

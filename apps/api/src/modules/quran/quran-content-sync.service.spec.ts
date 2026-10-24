@@ -148,7 +148,12 @@ function createService(initialState: unknown = null) {
       persisted = value;
       return true;
     }),
+    setPersistentWithLock: vi.fn(async (_key: string, value: unknown) => {
+      persisted = value;
+      return true;
+    }),
     acquireLock: vi.fn(async () => true),
+    renewLock: vi.fn(async () => true),
     releaseLock: vi.fn(async () => undefined),
   };
   const redis = redisMock as unknown as RedisService;
@@ -209,7 +214,7 @@ describe('QuranContentSyncService', () => {
       };
       revision: string;
     };
-    expect(redisMock.setPersistent).toHaveBeenCalledOnce();
+    expect(redisMock.setPersistentWithLock).toHaveBeenCalledOnce();
     expect(state.syncToken).toBe('bootstrap-token');
     expect(state.revision).toMatch(/^[a-f0-9]{64}$/);
     expect(state.dataset.chapters).toHaveLength(114);
@@ -242,7 +247,7 @@ describe('QuranContentSyncService', () => {
       (service as unknown as { runSync: () => Promise<void> }).runSync(),
     ).rejects.toThrow(/incomplete/i);
 
-    expect(redisMock.setPersistent).not.toHaveBeenCalled();
+    expect(redisMock.setPersistentWithLock).not.toHaveBeenCalled();
     expect(readPersisted()).toBe(previous);
   });
 
@@ -307,8 +312,45 @@ describe('QuranContentSyncService', () => {
       (service as unknown as { runSync: () => Promise<void> }).runSync(),
     ).rejects.toThrow(/required Quran core resource was deleted/i);
 
-    expect(redisMock.setPersistent).not.toHaveBeenCalled();
+    expect(redisMock.setPersistentWithLock).not.toHaveBeenCalled();
     expect(readPersisted()).toBe(previous);
+  });
+
+  it('retains the prior dataset and cursor if its Redis lease is lost before commit', async () => {
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_ID', 'client-id');
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_SECRET', 'client-secret');
+    vi.stubEnv('QURAN_FOUNDATION_ENV', 'production');
+    vi.stubEnv('QURAN_SYNC_TIMEZONE', 'UTC');
+    vi.stubGlobal('fetch', mockBootstrapFetch({ rejectOldToken: true }));
+    const previous = {
+      schemaVersion: 1,
+      resourcesFilter: QURAN_RESOURCE_FILTER,
+      syncToken: 'previous-token',
+      lastSuccessfulSyncAt: '2026-05-01T00:00:00.000Z',
+      revision: 'previous-revision',
+      dataset: {},
+    };
+    const { service, redisMock, readPersisted } = createService(previous);
+    redisMock.renewLock.mockResolvedValue(false);
+
+    await expect(
+      (service as unknown as { runSync: () => Promise<void> }).runSync(),
+    ).rejects.toThrow(/lost its Redis lock before commit/i);
+
+    expect(redisMock.setPersistentWithLock).not.toHaveBeenCalled();
+    expect(readPersisted()).toBe(previous);
+  });
+
+  it('does not start another sync when a different worker holds the Redis lock', async () => {
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_ID', 'client-id');
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_SECRET', 'client-secret');
+    const { service, redisMock } = createService();
+    redisMock.acquireLock.mockResolvedValue(false);
+
+    await (service as unknown as { runSync: () => Promise<void> }).runSync();
+
+    expect(redisMock.getPersistent).not.toHaveBeenCalled();
+    expect(redisMock.setPersistentWithLock).not.toHaveBeenCalled();
   });
 
   it('returns incremental table changes only for the retained prior revision', async () => {

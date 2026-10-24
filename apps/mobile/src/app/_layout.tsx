@@ -127,7 +127,11 @@ const RootLayout = () => {
   }
 
   return (
-    <SQLiteProvider databaseName="quran-v2.db" onInit={initializeDatabase}>
+    <SQLiteProvider
+      databaseName="quran-v2.db"
+      assetSource={{ assetId: require("@/assets/database/quran.db") }}
+      onInit={initializeDatabase}
+    >
       <ThemeProvider>
         <View className="flex-1" onLayout={handleRootLayout}>
           {quranDatabaseReady ? (
