@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 
 const ROOT = resolve(import.meta.dirname, "..");
+const API_ROOT = resolve(ROOT, "../api");
 const DATABASE_PATH = resolve(ROOT, "assets/database/quran.db");
 const translations = [
   { id: 85, language: "en" },
@@ -59,9 +60,12 @@ CREATE INDEX chapter_audio_reciter_id ON chapter_audio(reciter_id);
 `;
 
 const loadEnv = async () => {
-  for (const file of [".env", ".env.local"]) {
+  for (const file of [
+    resolve(API_ROOT, ".env"),
+    resolve(API_ROOT, ".env.local"),
+  ]) {
     try {
-      const contents = await readFile(resolve(ROOT, file), "utf8");
+      const contents = await readFile(file, "utf8");
       for (const line of contents.split(/\r?\n/)) {
         const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
         if (match && !process.env[match[1]]) {

@@ -23,6 +23,47 @@
 
 ## Description
 
+Qalb's API also maintains the Quran dataset used by the mobile app. Quran
+content synchronization requires a durable Redis service and Quran.Foundation
+Content API credentials; do not use an in-memory cache for this data.
+
+### Quran Content Sync
+
+Set `REDIS_URL`, `QURAN_FOUNDATION_CLIENT_ID`, and
+`QURAN_FOUNDATION_CLIENT_SECRET` in the API deployment environment. The Content
+API credentials are used only by this backend. `QURAN_FOUNDATION_ENV` selects
+`production` (default) or `prelive`; use matching credentials for each.
+
+The service synchronizes `quran_core:1`, translations `45`, `57`, and `85`, and
+ayah recitation `6` using the Content Sync filter
+`quran_core:1;translations:45,57,85;recitations:6`. It runs on Mondays at
+03:00 in `QURAN_SYNC_TIMEZONE` (default `UTC`); `QURAN_SYNC_HOUR` changes the
+local hour. The process checks once a minute, catches up on startup, and checks
+when `/api/quran/status` is requested. These checks allow a sleeping service to
+catch up on its next start/request; an external scheduler is not configured in
+this repository.
+
+Transient failures retry with exponential backoff, jitter, and a 24-hour cap.
+A Redis lock prevents concurrent workers from advancing the cursor. Redis
+stores the complete app dataset and Content Sync token together in one
+non-expiring key; failed requests, validation errors, and failed Redis writes
+leave the previous committed dataset and token intact. The API exposes only a
+revision, sync timestamp, row counts, and the app's content snapshot. It never
+returns QF credentials or sync tokens.
+
+`GET /api/quran/status` reports the current public revision and starts a due
+catch-up run in the background. `GET /api/quran/snapshot` returns the validated
+mobile projection. The mobile app keeps its own SQLite copy and can continue to
+read/search it offline. New installs need internet access to fetch their first
+copy; they receive a retry screen if that request fails. Existing local data is
+kept when updates fail.
+
+The current local development setup uses a Redis endpoint configured in
+`apps/api/.env.local`. Configure the same durable storage and QF variables in
+the deployed API environment before a mobile release. If Redis is unavailable
+or exceeds its storage limit, synchronization fails closed and retains the last
+valid dataset; it does not fall back to ephemeral storage.
+
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Project setup

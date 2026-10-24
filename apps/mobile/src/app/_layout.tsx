@@ -1,15 +1,18 @@
 import AppNavigator from "@/components/ui/AppNavigator";
 import AppStatusBar from "@/components/ui/AppStatusBar";
+import QuranBootstrapScreen from "@/components/quran/QuranBootstrapScreen";
 import "@/global.css";
 import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
 import NotificationInitializer from "@/initializers/NotificationInitializer";
+import QuranSyncInitializer from "@/initializers/QuranSyncInitializer";
 import { setupNotificationHandler } from "@/lib/notifications";
 import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { initializeQuranDatabase } from "@/lib/quran/sync";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { SQLiteProvider } from "expo-sqlite";
+import { SQLiteProvider, type SQLiteDatabase } from "expo-sqlite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
@@ -22,7 +25,10 @@ SplashScreen.setOptions({
 const RootLayout = () => {
   const [languageLoaded, setLanguageLoaded] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
+  const [quranDatabaseReady, setQuranDatabaseReady] = useState(false);
+  const [quranDatabaseError, setQuranDatabaseError] = useState(false);
   const splashHidden = useRef(false);
+  const databaseRef = useRef<SQLiteDatabase | null>(null);
 
   const [fontsLoaded, fontError] = useFonts({
     "sans-regular": require("@/assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -62,11 +68,38 @@ const RootLayout = () => {
     setRootLaidOut(true);
   }, []);
 
+  const initializeDatabase = useCallback(async (db: SQLiteDatabase) => {
+    databaseRef.current = db;
+    try {
+      await initializeQuranDatabase(db);
+      setQuranDatabaseError(false);
+      setQuranDatabaseReady(true);
+    } catch (error) {
+      setQuranDatabaseError(true);
+      setQuranDatabaseReady(false);
+      if (__DEV__) {
+        console.warn(
+          "Quran database initialization failed.",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      }
+    }
+  }, []);
+
+  const retryDatabaseInitialization = useCallback(() => {
+    const db = databaseRef.current;
+    if (!db) return;
+    setQuranDatabaseError(false);
+    setQuranDatabaseReady(false);
+    void initializeDatabase(db);
+  }, [initializeDatabase]);
+
   useEffect(() => {
     if (
       !fontsLoaded ||
       !languageLoaded ||
       !rootLaidOut ||
+      (!quranDatabaseReady && !quranDatabaseError) ||
       splashHidden.current
     ) {
       return;
@@ -77,7 +110,13 @@ const RootLayout = () => {
       splashHidden.current = false;
       console.warn("Failed to hide splash screen", error);
     });
-  }, [fontsLoaded, languageLoaded, rootLaidOut]);
+  }, [
+    fontsLoaded,
+    languageLoaded,
+    quranDatabaseReady,
+    quranDatabaseError,
+    rootLaidOut,
+  ]);
 
   if (fontError) {
     throw fontError;
@@ -88,19 +127,24 @@ const RootLayout = () => {
   }
 
   return (
-    <SQLiteProvider
-      databaseName="quran-v2.db"
-      assetSource={{ assetId: require("@/assets/database/quran.db") }}
-    >
+    <SQLiteProvider databaseName="quran-v2.db" onInit={initializeDatabase}>
       <ThemeProvider>
-        <QuranAudioProvider>
-          <View className="flex-1" onLayout={handleRootLayout}>
-            <AppStatusBar />
-            <LocationInitializer />
-            <NotificationInitializer />
-            <AppNavigator />
-          </View>
-        </QuranAudioProvider>
+        <View className="flex-1" onLayout={handleRootLayout}>
+          {quranDatabaseReady ? (
+            <QuranAudioProvider>
+              <AppStatusBar />
+              <QuranSyncInitializer />
+              <LocationInitializer />
+              <NotificationInitializer />
+              <AppNavigator />
+            </QuranAudioProvider>
+          ) : (
+            <QuranBootstrapScreen
+              error={quranDatabaseError ? "bootstrap-failed" : null}
+              onRetry={retryDatabaseInitialization}
+            />
+          )}
+        </View>
       </ThemeProvider>
     </SQLiteProvider>
   );

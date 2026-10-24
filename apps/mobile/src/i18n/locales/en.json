@@ -408,6 +408,13 @@
   },
   "quran": {
     "title": "Quran",
+    "bootstrap": {
+      "loadingTitle": "Preparing Quran content",
+      "loadingMessage": "Qalb is downloading and checking the Quran database. This is needed the first time the app is opened.",
+      "errorTitle": "Quran content is unavailable",
+      "errorMessage": "Connect to the internet and try again. Your saved Quran database is kept if an update fails.",
+      "retry": "Try again"
+    },
     "search": "Search Quran",
     "surahs": "Surahs",
     "ayahsTitle": "Ayahs",
