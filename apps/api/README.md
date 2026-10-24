@@ -48,21 +48,29 @@ A Redis lock prevents concurrent workers from advancing the cursor. Redis
 stores the complete app dataset and Content Sync token together in one
 non-expiring key; failed requests, validation errors, and failed Redis writes
 leave the previous committed dataset and token intact. The API exposes only a
-revision, sync timestamp, row counts, and the app's content snapshot. It never
-returns QF credentials or sync tokens.
+revision, sync timestamp, row counts, the app's content snapshot, and changes
+between the latest two revisions. A client on an older revision receives a
+full snapshot. It never returns QF credentials or sync tokens.
 
 `GET /api/quran/status` reports the current public revision and starts a due
-catch-up run in the background. `GET /api/quran/snapshot` returns the validated
-mobile projection. The mobile app keeps its own SQLite copy and can continue to
-read/search it offline. New installs need internet access to fetch their first
-copy; they receive a retry screen if that request fails. Existing local data is
-kept when updates fail.
+catch-up run in the background. `GET /api/quran/changes?revision=...` returns
+the insert/update/delete patch when the revision is the retained previous
+revision, or a full snapshot for new/stale clients. `GET /api/quran/snapshot`
+returns the current full projection. The mobile app applies updates to its own
+SQLite copy transactionally and can continue to read/search it offline. New
+installs need internet access to fetch their first copy; they receive a retry
+screen if that request fails. Existing local data is kept when updates fail.
 
 The current local development setup uses a Redis endpoint configured in
 `apps/api/.env.local`. Configure the same durable storage and QF variables in
 the deployed API environment before a mobile release. If Redis is unavailable
 or exceeds its storage limit, synchronization fails closed and retains the last
 valid dataset; it does not fall back to ephemeral storage.
+
+Content Sync supplies recitation metadata and audio URLs, not audio recordings.
+This integration does not establish redistribution rights for Quran text,
+translations, transliteration, or recitation recordings. Review the applicable
+Quran.Foundation terms and each content provider's rights before release.
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 

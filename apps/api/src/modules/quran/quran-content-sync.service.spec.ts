@@ -310,4 +310,47 @@ describe('QuranContentSyncService', () => {
     expect(redisMock.setPersistent).not.toHaveBeenCalled();
     expect(readPersisted()).toBe(previous);
   });
+
+  it('returns incremental table changes only for the retained prior revision', async () => {
+    const oldDataset = {
+      chapters: [{ id: 1, name_simple: 'Old' }],
+      verses: [],
+      translations: [],
+      transliterations: [],
+      reciters: [{ id: 6, name: 'Reciter' }],
+      ayahAudio: [],
+      chapterAudio: [],
+    };
+    const newDataset = {
+      ...oldDataset,
+      chapters: [{ id: 1, name_simple: 'New' }],
+    };
+    const { service } = createService({
+      schemaVersion: 1,
+      resourcesFilter: QURAN_RESOURCE_FILTER,
+      syncToken: 'internal-token',
+      lastSuccessfulSyncAt: '2026-06-01T03:00:00.000Z',
+      revision: 'revision-new',
+      previous: { revision: 'revision-old', dataset: oldDataset },
+      dataset: newDataset,
+    });
+
+    const incremental = await service.getChanges('revision-old');
+    expect(incremental).toMatchObject({
+      kind: 'incremental',
+      fromRevision: 'revision-old',
+      revision: 'revision-new',
+    });
+    expect(
+      incremental.kind === 'incremental' && incremental.changes[0],
+    ).toMatchObject({
+      table: 'chapters',
+      upserts: [{ id: 1, name_simple: 'New' }],
+    });
+    await expect(service.getChanges('stale-revision')).resolves.toMatchObject({
+      kind: 'full',
+      revision: 'revision-new',
+      chapters: [{ id: 1, name_simple: 'New' }],
+    });
+  });
 });

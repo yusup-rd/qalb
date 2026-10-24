@@ -30,6 +30,9 @@ export class QuranContentController {
 
   @Get('changes')
   async getChanges(@Query('revision') revision?: string) {
+    if (revision && revision.length > 128) {
+      throw new ServiceUnavailableException('Client revision is invalid.');
+    }
     return this.contentSync.getChanges(revision || null);
   }
 }

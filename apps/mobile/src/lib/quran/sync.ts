@@ -19,6 +19,18 @@ type QuranSnapshot = {
   chapterAudio: ChapterAudio[];
 };
 
+type QuranChanges = {
+  kind: "incremental";
+  fromRevision: string;
+  revision: string;
+  syncedAt: string;
+  changes: {
+    table: string;
+    upserts: Record<string, SQLiteBindValue>[];
+    deletes: SQLiteBindValue[];
+  }[];
+};
+
 type Chapter = {
   id: number;
   chapter_number: number;
@@ -149,17 +161,155 @@ export async function refreshQuranDatabase(
   );
   if (current?.revision === status.revision) return false;
 
-  const snapshot = await apiRequest<QuranSnapshot>(
-    "/api/quran/snapshot",
+  const changes = await apiRequest<QuranChanges | QuranSnapshot>(
+    `/api/quran/changes${current?.revision ? `?revision=${encodeURIComponent(current.revision)}` : ""}`,
     undefined,
     {
       timeoutMs: 45_000,
       maxAttempts: 3,
     },
   );
+  if ("kind" in changes && changes.kind === "incremental") {
+    if (
+      !current?.revision ||
+      changes.fromRevision !== current.revision ||
+      changes.revision !== status.revision ||
+      !Array.isArray(changes.changes)
+    ) {
+      throw new Error("The Quran server returned an invalid change batch.");
+    }
+    await applyChangesTransactionally(db, changes);
+    return true;
+  }
+  const snapshot = changes as QuranSnapshot;
   validateSnapshot(snapshot);
   await applySnapshotTransactionally(db, snapshot);
   return true;
+}
+
+const tableColumns: Record<string, { table: string; key: string }> = {
+  chapters: { table: "chapters", key: "id" },
+  verses: { table: "verses", key: "id" },
+  translations: { table: "translations", key: "id" },
+  transliterations: { table: "transliterations", key: "id" },
+  reciters: { table: "reciters", key: "id" },
+  ayah_audio: { table: "ayah_audio", key: "id" },
+  chapter_audio: { table: "chapter_audio", key: "id" },
+};
+const allowedColumns: Record<string, Set<string>> = {
+  chapters: new Set([
+    "id",
+    "chapter_number",
+    "name_simple",
+    "name_arabic",
+    "name_complex",
+    "translated_name",
+    "revelation_place",
+    "revelation_order",
+    "verses_count",
+  ]),
+  verses: new Set([
+    "id",
+    "chapter_id",
+    "verse_number",
+    "verse_index",
+    "verse_key",
+    "text_uthmani",
+  ]),
+  translations: new Set([
+    "id",
+    "verse_id",
+    "language",
+    "resource_id",
+    "text",
+    "foot_notes",
+  ]),
+  transliterations: new Set(["id", "verse_id", "text", "resource_id"]),
+  reciters: new Set(["id", "name"]),
+  ayah_audio: new Set([
+    "id",
+    "verse_id",
+    "reciter_id",
+    "url",
+    "duration",
+    "format",
+    "mime_type",
+    "segments_json",
+    "updated_at",
+  ]),
+  chapter_audio: new Set([
+    "id",
+    "chapter_id",
+    "reciter_id",
+    "url",
+    "duration",
+    "format",
+    "mime_type",
+    "segments_json",
+    "updated_at",
+  ]),
+};
+
+async function applyChangesTransactionally(
+  db: SQLiteDatabase,
+  batch: QuranChanges,
+): Promise<void> {
+  await db.withExclusiveTransactionAsync(async (transaction) => {
+    for (const change of [...batch.changes].reverse()) {
+      const spec = tableColumns[change.table];
+      if (
+        !spec ||
+        !Array.isArray(change.upserts) ||
+        !Array.isArray(change.deletes)
+      ) {
+        throw new Error("The Quran server returned an invalid table change.");
+      }
+      for (const id of change.deletes) {
+        await transaction.runAsync(
+          `DELETE FROM ${spec.table} WHERE ${spec.key} = ?`,
+          id,
+        );
+      }
+    }
+    for (const change of batch.changes) {
+      const spec = tableColumns[change.table];
+      if (!spec)
+        throw new Error("The Quran server returned an invalid table change.");
+      for (const row of change.upserts) {
+        const columns = Object.keys(row);
+        if (
+          !columns.includes(spec.key) ||
+          columns.length === 0 ||
+          columns.some((column) => !allowedColumns[change.table].has(column))
+        ) {
+          throw new Error("The Quran server returned an invalid row change.");
+        }
+        const placeholders = columns.map(() => "?").join(", ");
+        const updates = columns
+          .filter((column) => column !== spec.key)
+          .map((column) => `${column} = excluded.${column}`)
+          .join(", ");
+        await transaction.runAsync(
+          `INSERT INTO ${spec.table} (${columns.join(", ")}) VALUES (${placeholders}) ON CONFLICT(${spec.key}) DO ${updates ? `UPDATE SET ${updates}` : "NOTHING"}`,
+          ...columns.map((column) => row[column]),
+        );
+      }
+    }
+    await transaction.runAsync(
+      `INSERT INTO quran_sync_state (id, revision, synced_at) VALUES (1, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET revision = excluded.revision, synced_at = excluded.synced_at`,
+      batch.revision,
+      batch.syncedAt,
+    );
+    const counts = await transaction.getFirstAsync<{
+      chapters: number;
+      verses: number;
+    }>(`SELECT (SELECT COUNT(*) FROM chapters) AS chapters,
+              (SELECT COUNT(*) FROM verses) AS verses`);
+    if (counts?.chapters !== 114 || counts.verses !== 6236) {
+      throw new Error("The Quran dataset failed local database validation.");
+    }
+  });
 }
 
 function validateSnapshot(snapshot: QuranSnapshot): void {
