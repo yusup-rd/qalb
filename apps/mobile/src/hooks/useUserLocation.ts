@@ -1,5 +1,6 @@
-import type { LocationPermissionStatus } from "@/store/locationStore";
+import i18n from "@/i18n";
 import { withTimeout } from "@/lib/with-timeout";
+import type { LocationPermissionStatus } from "@/store/locationStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
@@ -11,13 +12,32 @@ interface UserLocation {
   longitude: number;
 }
 
+type LocationErrorKey =
+  | "prayerTimes.locationError.permissionNotGranted"
+  | "prayerTimes.locationError.permissionBlockedTitle"
+  | "prayerTimes.locationError.unavailableMessage";
+
+function translateLocationError(
+  key: LocationErrorKey,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  switch (key) {
+    case "prayerTimes.locationError.permissionNotGranted":
+      return t("prayerTimes.locationError.permissionNotGranted");
+    case "prayerTimes.locationError.permissionBlockedTitle":
+      return t("prayerTimes.locationError.permissionBlockedTitle");
+    case "prayerTimes.locationError.unavailableMessage":
+      return t("prayerTimes.locationError.unavailableMessage");
+  }
+}
+
 export function useUserLocation() {
   const { t } = useTranslation();
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] =
     useState<LocationPermissionStatus>("checking");
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<LocationErrorKey | null>(null);
   const initialRequestComplete = useRef(false);
   const requestInFlight = useRef(false);
   const previousAppState = useRef<string | null | undefined>(
@@ -28,7 +48,7 @@ export function useUserLocation() {
     if (requestInFlight.current) return;
     requestInFlight.current = true;
     setLoading(true);
-    setError(null);
+    setErrorKey(null);
 
     let permissionConfirmed = false;
 
@@ -39,16 +59,16 @@ export function useUserLocation() {
       if (disclosureAccepted !== "accepted") {
         const accepted = await new Promise<boolean>((resolve) => {
           Alert.alert(
-            t("prayerTimes.location.disclosure.title"),
-            t("prayerTimes.location.disclosure.message"),
+            i18n.t("prayerTimes.location.disclosure.title"),
+            i18n.t("prayerTimes.location.disclosure.message"),
             [
               {
-                text: t("prayerTimes.location.disclosure.notNow"),
+                text: i18n.t("prayerTimes.location.disclosure.notNow"),
                 style: "cancel",
                 onPress: () => resolve(false),
               },
               {
-                text: t("prayerTimes.location.disclosure.continue"),
+                text: i18n.t("prayerTimes.location.disclosure.continue"),
                 onPress: () => resolve(true),
               },
             ],
@@ -58,7 +78,7 @@ export function useUserLocation() {
 
         if (!accepted) {
           setPermissionStatus("denied");
-          setError(t("prayerTimes.locationError.permissionNotGranted"));
+          setErrorKey("prayerTimes.locationError.permissionNotGranted");
           return;
         }
 
@@ -71,7 +91,7 @@ export function useUserLocation() {
         if (!permission.canAskAgain) {
           setPermissionStatus("blocked");
 
-          setError(t("prayerTimes.locationError.permissionBlockedTitle"));
+          setErrorKey("prayerTimes.locationError.permissionBlockedTitle");
 
           return;
         }
@@ -81,10 +101,10 @@ export function useUserLocation() {
         if (!permission.granted) {
           setPermissionStatus(permission.canAskAgain ? "denied" : "blocked");
 
-          setError(
+          setErrorKey(
             permission.canAskAgain
-              ? t("prayerTimes.locationError.permissionNotGranted")
-              : t("prayerTimes.locationError.permissionBlockedTitle"),
+              ? "prayerTimes.locationError.permissionNotGranted"
+              : "prayerTimes.locationError.permissionBlockedTitle",
           );
 
           return;
@@ -112,13 +132,13 @@ export function useUserLocation() {
         setPermissionStatus("granted");
       }
 
-      setError(t("prayerTimes.locationError.unavailableMessage"));
+      setErrorKey("prayerTimes.locationError.unavailableMessage");
     } finally {
       requestInFlight.current = false;
       initialRequestComplete.current = true;
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   const refreshPermissionOnResume = useCallback(async () => {
     if (!initialRequestComplete.current) {
@@ -134,15 +154,15 @@ export function useUserLocation() {
 
       setLocation(null);
       setPermissionStatus(permission.canAskAgain ? "denied" : "blocked");
-      setError(
+      setErrorKey(
         permission.canAskAgain
-          ? t("prayerTimes.locationError.permissionNotGranted")
-          : t("prayerTimes.locationError.permissionBlockedTitle"),
+          ? "prayerTimes.locationError.permissionNotGranted"
+          : "prayerTimes.locationError.permissionBlockedTitle",
       );
     } catch (permissionError) {
       console.warn("Failed to refresh location permission:", permissionError);
     }
-  }, [getLocation, t]);
+  }, [getLocation]);
 
   useEffect(() => {
     // Intentionally starts the native Expo Location request on mount.
@@ -169,7 +189,7 @@ export function useUserLocation() {
     location,
     loading,
     permissionStatus,
-    error,
+    error: errorKey ? translateLocationError(errorKey, t) : null,
     retry: getLocation,
   };
 }

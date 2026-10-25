@@ -7,7 +7,10 @@ import { withTimeout } from "../src/lib/with-timeout.ts";
 // Native APIs are mocked. These tests exercise production hook logic, not
 // native permission dialogs, GPS, SQLite, or React's rendering lifecycle.
 function load(file, modules) {
-  const source = readFileSync(new URL(file, pathToFileURL(__filename).href), "utf8");
+  const source = readFileSync(
+    new URL(file, pathToFileURL(__filename).href),
+    "utf8",
+  );
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -127,6 +130,10 @@ test("location requests are single-flight and permission errors are localized", 
   });
   const { useUserLocation } = load("../src/hooks/useUserLocation.ts", {
     react,
+    "@/i18n": {
+      __esModule: true,
+      default: { t: (key) => `translated:${key}` },
+    },
     "@/lib/with-timeout": { withTimeout },
     "react-i18next": {
       useTranslation: () => ({ t: (key) => `translated:${key}` }),
@@ -152,7 +159,7 @@ test("location requests are single-flight and permission errors are localized", 
   assert.equal(react.state[2], "blocked");
   assert.equal(
     react.state[3],
-    "translated:prayerTimes.locationError.permissionBlockedTitle",
+    "prayerTimes.locationError.permissionBlockedTitle",
   );
   await hook.retry();
   assert.equal(requests, 2);

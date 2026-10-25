@@ -27,17 +27,20 @@ const PrayerTimes = () => {
     useState<CalculationMethodId>("mwl");
   const [draftAsrMethod, setDraftAsrMethod] = useState<AsrMethod>("standard");
 
-  const { calculationMethod, asrMethod, setCalculationSettings } =
-    usePrayerStore();
+  const calculationMethod = usePrayerStore((state) => state.calculationMethod);
+  const asrMethod = usePrayerStore((state) => state.asrMethod);
+  const setCalculationSettings = usePrayerStore(
+    (state) => state.setCalculationSettings,
+  );
 
-  const {
-    latitude,
-    longitude,
-    locationLoading,
-    locationError,
-    locationPermissionStatus,
-    retryLocation,
-  } = useLocationStore();
+  const latitude = useLocationStore((state) => state.latitude);
+  const longitude = useLocationStore((state) => state.longitude);
+  const locationLoading = useLocationStore((state) => state.locationLoading);
+  const locationError = useLocationStore((state) => state.locationError);
+  const locationPermissionStatus = useLocationStore(
+    (state) => state.locationPermissionStatus,
+  );
+  const retryLocation = useLocationStore((state) => state.retryLocation);
 
   const prayerTimes = usePrayerTimes(selectedDate);
 

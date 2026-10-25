@@ -39,8 +39,11 @@ const PrayersToday = ({
     keyPrefix: "duration",
   });
 
-  const { calculationMethod, asrMethod, prayerTimeAdjustments } =
-    usePrayerStore();
+  const calculationMethod = usePrayerStore((state) => state.calculationMethod);
+  const asrMethod = usePrayerStore((state) => state.asrMethod);
+  const prayerTimeAdjustments = usePrayerStore(
+    (state) => state.prayerTimeAdjustments,
+  );
 
   const calculationMethodOption = calculationMethods.find(
     (method) => method.id === calculationMethod,

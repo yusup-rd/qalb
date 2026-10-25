@@ -86,7 +86,8 @@ describe("useDeviceHeading", () => {
       expect(mockedLocation.watchHeadingAsync).toHaveBeenCalledTimes(2),
     );
     expect(result.current.sensorStatus).toBe("checking");
-    expect(result.current.heading).toBeNull();
+    // Reopening retains the last reading while the sensor reconnects.
+    expect(result.current.heading).toBe(90);
     await new Promise((resolve) => setTimeout(resolve, 110));
     act(() => emitHeading?.({ trueHeading: 91, magHeading: 91, accuracy: 2 }));
     expect(result.current.sensorStatus).toBe("available");

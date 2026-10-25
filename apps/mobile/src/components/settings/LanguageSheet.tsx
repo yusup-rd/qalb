@@ -47,11 +47,20 @@ const LanguageSheet = ({
   const handleSelect = async (language: string) => {
     if (isChanging) return;
 
+    if (language === selectedLanguage) {
+      onClose();
+      return;
+    }
+
     try {
       setIsChanging(true);
+      onClose();
+      // Start the native dismissal before the locale update notifies screens.
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
       await changeLanguage(language);
       onLanguageChange(language);
-      onClose();
     } catch (error) {
       console.error("Failed to change language:", error);
     } finally {
