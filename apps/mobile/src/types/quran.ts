@@ -33,24 +33,8 @@ type QuranTransliteration = {
   text: string;
 };
 
-export type QuranReciter = {
-  id: number;
-  name: string;
-};
-
 export type AyahAudio = {
   verseId: number;
-  reciterId: number;
-  url: string;
-  duration: number | null;
-  format: string | null;
-  mimeType: string | null;
-  segmentsJson: string | null;
-  updatedAt: string | null;
-};
-
-export type ChapterAudio = {
-  chapterId: number;
   reciterId: number;
   url: string;
   duration: number | null;

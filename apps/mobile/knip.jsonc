@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Retained for Expo/native integration, development, and root Prettier config.
+  "ignoreDependencies": [
+    "expo-device",
+    "expo-glass-effect",
+    "expo-web-browser",
+    "prettier",
+    "prettier-plugin-tailwindcss"
+  ],
+  "ignoreIssues": {
+    // The Quran bootstrap test loads this module dynamically and calls
+    // isQuranUpdateCheckDue, which static import analysis cannot detect.
+    "src/lib/quran/sync.ts": ["exports"]
+  }
+}

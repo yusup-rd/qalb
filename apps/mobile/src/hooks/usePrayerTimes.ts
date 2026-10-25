@@ -414,10 +414,6 @@ function usePrayerTimesState(selectedDate?: Date) {
   return useMemo(() => ({ data, calculatedData }), [calculatedData, data]);
 }
 
-export function usePrayerTimesData(selectedDate?: Date): PrayerTimeSnapshot {
-  return usePrayerTimesState(selectedDate).data;
-}
-
 export function usePrayerTimes(selectedDate?: Date) {
   const { data, calculatedData } = usePrayerTimesState(selectedDate);
   const { i18n: i18nInstance } = useTranslation();

@@ -1,23 +1,16 @@
 import { apiRequest } from "@/api/client";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
-import {
-  isSecureAudioUrl,
-  validateQuranSnapshot,
-  type QuranSnapshot,
-  type Chapter,
-  type Verse,
-  type Translation,
-  type Transliteration,
-  type Reciter,
-  type Audio,
-  type ChapterAudio,
-} from "./snapshot-validation";
 import { getQuranBootstrapErrorKind } from "./bootstrap-error";
 import {
   createQuranBootstrapReporter,
   type QuranBootstrapObserver,
   type QuranBootstrapReporter,
 } from "./bootstrap-progress";
+import {
+  isSecureAudioUrl,
+  validateQuranSnapshot,
+  type QuranSnapshot,
+} from "./snapshot-validation";
 
 type QuranServerStatus = {
   available: true;

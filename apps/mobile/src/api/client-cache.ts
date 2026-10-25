@@ -139,22 +139,3 @@ export async function requestCached<T>(
     }
   }
 }
-
-export async function invalidateCached(key: string): Promise<void> {
-  memoryCache.delete(key);
-  const stored = await readStorage();
-  if (!(key in stored)) return;
-  delete stored[key];
-  await writeStorage(stored);
-}
-
-export function clearMemoryCache(): void {
-  memoryCache.clear();
-}
-
-export function resetApiCache(): void {
-  memoryCache.clear();
-  inFlightRequests.clear();
-  storageLoad = null;
-  storageWrite = Promise.resolve();
-}
