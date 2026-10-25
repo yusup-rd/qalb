@@ -7,13 +7,15 @@ const LocationInitializer = () => {
   const { location, loading, error, permissionStatus, retry } =
     useUserLocation();
 
-  const {
-    setLocation,
-    setLocationLoading,
-    setLocationError,
-    setLocationPermissionStatus,
-    setRetryLocation,
-  } = useLocationStore();
+  const setLocation = useLocationStore((state) => state.setLocation);
+  const setLocationLoading = useLocationStore(
+    (state) => state.setLocationLoading,
+  );
+  const setLocationError = useLocationStore((state) => state.setLocationError);
+  const setLocationPermissionStatus = useLocationStore(
+    (state) => state.setLocationPermissionStatus,
+  );
+  const setRetryLocation = useLocationStore((state) => state.setRetryLocation);
 
   useLocationName();
 

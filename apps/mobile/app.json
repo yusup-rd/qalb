@@ -54,7 +54,12 @@
       "url": "https://u.expo.dev/4fc7edef-51b0-47f6-8203-66dd1d1ec294"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "apiRoutes": true
+        }
+      ],
       [
         "expo-splash-screen",
         {

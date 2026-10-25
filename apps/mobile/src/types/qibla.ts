@@ -1,7 +1,7 @@
 export type HeadingPermissionStatus =
   "checking" | "granted" | "denied" | "error";
 
-export type HeadingSensorStatus =
+type HeadingSensorStatus =
   | "checking"
   | "available"
   | "unavailable"

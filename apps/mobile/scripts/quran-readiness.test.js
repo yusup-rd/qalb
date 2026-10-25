@@ -55,7 +55,7 @@ const { default: QuranReadinessGate, QuranReadinessContext } = loadModule(
   {},
 );
 
-test("reproduces SDK 57 retaining a false child after database initialization", () => {
+test("reproduces SQLiteProvider retaining its child when only children change", () => {
   const previous = { databaseName: "quran-v2.db", children: false };
   const next = {
     ...previous,

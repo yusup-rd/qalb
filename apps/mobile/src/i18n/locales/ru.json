@@ -598,8 +598,7 @@
         "licenseExpo": "Expo и модули Expo — лицензия MIT",
         "licenseReactNative": "React Native — лицензия MIT",
         "licenseMapsAndStorage": "React Native Maps и AsyncStorage — лицензия MIT",
-        "licensePluralRules": "intl-pluralrules — лицензия ISC",
-        "contentRightsNote": "На текст Корана, переводы, транслитерацию и чтение распространяются отдельные права. Указание источника здесь не означает, что эти права подтверждены."
+        "licensePluralRules": "intl-pluralrules — лицензия ISC"
       },
       "copyright": "© Юсуп Реджепов {{year}}"
     }

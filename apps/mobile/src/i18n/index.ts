@@ -3,10 +3,12 @@ import { getLocales } from "expo-localization";
 import i18n from "i18next";
 import "intl-pluralrules";
 import { initReactI18next } from "react-i18next";
+import { Platform } from "react-native";
 import en from "./locales/en.json";
 import ru from "./locales/ru.json";
 
 const I18N_STORAGE_KEY = "@app/language";
+let languageStorageWrite: Promise<void> = Promise.resolve();
 
 const resources = {
   en: {
@@ -53,14 +55,18 @@ export const changeLanguage = async (language: string) => {
   }
 
   await i18n.changeLanguage(language);
-  try {
-    const { setupNotificationChannel } = await import("@/lib/notifications");
-    await setupNotificationChannel();
-  } catch {}
 
-  try {
-    await AsyncStorage.setItem(I18N_STORAGE_KEY, language);
-  } catch {}
+  // Neither native channel setup nor persistence needs to hold the sheet open.
+  if (Platform.OS === "android") {
+    void import("@/lib/notifications")
+      .then(({ setupNotificationChannel }) => setupNotificationChannel())
+      .catch(() => undefined);
+  }
+
+  // Serialize quick successive selections so the last choice is persisted.
+  languageStorageWrite = languageStorageWrite.then(() =>
+    AsyncStorage.setItem(I18N_STORAGE_KEY, language).catch(() => undefined),
+  );
 };
 
 export default i18n;

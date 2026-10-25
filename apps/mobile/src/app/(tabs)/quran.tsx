@@ -259,6 +259,7 @@ const Quran = () => {
     <SafeAreaView className="bg-background flex-1" edges={["top"]}>
       <FlatList
         className="bg-background flex-1 px-5"
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="gap-3 pb-5"
         data={listItems}
         initialNumToRender={10}

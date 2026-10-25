@@ -1,7 +1,5 @@
 import type {
-  ChapterAudio,
   QuranChapter,
-  QuranReciter,
   QuranVerse,
   QuranVerseWithContent,
 } from "@/types/quran";
@@ -219,15 +217,6 @@ export const getVersesByChapterId = async (
     };
   });
 };
-
-export const getChapterAudio = (db: SQLiteDatabase, chapterId: number) =>
-  db.getFirstAsync<ChapterAudio>(
-    "SELECT chapter_id AS chapterId, reciter_id AS reciterId, url, duration, format, mime_type AS mimeType, segments_json AS segmentsJson, updated_at AS updatedAt FROM chapter_audio WHERE chapter_id = ? ORDER BY reciter_id LIMIT 1",
-    chapterId,
-  );
-
-export const getReciters = (db: SQLiteDatabase) =>
-  db.getAllAsync<QuranReciter>("SELECT id, name FROM reciters ORDER BY id");
 
 export const searchQuran = (db: SQLiteDatabase, query: string) => {
   const trimmedQuery = query.trim();

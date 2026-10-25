@@ -598,8 +598,7 @@
         "licenseExpo": "Expo and Expo modules — MIT License",
         "licenseReactNative": "React Native — MIT License",
         "licenseMapsAndStorage": "React Native Maps and AsyncStorage — MIT License",
-        "licensePluralRules": "intl-pluralrules — ISC License",
-        "contentRightsNote": "Quran text, translations, transliteration, and recitation have separate content rights; attribution here does not claim that those rights have been cleared."
+        "licensePluralRules": "intl-pluralrules — ISC License"
       },
       "copyright": "© Yusup Rejebov {{year}}"
     }

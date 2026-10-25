@@ -113,9 +113,6 @@ export default function AboutSection() {
             label={t("about.licensePluralRules")}
             url="https://github.com/eemeli/intl-pluralrules/blob/main/LICENSE"
           />
-          <Text className="text-muted-foreground font-sans text-xs">
-            {t("about.contentRightsNote")}
-          </Text>
         </ScrollView>
       </SheetWrapper>
     </View>

@@ -13,14 +13,8 @@ import { usePrayerTimeSettings } from "@/hooks/usePrayerTimeSettings";
 import { useAyahOfDay } from "@/hooks/useQuran";
 import { useLocationStore } from "@/store/locationStore";
 import { styled } from "nativewind";
-import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AppState,
-  type AppStateStatus,
-  Linking,
-  ScrollView,
-} from "react-native";
+import { Linking, ScrollView } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
@@ -48,28 +42,6 @@ const Index = () => {
     handleNotificationMinutesChange,
     handleAdjustmentChange,
   } = usePrayerTimeSettings();
-
-  const previousAppState = useRef<AppStateStatus>(AppState.currentState);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      const wasInactive =
-        previousAppState.current === "inactive" ||
-        previousAppState.current === "background";
-
-      const returnedToApp = wasInactive && nextAppState === "active";
-
-      if (returnedToApp && locationPermissionStatus === "blocked") {
-        void retryLocation();
-      }
-
-      previousAppState.current = nextAppState;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [locationPermissionStatus, retryLocation]);
 
   const renderLocationContent = () => {
     if (locationLoading) {
@@ -138,6 +110,7 @@ const Index = () => {
       <SafeAreaView className="bg-background flex-1" edges={["top"]}>
         <ScrollView
           className="flex-1"
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-5 p-5"
           showsVerticalScrollIndicator={false}
         >

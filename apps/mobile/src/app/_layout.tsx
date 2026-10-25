@@ -50,7 +50,8 @@ const RootLayout = () => {
   const handleDatabaseOpenError = useCallback((error: Error) => {
     if (reportedOpenError.current === error) return;
     reportedOpenError.current = error;
-    // SDK 57 invokes onError during render. Update the parent after rendering.
+    // SQLiteProvider invokes onError during render. Defer parent updates until
+    // after that render completes.
     queueMicrotask(() => {
       databaseRef.current = null;
       setQuranDatabaseError(getQuranBootstrapErrorKind(error));

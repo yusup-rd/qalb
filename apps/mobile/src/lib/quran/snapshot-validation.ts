@@ -10,7 +10,7 @@ export type QuranSnapshot = {
   chapterAudio: ChapterAudio[];
 };
 
-export type Chapter = {
+type Chapter = {
   id: number;
   chapter_number: number;
   name_simple: string;
@@ -21,7 +21,7 @@ export type Chapter = {
   revelation_order: number | null;
   verses_count: number;
 };
-export type Verse = {
+type Verse = {
   id: number;
   chapter_id: number;
   verse_number: number;
@@ -29,7 +29,7 @@ export type Verse = {
   verse_key: string;
   text_uthmani: string;
 };
-export type Translation = {
+type Translation = {
   id: number;
   verse_id: number;
   language: "en" | "ru";
@@ -37,14 +37,14 @@ export type Translation = {
   text: string;
   foot_notes: string | null;
 };
-export type Transliteration = {
+type Transliteration = {
   id: number;
   verse_id: number;
   resource_id: number;
   text: string;
 };
-export type Reciter = { id: number; name: string };
-export type Audio = {
+type Reciter = { id: number; name: string };
+type Audio = {
   id: number;
   verse_id: number;
   reciter_id: number;
@@ -55,7 +55,7 @@ export type Audio = {
   segments_json: string | null;
   updated_at: string | null;
 };
-export type ChapterAudio = {
+type ChapterAudio = {
   id: number;
   chapter_id: number;
   reciter_id: number;

@@ -73,7 +73,8 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
             return;
           }
 
-          setHeading(null);
+          // Keep the last reading while the focused screen reacquires the sensor.
+          // The compass can render immediately and the next sample replaces it.
           setSensorStatus("checking");
           headingTimeout = setTimeout(() => {
             if (mounted) {

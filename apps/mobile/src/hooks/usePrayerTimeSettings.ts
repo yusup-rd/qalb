@@ -4,12 +4,18 @@ import type { Prayer, PrayerTimeAdjustment, SolarEvent } from "@/types/prayer";
 import { useState } from "react";
 
 export function usePrayerTimeSettings() {
-  const {
-    prayerNotifications,
-    prayerTimeAdjustments,
-    setPrayerNotification,
-    setPrayerTimeAdjustment,
-  } = usePrayerStore();
+  const prayerNotifications = usePrayerStore(
+    (state) => state.prayerNotifications,
+  );
+  const prayerTimeAdjustments = usePrayerStore(
+    (state) => state.prayerTimeAdjustments,
+  );
+  const setPrayerNotification = usePrayerStore(
+    (state) => state.setPrayerNotification,
+  );
+  const setPrayerTimeAdjustment = usePrayerStore(
+    (state) => state.setPrayerTimeAdjustment,
+  );
 
   const [visible, setVisible] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<

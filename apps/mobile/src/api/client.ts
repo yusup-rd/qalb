@@ -44,9 +44,9 @@ const REQUEST_TIMEOUTS_MS = [15_000, 20_000, 45_000] as const;
 const RETRY_DELAYS_MS = [2_000, 8_000] as const;
 const DEFAULT_MAX_ATTEMPTS = 3;
 
-export type ApiErrorKind = "timeout" | "network" | "http" | "cancelled";
+type ApiErrorKind = "timeout" | "network" | "http" | "cancelled";
 
-export class ApiClientError extends Error {
+class ApiClientError extends Error {
   readonly status: number | null;
   readonly kind: ApiErrorKind;
   readonly retryable: boolean;
@@ -76,7 +76,7 @@ export interface ApiRequestOptions {
   onEvent?: (event: ApiRequestEvent) => void;
 }
 
-export type ApiRequestEvent = {
+type ApiRequestEvent = {
   type:
     | "start"
     | "response"
