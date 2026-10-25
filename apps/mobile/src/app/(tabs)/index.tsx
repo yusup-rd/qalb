@@ -139,6 +139,7 @@ const Index = () => {
       <SafeAreaView className="bg-background flex-1" edges={["top"]}>
         <ScrollView
           className="flex-1"
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-5 p-5"
           showsVerticalScrollIndicator={false}
         >

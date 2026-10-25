@@ -1,14 +1,14 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
+import ErrorCard from "@/components/ui/ErrorCard";
 import { MosqueCardSkeleton } from "@/components/ui/skeletons/MosqueCardSkeleton";
 import type { NearbyMosque } from "@/hooks/useNearbyMosques";
+import { useLocationStore } from "@/store/locationStore";
 import type { Route } from "@/types/routing";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Linking, Text, View } from "react-native";
 import MosqueCard from "./MosqueCard";
-import ErrorCard from "@/components/ui/ErrorCard";
-import { useLocationStore } from "@/store/locationStore";
 
 interface MosquesListProps {
   mosques: NearbyMosque[];
@@ -103,6 +103,7 @@ const MosquesList = ({
     <FlatList
       ref={listRef}
       className="bg-background flex-1 px-5"
+      contentInsetAdjustmentBehavior="automatic"
       data={mosques}
       keyExtractor={(item) => item.id}
       stickyHeaderIndices={[0]}
@@ -158,7 +159,7 @@ const MosquesList = ({
       )}
       ListEmptyComponent={
         loading ? (
-          <View className="gap-[15px]">
+          <View className="gap-3">
             <MosqueCardSkeleton />
             <MosqueCardSkeleton />
             <MosqueCardSkeleton />
