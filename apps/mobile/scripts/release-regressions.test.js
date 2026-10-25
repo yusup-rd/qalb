@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import { getDistanceMeters } from "../src/lib/mosque-distance.ts";
 import { withTimeout } from "../src/lib/with-timeout.ts";
 
 // Native APIs are mocked. These tests exercise production hook logic, not
@@ -134,6 +135,7 @@ test("location requests are single-flight and permission errors are localized", 
       __esModule: true,
       default: { t: (key) => `translated:${key}` },
     },
+    "@/lib/mosque-distance": { getDistanceMeters },
     "@/lib/with-timeout": { withTimeout },
     "react-i18next": {
       useTranslation: () => ({ t: (key) => `translated:${key}` }),

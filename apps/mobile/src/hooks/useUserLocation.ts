@@ -1,4 +1,5 @@
 import i18n from "@/i18n";
+import { getDistanceMeters } from "@/lib/mosque-distance";
 import { withTimeout } from "@/lib/with-timeout";
 import type { LocationPermissionStatus } from "@/store/locationStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,6 +12,10 @@ interface UserLocation {
   latitude: number;
   longitude: number;
 }
+
+// A recent fix remains useful across short app switches. Real travel still refreshes.
+const LOCATION_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const MIN_LOCATION_CHANGE_METERS = 100;
 
 type LocationErrorKey =
   | "prayerTimes.locationError.permissionNotGranted"
@@ -40,14 +45,15 @@ export function useUserLocation() {
   const [errorKey, setErrorKey] = useState<LocationErrorKey | null>(null);
   const initialRequestComplete = useRef(false);
   const requestInFlight = useRef(false);
-  const previousAppState = useRef<string | null | undefined>(
-    AppState.currentState,
-  );
+  const wasBackgrounded = useRef(false);
+  const lastLocationFixAt = useRef<number | null>(null);
+  const locationRef = useRef<UserLocation | null>(null);
 
-  const getLocation = useCallback(async () => {
+  const getLocation = useCallback(async (mode?: "background") => {
     if (requestInFlight.current) return;
     requestInFlight.current = true;
-    setLoading(true);
+    const silentRefresh = mode === "background" && locationRef.current !== null;
+    if (!silentRefresh) setLoading(true);
     setErrorKey(null);
 
     let permissionConfirmed = false;
@@ -121,10 +127,24 @@ export function useUserLocation() {
         20_000,
       );
 
-      setLocation({
+      const nextLocation = {
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
-      });
+      };
+      const previousLocation = locationRef.current;
+      lastLocationFixAt.current = Date.now();
+      if (
+        !previousLocation ||
+        getDistanceMeters(
+          previousLocation.latitude,
+          previousLocation.longitude,
+          nextLocation.latitude,
+          nextLocation.longitude,
+        ) >= MIN_LOCATION_CHANGE_METERS
+      ) {
+        locationRef.current = nextLocation;
+        setLocation(nextLocation);
+      }
     } catch (error) {
       console.error("Failed to get user location:", error);
 
@@ -132,7 +152,9 @@ export function useUserLocation() {
         setPermissionStatus("granted");
       }
 
-      setErrorKey("prayerTimes.locationError.unavailableMessage");
+      if (!silentRefresh) {
+        setErrorKey("prayerTimes.locationError.unavailableMessage");
+      }
     } finally {
       requestInFlight.current = false;
       initialRequestComplete.current = true;
@@ -148,10 +170,24 @@ export function useUserLocation() {
     try {
       const permission = await Location.getForegroundPermissionsAsync();
       if (permission.granted) {
-        void getLocation();
+        const fixAge =
+          lastLocationFixAt.current === null
+            ? null
+            : Date.now() - lastLocationFixAt.current;
+        if (
+          locationRef.current &&
+          fixAge !== null &&
+          fixAge >= 0 &&
+          fixAge < LOCATION_REFRESH_INTERVAL_MS
+        ) {
+          return;
+        }
+        void getLocation("background");
         return;
       }
 
+      locationRef.current = null;
+      lastLocationFixAt.current = null;
       setLocation(null);
       setPermissionStatus(permission.canAskAgain ? "denied" : "blocked");
       setErrorKey(
@@ -173,11 +209,11 @@ export function useUserLocation() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
-      const returnedToApp =
-        previousAppState.current !== "active" && nextState === "active";
-      previousAppState.current = nextState;
-
-      if (returnedToApp) {
+      // iOS system overlays can make the app inactive without leaving it.
+      if (nextState === "background") {
+        wasBackgrounded.current = true;
+      } else if (nextState === "active" && wasBackgrounded.current) {
+        wasBackgrounded.current = false;
         void refreshPermissionOnResume();
       }
     });
