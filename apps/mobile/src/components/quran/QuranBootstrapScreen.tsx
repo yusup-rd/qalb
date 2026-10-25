@@ -7,7 +7,7 @@ import {
   type QuranBootstrapProgress,
 } from "@/lib/quran/bootstrap-progress";
 import { useTheme } from "@/providers/ThemeProvider";
-import { Feather } from "@expo/vector-icons";
+import { FontAwesome6 as Fa, Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
@@ -58,24 +58,24 @@ export default function QuranBootstrapScreen({
         }}
       >
         <View className="w-full max-w-md gap-6 self-center">
-          <View className="gap-4">
+          <View className="items-center gap-4">
             <View
               accessible={false}
               importantForAccessibility="no-hide-descendants"
               className="size-14 items-center justify-center rounded-2xl"
               style={{ backgroundColor: colors.primarySoft }}
             >
-              <Feather name="book-open" size={26} color={colors.primary} />
+              <Fa name="book-quran" size={26} color={colors.primary} />
             </View>
             <Text
               accessibilityRole="header"
-              className="font-sans-bold text-2xl"
+              className="font-sans-bold text-center text-2xl"
               style={{ color: colors.foreground }}
             >
               {error ? t("errorTitle") : t("loadingTitle")}
             </Text>
             <Text
-              className="font-sans text-sm leading-6"
+              className="font-sans text-center text-sm leading-6"
               style={{ color: colors.mutedForeground }}
             >
               {t("loadingMessage")}

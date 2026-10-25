@@ -54,7 +54,7 @@ const useDeviceHeading = (options: UseDeviceHeadingOptions): DeviceHeading => {
 
           if (!mounted) return;
 
-          // The shared location flow owns disclosure and permission requests.
+          // The shared location flow owns the foreground permission request.
           if (!permission.granted) {
             setPermissionStatus("denied");
             setHeading(null);

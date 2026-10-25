@@ -157,13 +157,14 @@ function createService(initialState: unknown = null) {
     releaseLock: vi.fn(async () => undefined),
   };
   const redis = redisMock as unknown as RedisService;
-  const logger = {
+  const loggerMock = {
     setContext: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-  } as unknown as PinoLogger;
+  };
+  const logger = loggerMock as unknown as PinoLogger;
   const service = new QuranContentSyncService(redis, logger);
-  return { service, redisMock, readPersisted: () => persisted };
+  return { service, redisMock, loggerMock, readPersisted: () => persisted };
 }
 
 describe('QuranContentSyncService', () => {
@@ -222,6 +223,38 @@ describe('QuranContentSyncService', () => {
     expect(state.dataset.translations).toHaveLength(12_472);
     expect(state.dataset.transliterations).toHaveLength(6236);
     expect(state.dataset.ayahAudio).toHaveLength(6236);
+  });
+
+  it('logs a safe Quran.Foundation stage and status when sync fails', async () => {
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_ID', 'client-id');
+    vi.stubEnv('QURAN_FOUNDATION_CLIENT_SECRET', 'client-secret');
+    vi.stubEnv('QURAN_FOUNDATION_ENV', 'production');
+    vi.stubGlobal('fetch', vi.fn(async () => response({}, 401)));
+    const { service, loggerMock } = createService();
+
+    await (
+      service as unknown as { syncIfDue: () => Promise<void> }
+    ).syncIfDue();
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'sync_failed',
+        syncStage: 'quran_foundation_auth',
+        failureReason: 'quran_foundation_http',
+        errorCode: 'QuranFoundationHttpError',
+        upstreamStatus: 401,
+        quranFoundationEnvironment: 'production',
+        quranFoundationCredentialsConfigured: true,
+        redisConfigured: true,
+      }),
+      expect.any(String),
+    );
+    expect(JSON.stringify(loggerMock.warn.mock.calls)).not.toContain(
+      'client-secret',
+    );
+    expect(JSON.stringify(loggerMock.warn.mock.calls)).not.toContain(
+      'client-id',
+    );
   });
 
   it('does not replace a previous dataset or cursor when a bootstrap snapshot is incomplete', async () => {

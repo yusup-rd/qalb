@@ -1,4 +1,5 @@
 import { AyahCard } from "@/components/quran/AyahCard";
+import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SurahCard } from "@/components/quran/SurahCard";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { SurahCardSkeleton } from "@/components/ui/skeletons/SurahCardSkeleton";
@@ -47,7 +48,7 @@ type QuranListItem =
       id: string;
     };
 
-const Quran = () => {
+const QuranLibrary = () => {
   const { colors } = useTheme();
   const showTranslation = useQuranPreferencesStore(
     (state) => state.showTranslation,
@@ -277,5 +278,11 @@ const Quran = () => {
     </SafeAreaView>
   );
 };
+
+const Quran = () => (
+  <QuranReadinessGate>
+    <QuranLibrary />
+  </QuranReadinessGate>
+);
 
 export default Quran;

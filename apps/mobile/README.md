@@ -50,12 +50,13 @@ physical iOS and Android devices.
 ## API and Quran storage
 
 The app uses `EXPO_PUBLIC_API_URL` to reach the API documented in
-[`../api/README.md`](../api/README.md). A new install downloads and validates a
-Quran snapshot before the main app opens, then stores it in `quran-v2.db` using
-Expo SQLite. Reading and search use that local database offline. The app checks
-for Quran updates every seven days; API and network errors preserve the
-last committed local content. Recitation playback and other provider-backed
-features need network access unless their data is already available locally.
+[`../api/README.md`](../api/README.md). On a new install, Qalb opens the rest of
+the app while it downloads and validates Quran content in the background. The
+Quran tab shows preparation progress until the local `quran-v2.db` database is
+ready. Reading and search then use that database offline. The app checks for
+Quran updates every seven days; API and network errors preserve the last
+committed local content. Recitation playback and other provider-backed features
+need network access unless their data is already available locally.
 
 The Android Maps key is read by `app.config.js`; it is not sent as an API
 credential. API provider credentials belong only in the API environment.

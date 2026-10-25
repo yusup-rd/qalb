@@ -105,7 +105,7 @@ export async function initializeQuranDatabase(
 ): Promise<void> {
   const reporter = createQuranBootstrapReporter(onProgress);
   try {
-    await db.execAsync(schema);
+    await prepareQuranDatabase(db);
     const localReady = await hasLocalQuran(db);
     if (!localReady) {
       await refreshQuranDatabase(db, reporter, true);
@@ -115,6 +115,10 @@ export async function initializeQuranDatabase(
     reporter.fail(getQuranBootstrapErrorKind(error));
     throw error;
   }
+}
+
+export async function prepareQuranDatabase(db: SQLiteDatabase): Promise<void> {
+  await db.execAsync(schema);
 }
 
 export async function refreshQuranDatabase(
@@ -185,8 +189,11 @@ async function refreshQuranDatabaseOnce(
     `/api/quran/changes${localReady && current?.revision ? `?revision=${encodeURIComponent(current.revision)}` : ""}`,
     undefined,
     {
-      timeoutMs: 45_000,
-      maxAttempts: 3,
+      // The first full Quran snapshot is about 10 MB. A development build on
+      // an Android emulator can take longer than the usual API timeout, and
+      // retrying restarts that large transfer from the beginning.
+      timeoutMs: 180_000,
+      maxAttempts: 1,
     },
   );
   reporter?.stage("validating");

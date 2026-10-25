@@ -207,13 +207,7 @@
     },
     "location": {
       "loading": "Locating...",
-      "unavailable": "Location unavailable",
-      "disclosure": {
-        "title": "How Qalb uses your location",
-        "message": "Qalb uses your location for prayer times, Qibla, locality names, nearby mosques, and route estimates. Coordinates are sent to Qalb's server and the service providers needed for these features. If locality lookup through Qalb is unavailable, your device's geocoder may receive them. You can continue without location access.",
-        "continue": "Continue",
-        "notNow": "Not now"
-      }
+      "unavailable": "Location unavailable"
     },
     "prayerCalculation": {
       "title": "Prayer Calculation",
@@ -411,8 +405,8 @@
     "title": "Quran",
     "bootstrap": {
       "loadingTitle": "Preparing Quran content",
-      "loadingMessage": "Preparing the Quran and translations for offline reading.",
-      "offlineHint": "Keep Qalb open for this first download. Once preparation is complete, reading and search will work offline.",
+      "loadingMessage": "Preparing the Quran for offline reading. You can use the rest of Qalb while this finishes.",
+      "offlineHint": "Keep Qalb open and connected while the first download finishes. You can move to other sections in the meantime.",
       "inProgress": "In progress",
       "writingProgress": "{{percent}}% written",
       "takingLonger": "This step is taking a little longer. Keep Qalb open. If preparation fails, you can try again.",

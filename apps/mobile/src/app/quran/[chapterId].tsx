@@ -1,4 +1,5 @@
 import { AyahCard } from "@/components/quran/AyahCard";
+import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { useQuranChapter } from "@/hooks/useQuran";
@@ -23,7 +24,7 @@ type ReaderItem =
   | { type: "skeleton"; id: string }
   | { type: "message"; id: string; message: string };
 
-const QuranReader = () => {
+const QuranReaderContent = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
   const { i18n } = useTranslation();
   const router = useRouter();
@@ -222,5 +223,11 @@ const QuranReader = () => {
     </SafeAreaView>
   );
 };
+
+const QuranReader = () => (
+  <QuranReadinessGate>
+    <QuranReaderContent />
+  </QuranReadinessGate>
+);
 
 export default QuranReader;
