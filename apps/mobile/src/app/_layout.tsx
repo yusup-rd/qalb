@@ -45,6 +45,7 @@ const RootLayout = () => {
   const databaseRef = useRef<SQLiteDatabase | null>(null);
   const [databaseOpenAttempt, setDatabaseOpenAttempt] = useState(0);
   const reportedOpenError = useRef<Error | null>(null);
+  const [databaseOpenFailed, setDatabaseOpenFailed] = useState(false);
 
   const handleDatabaseOpenError = useCallback((error: Error) => {
     if (reportedOpenError.current === error) return;
@@ -53,6 +54,7 @@ const RootLayout = () => {
     // after that render completes.
     queueMicrotask(() => {
       databaseRef.current = null;
+      setDatabaseOpenFailed(true);
       setQuranDatabaseError(getQuranBootstrapErrorKind(error));
       setQuranDatabaseReady(false);
     });
@@ -98,6 +100,7 @@ const RootLayout = () => {
   // background, after the rest of the app is already usable.
   const initializeDatabase = useCallback(async (db: SQLiteDatabase) => {
     databaseRef.current = db;
+    setDatabaseOpenFailed(false);
     try {
       await prepareQuranDatabase(db);
       const ready = await hasLocalQuran(db);
@@ -142,6 +145,7 @@ const RootLayout = () => {
       return;
     }
     reportedOpenError.current = null;
+    setDatabaseOpenFailed(false);
     setQuranDatabaseError(null);
     setDatabaseOpenAttempt((attempt) => attempt + 1);
   }, [runQuranInitialization]);
@@ -175,24 +179,34 @@ const RootLayout = () => {
   if (fontError) throw fontError;
   if (!fontsLoaded || !languageLoaded) return null;
 
+  const appContent = (
+    <QuranAudioProvider>
+      {!databaseOpenFailed && (
+        <QuranSyncInitializer onInitialize={runQuranInitialization} />
+      )}
+      <LocationInitializer />
+      <NotificationInitializer />
+      <AppNavigator />
+    </QuranAudioProvider>
+  );
+
   return (
     <ThemeProvider>
       <View className="flex-1" onLayout={handleRootLayout}>
         <AppStatusBar />
         <QuranReadinessContext.Provider value={quranReadiness}>
-          <SQLiteProvider
-            key={databaseOpenAttempt}
-            databaseName="quran-v2.db"
-            onInit={initializeDatabase}
-            onError={handleDatabaseOpenError}
-          >
-            <QuranAudioProvider>
-              <QuranSyncInitializer onInitialize={runQuranInitialization} />
-              <LocationInitializer />
-              <NotificationInitializer />
-              <AppNavigator />
-            </QuranAudioProvider>
-          </SQLiteProvider>
+          {databaseOpenFailed ? (
+            appContent
+          ) : (
+            <SQLiteProvider
+              key={databaseOpenAttempt}
+              databaseName="quran-v2.db"
+              onInit={initializeDatabase}
+              onError={handleDatabaseOpenError}
+            >
+              {appContent}
+            </SQLiteProvider>
+          )}
         </QuranReadinessContext.Provider>
       </View>
     </ThemeProvider>
