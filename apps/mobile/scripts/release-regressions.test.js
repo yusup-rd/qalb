@@ -169,6 +169,7 @@ test("location requests are single-flight and permission errors are localized", 
 
 test("database-open errors reach bootstrap UI and retry remounts the same database", async () => {
   const react = hooks({ 0: true, 1: true, 4: true });
+  react.useMemo = (compute) => compute();
   const component = () => null;
   const modules = {
     react,
@@ -196,7 +197,7 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
     "@/components/quran/QuranReadinessGate": {
       __esModule: true,
       default: component,
-      QuranReadinessContext: { Provider: component },
+      QuranReadinessContext: { Provider: "readiness-provider" },
     },
   };
   for (const name of [
@@ -235,9 +236,9 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
   assert.equal(sqlite.props.databaseName, "quran-v2.db");
   sqlite.props.onError(new Error("disk full"));
   await new Promise((resolve) => queueMicrotask(resolve));
-  assert.equal(react.state[5], "storage");
+  assert.equal(react.state[4], "storage");
   assert.equal(react.state[2], false);
-  find(tree, "quran/QuranBootstrapScreen").props.onRetry();
-  assert.equal(react.state[5], null);
-  assert.equal(react.state[6], 1);
+  find(tree, "readiness-provider").props.value.retry();
+  assert.equal(react.state[4], null);
+  assert.equal(react.state[5], 1);
 });

@@ -419,11 +419,7 @@ function validateCompleteDataset(dataset: QuranDataset): void {
   }
 }
 
-const mergeSnapshot = (
-  dataset: QuranDataset,
-  snapshot: QfSnapshot,
-  bootstrap = false,
-) => {
+const mergeSnapshot = (dataset: QuranDataset, snapshot: QfSnapshot) => {
   const projected = projectSnapshot(snapshot);
   validateResourceSnapshot(snapshot, projected);
   if (snapshot.resource_group === 'quran_core') {
@@ -883,7 +879,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
             clientId,
             mutation.snapshot_url,
           );
-          mergeSnapshot(dataset, snapshot, true);
+          mergeSnapshot(dataset, snapshot);
         }
         stage = 'dataset_validation';
         validateCompleteDataset(dataset);
