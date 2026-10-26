@@ -591,7 +591,8 @@
         "softwareNotices": "Open-source software notices",
         "licenseExpo": "Expo and Expo modules — MIT License",
         "licenseReactNative": "React Native — MIT License",
-        "licenseMapsAndStorage": "React Native Maps and AsyncStorage — MIT License",
+        "licenseMaps": "React Native Maps — MIT License",
+        "licenseAsyncStorage": "AsyncStorage — MIT License",
         "licensePluralRules": "intl-pluralrules — ISC License"
       },
       "copyright": "© Yusup Rejebov {{year}}"

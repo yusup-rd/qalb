@@ -17,12 +17,15 @@ export default function QuranBootstrapScreen({
   progress,
   error,
   onRetry,
+  onExit,
 }: {
   progress: QuranBootstrapProgress;
   error: QuranBootstrapErrorKind | null;
   onRetry: () => void;
+  onExit?: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "quran.bootstrap" });
+  const { t: tTabs } = useTranslation(undefined, { keyPrefix: "tabs" });
   const { colors } = useTheme();
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function QuranBootstrapScreen({
               {error ? t("errorTitle") : t("loadingTitle")}
             </Text>
             <Text
-              className="font-sans text-center text-sm leading-6"
+              className="text-center font-sans text-sm leading-6"
               style={{ color: colors.mutedForeground }}
             >
               {t("loadingMessage")}
@@ -233,6 +236,21 @@ export default function QuranBootstrapScreen({
                   {t("retry")}
                 </Text>
               </SmoothPressable>
+              {onExit && (
+                <SmoothPressable
+                  onPress={onExit}
+                  accessibilityRole="button"
+                  className="min-h-12 items-center justify-center rounded-xl px-5 py-3"
+                  style={{ borderWidth: 1, borderColor: colors.border }}
+                >
+                  <Text
+                    className="font-sans-semibold text-sm"
+                    style={{ color: colors.foreground }}
+                  >
+                    {tTabs("home")}
+                  </Text>
+                </SmoothPressable>
+              )}
             </View>
           ) : (
             <View className="gap-2">

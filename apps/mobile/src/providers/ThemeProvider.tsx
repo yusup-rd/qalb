@@ -54,7 +54,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    Appearance.setColorScheme(mode === "system" ? "unspecified" : mode);
+    Appearance.setColorScheme(mode === "system" ? "auto" : mode);
   }, [mode]);
 
   const resolvedMode: "light" | "dark" =

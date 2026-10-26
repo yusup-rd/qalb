@@ -17,11 +17,11 @@ English and Russian app for iOS and Android.
 
 ## What’s inside
 
-| Worship | Everyday tools |
-| --- | --- |
-| Prayer times, reminders, and calculation settings | Nearby mosques, maps, and route estimates |
+| Worship                                             | Everyday tools                                    |
+| --------------------------------------------------- | ------------------------------------------------- |
+| Prayer times, reminders, and calculation settings   | Nearby mosques, maps, and route estimates         |
 | Quran reading, search, translations, and recitation | Zakat calculator with live gold and silver prices |
-| Qibla compass | Tasbih and spiritual-pause counters |
+| Qibla compass                                       | Tasbih and spiritual-pause counters               |
 
 Quran content is stored on the device after its first download, so reading and
 search remain available offline. Network-backed features use the Qalb API, and
@@ -64,21 +64,22 @@ yarn workspace api start:dev
 yarn workspace qalb start
 ```
 
-Android native builds also need a Google Maps API key. See the workspace
-guides for device setup, environment details, and commands:
+Android native builds also need a restricted `GOOGLE_MAPS_API_KEY` with both
+Android application restrictions and Maps SDK for Android API restrictions. See
+the workspace guides for device setup, environment details, and commands:
 
 - [Mobile app guide](apps/mobile/README.md)
 - [API guide](apps/api/README.md)
 
 ## Repository map
 
-| Path | Purpose |
-| --- | --- |
-| `apps/mobile` | Expo app for iOS, Android, and web |
-| `apps/api` | NestJS API and Quran content synchronization |
-| `packages/shared` | Types shared between the mobile app and API |
-| `docs/legal` | Privacy policy and terms of use |
-| `legal-site` | Static site that publishes the legal documents |
+| Path              | Purpose                                        |
+| ----------------- | ---------------------------------------------- |
+| `apps/mobile`     | Expo app for iOS, Android, and web             |
+| `apps/api`        | NestJS API and Quran content synchronization   |
+| `packages/shared` | Types shared between the mobile app and API    |
+| `docs/legal`      | Privacy policy and terms of use                |
+| `legal-site`      | Static site that publishes the legal documents |
 
 ## Project checks
 
@@ -87,9 +88,11 @@ Run the mobile and API checks from the repository root:
 ```sh
 yarn workspace qalb lint
 yarn workspace qalb tsc --noEmit
+yarn workspace qalb i18n:check
 yarn workspace qalb test
 yarn workspace api lint
 yarn workspace api test
 yarn workspace api test:e2e
 yarn workspace api build
+yarn tsc --noEmit -p apps/api/tsconfig.json
 ```

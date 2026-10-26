@@ -591,7 +591,8 @@
         "softwareNotices": "Уведомления об открытом программном обеспечении",
         "licenseExpo": "Expo и модули Expo — лицензия MIT",
         "licenseReactNative": "React Native — лицензия MIT",
-        "licenseMapsAndStorage": "React Native Maps и AsyncStorage — лицензия MIT",
+        "licenseMaps": "React Native Maps — лицензия MIT",
+        "licenseAsyncStorage": "AsyncStorage — лицензия MIT",
         "licensePluralRules": "intl-pluralrules — лицензия ISC"
       },
       "copyright": "© Юсуп Реджепов {{year}}"

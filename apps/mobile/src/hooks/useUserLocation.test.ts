@@ -35,6 +35,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 jest.mock("expo-location", () => ({
   Accuracy: { Balanced: 3 },
   getForegroundPermissionsAsync: mockJestApi.fn(),
+  requestForegroundPermissionsAsync: mockJestApi.fn(),
   getCurrentPositionAsync: mockJestApi.fn(),
 }));
 
@@ -66,6 +67,42 @@ describe("useUserLocation", () => {
 
     expect(result.current.location).toEqual({ latitude: 40, longitude: 50 });
     expect(mockedLocation.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it("requests permission on first launch and can retry after denial", async () => {
+    mockedLocation.getForegroundPermissionsAsync.mockResolvedValue({
+      granted: false,
+      canAskAgain: true,
+    } as Location.LocationPermissionResponse);
+    mockedLocation.requestForegroundPermissionsAsync
+      .mockResolvedValueOnce({
+        granted: false,
+        canAskAgain: true,
+      } as Location.LocationPermissionResponse)
+      .mockResolvedValueOnce({
+        granted: true,
+        canAskAgain: true,
+      } as Location.LocationPermissionResponse);
+    mockedLocation.getCurrentPositionAsync.mockResolvedValue({
+      coords: { latitude: 40, longitude: 50 },
+    } as Location.LocationObject);
+
+    const { result, unmount } = renderHook(() => useUserLocation());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.permissionStatus).toBe("denied");
+    expect(
+      mockedLocation.requestForegroundPermissionsAsync,
+    ).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.retry();
+    });
+    expect(
+      mockedLocation.requestForegroundPermissionsAsync,
+    ).toHaveBeenCalledTimes(2);
+    expect(result.current.permissionStatus).toBe("granted");
+    expect(result.current.location).toEqual({ latitude: 40, longitude: 50 });
     unmount();
   });
 
@@ -168,6 +205,18 @@ describe("useUserLocation", () => {
       expect(result.current.permissionStatus).toBe("blocked"),
     );
     expect(result.current.location).toBeNull();
+
+    act(() => {
+      emitAppState?.("background");
+      emitAppState?.("active");
+    });
+    await waitFor(() =>
+      expect(result.current.permissionStatus).toBe("granted"),
+    );
+    expect(result.current.location).toEqual({ latitude: 40, longitude: 50 });
+    expect(
+      mockedLocation.requestForegroundPermissionsAsync,
+    ).not.toHaveBeenCalled();
     unmount();
   });
 });

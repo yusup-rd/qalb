@@ -224,10 +224,13 @@ const QuranReaderContent = () => {
   );
 };
 
-const QuranReader = () => (
-  <QuranReadinessGate>
-    <QuranReaderContent />
-  </QuranReadinessGate>
-);
+const QuranReader = () => {
+  const router = useRouter();
+  return (
+    <QuranReadinessGate onExit={() => router.replace("/(tabs)")}>
+      <QuranReaderContent />
+    </QuranReadinessGate>
+  );
+};
 
 export default QuranReader;

@@ -4,6 +4,11 @@ Qalb is an Expo app for iOS and Android, with a web build for development and
 supported deployments. It brings Quran reading, prayer times, Qibla, nearby
 mosques, remembrance, and zakat tools into one English and Russian interface.
 
+Web hosting must send `Cross-Origin-Embedder-Policy: credentialless` and
+`Cross-Origin-Opener-Policy: same-origin` headers for `expo-sqlite` to use
+`SharedArrayBuffer`. On EAS Hosting, configure these headers under the
+`expo-router` plugin in the app config.
+
 ## Features
 
 - **Prayer times:** daily schedules, calculation preferences, adjustments, and
@@ -29,10 +34,10 @@ yarn install --frozen-lockfile
 ```
 
 Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set
-`EXPO_PUBLIC_API_URL` to the Qalb API origin. `localhost` works for a simulator
-on the development computer; a physical device needs an API address reachable
-on the local network. Production builds should use an HTTPS API URL configured
-in the EAS environment.
+`EXPO_PUBLIC_API_URL` to the Qalb API origin. When the API runs on your
+development computer, use `localhost` for the iOS Simulator, `10.0.2.2` for
+the Android Emulator, and a LAN-reachable address for physical devices.
+Production builds should use an HTTPS API URL configured in the EAS environment.
 
 Start the API in one terminal if you are running it locally:
 
@@ -98,12 +103,12 @@ bootstrap and sync, location and compass behavior, and calculation edge cases.
 
 ## Code map
 
-| Path | Purpose |
-| --- | --- |
-| `src/app` | Routes and navigation |
-| `src/components` | Screen and shared UI components |
-| `src/hooks` | Device and feature behavior |
-| `src/lib` | Calculations, API clients, and Quran storage |
-| `src/store` | User and app state |
-| `src/i18n` | English and Russian translations |
-| `assets` | Fonts, icons, and other app assets |
+| Path             | Purpose                                      |
+| ---------------- | -------------------------------------------- |
+| `src/app`        | Routes and navigation                        |
+| `src/components` | Screen and shared UI components              |
+| `src/hooks`      | Device and feature behavior                  |
+| `src/lib`        | Calculations, API clients, and Quran storage |
+| `src/store`      | User and app state                           |
+| `src/i18n`       | English and Russian translations             |
+| `assets`         | Fonts, icons, and other app assets           |

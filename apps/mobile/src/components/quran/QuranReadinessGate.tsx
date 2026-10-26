@@ -29,14 +29,21 @@ export function useQuranReadiness() {
 
 export default function QuranReadinessGate({
   children,
+  onExit,
 }: {
   children: ReactNode;
+  onExit?: () => void;
 }) {
   const { ready, progress, error, retry } = useQuranReadiness();
 
   if (!ready) {
     return (
-      <QuranBootstrapScreen progress={progress} error={error} onRetry={retry} />
+      <QuranBootstrapScreen
+        progress={progress}
+        error={error}
+        onRetry={retry}
+        onExit={onExit}
+      />
     );
   }
 

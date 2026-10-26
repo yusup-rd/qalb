@@ -106,8 +106,12 @@ export default function AboutSection() {
             url="https://github.com/facebook/react-native/blob/main/LICENSE"
           />
           <LicenseLink
-            label={t("about.licenseMapsAndStorage")}
+            label={t("about.licenseMaps")}
             url="https://github.com/react-native-maps/react-native-maps/blob/master/LICENSE"
+          />
+          <LicenseLink
+            label={t("about.licenseAsyncStorage")}
+            url="https://github.com/react-native-async-storage/async-storage/blob/main/LICENSE"
           />
           <LicenseLink
             label={t("about.licensePluralRules")}
