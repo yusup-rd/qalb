@@ -93,4 +93,3 @@ yarn tsc --noEmit -p apps/api/tsconfig.json
 
 The API uses Oxlint and Vitest. Unit tests are in `src/`; HTTP end-to-end tests
 are in `test/`.
-\n

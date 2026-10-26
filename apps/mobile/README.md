@@ -107,5 +107,3 @@ bootstrap and sync, location and compass behavior, and calculation edge cases.
 | `src/store` | User and app state |
 | `src/i18n` | English and Russian translations |
 | `assets` | Fonts, icons, and other app assets |
-
-\n
