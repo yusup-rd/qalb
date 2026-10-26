@@ -1,4 +1,5 @@
 import AyahCard from "@/components/home/AyahCard";
+import { useQuranReadiness } from "@/components/quran/QuranReadinessGate";
 import DateWithLocation from "@/components/home/DateWithLocation";
 import HeroCountdown from "@/components/home/HeroCountdown";
 import PrayersToday from "@/components/home/PrayersToday";
@@ -19,11 +20,21 @@ import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-conte
 
 const SafeAreaView = styled(NativeSafeAreaView);
 
+const QuranAyahOfDay = () => {
+  const { ready } = useQuranReadiness();
+  if (!ready) return null;
+  return <LoadedQuranAyahOfDay />;
+};
+
+const LoadedQuranAyahOfDay = () => {
+  const { ayah, loading } = useAyahOfDay();
+  return loading ? <AyahOfDaySkeleton /> : <AyahCard ayah={ayah} />;
+};
+
 const Index = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "home" });
 
   const prayerTimes = usePrayerTimes();
-  const { ayah: ayahOfDay, loading: ayahOfDayLoading } = useAyahOfDay();
   const locationLoading = useLocationStore((state) => state.locationLoading);
   const locationError = useLocationStore((state) => state.locationError);
   const locationPermissionStatus = useLocationStore(
@@ -117,11 +128,7 @@ const Index = () => {
           {renderLocationContent()}
           <QuickAccess />
           <SpiritualPauseCard prayerTimes={prayerTimes} />
-          {ayahOfDayLoading ? (
-            <AyahOfDaySkeleton />
-          ) : (
-            <AyahCard ayah={ayahOfDay} />
-          )}
+          <QuranAyahOfDay />
         </ScrollView>
       </SafeAreaView>
 

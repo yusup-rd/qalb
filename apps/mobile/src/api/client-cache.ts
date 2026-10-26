@@ -98,15 +98,13 @@ export async function requestCached<T>(
   request: () => Promise<T>,
   options: CachedRequestOptions = {},
 ): Promise<T> {
+  const cached = await readEntry<T>(key);
+  if (cached && isFresh(cached, ttlMs)) return cached.value;
+
   const existing = inFlightRequests.get(key) as Promise<T> | undefined;
-  if (existing) return existing;
-
-  const pending = (async () => {
-    const cached = await readEntry<T>(key);
-    if (cached && isFresh(cached, ttlMs)) return cached.value;
-    const stale = cached;
-
-    try {
+  const pending =
+    existing ??
+    (async () => {
       const value = await request();
       if (value === null || value === undefined) {
         throw new Error("Cannot cache an empty API response.");
@@ -121,18 +119,17 @@ export async function requestCached<T>(
         }),
       );
       return value;
-    } catch (error) {
-      if (options.allowStaleOnError && stale) {
-        options.onStaleFallback?.();
-        return stale.value;
-      }
-      throw error;
-    }
-  })();
+    })();
 
-  inFlightRequests.set(key, pending);
+  if (!existing) inFlightRequests.set(key, pending);
   try {
     return await pending;
+  } catch (error) {
+    if (options.allowStaleOnError && cached) {
+      options.onStaleFallback?.();
+      return cached.value;
+    }
+    throw error;
   } finally {
     if (inFlightRequests.get(key) === pending) {
       inFlightRequests.delete(key);

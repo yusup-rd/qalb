@@ -1,68 +1,88 @@
 # Qalb mobile app
 
-The mobile app is an Expo SDK 58 / React Native app for iOS and Android. It
-owns the user interface, localization, local Quran SQLite database, device
-permissions, prayer calculations and reminders, compass, offline Quran reading
-and search, and user preferences.
+Qalb is an Expo app for iOS and Android, with a web build for development and
+supported deployments. It brings Quran reading, prayer times, Qibla, nearby
+mosques, remembrance, and zakat tools into one English and Russian interface.
 
-## Project layout
+Web hosting must send `Cross-Origin-Embedder-Policy: credentialless` and
+`Cross-Origin-Opener-Policy: same-origin` headers for `expo-sqlite` to use
+`SharedArrayBuffer`. On EAS Hosting, configure these headers under the
+`expo-router` plugin in the app config.
 
-- `src/app/` — Expo Router routes and navigation.
-- `src/components/` — reusable and feature-specific UI.
-- `src/hooks/` — app, location, and compass behavior.
-- `src/lib/` — calculations, API helpers, and Quran database/sync logic.
-- `src/store/` — Zustand application state.
-- `src/i18n/` — English and Russian translations.
-- `assets/` — fonts, icons, and other bundled assets.
-- `scripts/` — localization checks and Jest tests.
+## Features
 
-## Setup and development
+- **Prayer times:** daily schedules, calculation preferences, adjustments, and
+  local reminders.
+- **Quran:** Arabic text, transliteration, translations, search, and audio
+  recitation.
+- **Qibla:** compass direction to Makkah using the device location and sensors.
+- **Mosques:** nearby locations, map results, and route estimates.
+- **Remembrance:** a tasbih counter and spiritual-pause counters.
+- **Zakat:** a USD calculator with gold and silver market prices.
 
-Use a supported Node.js release (22.13+, 24.3+, or 26+) and Yarn Classic
-(1.x). SDK 58 uses React Native 0.88 and React 19.3. From the repository root:
+The Quran is downloaded to a local SQLite database and can be read and searched
+offline after setup. Quran updates and other API-backed features need a network
+connection.
+
+## Run the app
+
+The app uses Expo SDK 58. Use Node.js 22.13 or newer and Yarn Classic (1.x).
+Install dependencies from the repository root:
 
 ```sh
 yarn install --frozen-lockfile
 ```
 
-Copy `.env.example` to `.env.local`. Set `EXPO_PUBLIC_API_URL` to the Qalb API
-origin. For a physical device, use an address reachable on the network; device
-`localhost` does not refer to the development computer. Android native builds
-require `GOOGLE_MAPS_API_KEY`. Production builds require an HTTPS
-`EXPO_PUBLIC_API_URL`; configure production values in the EAS build environment.
+Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set
+`EXPO_PUBLIC_API_URL` to the Qalb API origin. When the API runs on your
+development computer, use `localhost` for the iOS Simulator, `10.0.2.2` for
+the Android Emulator, and a LAN-reachable address for physical devices.
+Production builds should use an HTTPS API URL configured in the EAS environment.
 
-From the repository root, run one of:
+Start the API in one terminal if you are running it locally:
+
+```sh
+yarn workspace api start:dev
+```
+
+Then start the mobile app from another terminal:
 
 ```sh
 yarn workspace qalb start
+```
+
+Expo will show options for opening the app in a simulator or on a device. The
+workspace also provides these commands from the repository root:
+
+```sh
 yarn workspace qalb start --clear
-yarn workspace qalb android
 yarn workspace qalb ios
+yarn workspace qalb android
 yarn workspace qalb web
 ```
 
-Expo Go can run supported Expo modules during development. Use a development
-build for native behavior that depends on the app's configured native modules,
-Android Maps key, background tasks, notifications, or release settings. Store
-and production behavior should be checked in development/release builds on
-physical iOS and Android devices.
+Android native builds use `GOOGLE_MAPS_API_KEY` for map tiles. Expo Go is useful
+for supported development flows; use a development build to verify native
+notifications, background work, maps, and release behavior.
 
-## API and Quran storage
+## Quran data flow
 
-The app uses `EXPO_PUBLIC_API_URL` to reach the API documented in
-[`../api/README.md`](../api/README.md). A new install downloads and validates a
-Quran snapshot before the main app opens, then stores it in `quran-v2.db` using
-Expo SQLite. Reading and search use that local database offline. The app checks
-for Quran updates every seven days; API and network errors preserve the
-last committed local content. Recitation playback and other provider-backed
-features need network access unless their data is already available locally.
+```mermaid
+flowchart LR
+  App[Qalb mobile app] --> Sync[Background Quran sync]
+  Sync -->|Download and updates| API[Qalb API]
+  Sync --> SQLite[(quran-v2.db)]
+  SQLite --> Read[Offline reading and search]
+  Features[Network-backed features] --> API
+```
 
-The Android Maps key is read by `app.config.js`; it is not sent as an API
-credential. API provider credentials belong only in the API environment.
+On first launch, the app prepares its local database and fetches Quran content
+in the background. If the network is unavailable, previously downloaded Quran
+content remains available. The app checks for updates periodically.
 
-## Commands
+## Development checks
 
-Run from the repository root:
+Run these commands from the repository root:
 
 ```sh
 yarn workspace qalb lint
@@ -72,26 +92,23 @@ yarn workspace qalb test
 yarn workspace qalb test:coverage
 ```
 
-After changing Expo dependencies, run `yarn workspace qalb expo install --fix`
-and `yarn workspace qalb expo install --check` from the repository root, then
-run `npx expo-doctor` from `apps/mobile`. Native tabs use the stable
-`expo-router/native-tabs` entry point. Keep `web.output` explicit in `app.json`;
-SDK 58 otherwise defaults Expo Router to server output. The `expo-router`
-plugin enables `apiRoutes` to retain SDK 57's static output behavior. Metro
-resolves `expo-asset` directly to React Native so Expo SDK 58 can access the
-React Native 0.88 `AssetRegistry` export through Nativewind's resolver. It also
-registers `.wasm` as an asset for Expo SQLite's web bundle. Hosting that web
-bundle requires the `Cross-Origin-Embedder-Policy` and
-`Cross-Origin-Opener-Policy` headers for SQLite's `SharedArrayBuffer` support.
-Theme colors are declared with concrete values in `@theme` and overridden in
-`:root` for dark mode so Tailwind can generate color opacity modifiers such as
-`bg-primary/10`. `react-native-css@3.1.0-rc.0` currently drops optional
-percentages when parsing the `color-mix()` generated for these modifiers. The
-root `postinstall` script applies the fix in
-[`patches/react-native-css+3.1.0-rc.0.patch`](../../patches/react-native-css+3.1.0-rc.0.patch)
-with `patch-package`; keep slash opacity utilities and retain the patch until
-the upstream release includes the fix.
+Run Expo Doctor from `apps/mobile`:
 
-Jest uses `jest-expo` and React Native Testing Library. Tests include Quran
-bootstrap/sync regressions, API request diagnostics, Qibla sensor state, and
-Qibla calculation edge cases.
+```sh
+npx expo-doctor
+```
+
+Mobile tests use Jest with `jest-expo`. They cover API helpers, Quran
+bootstrap and sync, location and compass behavior, and calculation edge cases.
+
+## Code map
+
+| Path             | Purpose                                      |
+| ---------------- | -------------------------------------------- |
+| `src/app`        | Routes and navigation                        |
+| `src/components` | Screen and shared UI components              |
+| `src/hooks`      | Device and feature behavior                  |
+| `src/lib`        | Calculations, API clients, and Quran storage |
+| `src/store`      | User and app state                           |
+| `src/i18n`       | English and Russian translations             |
+| `assets`         | Fonts, icons, and other app assets           |

@@ -168,7 +168,8 @@ test("location requests are single-flight and permission errors are localized", 
 });
 
 test("database-open errors reach bootstrap UI and retry remounts the same database", async () => {
-  const react = hooks({ 0: true, 1: true, 4: true });
+  const react = hooks({ 0: true, 1: true });
+  react.useMemo = (compute) => compute();
   const component = () => null;
   const modules = {
     react,
@@ -196,7 +197,7 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
     "@/components/quran/QuranReadinessGate": {
       __esModule: true,
       default: component,
-      QuranReadinessContext: { Provider: component },
+      QuranReadinessContext: { Provider: "readiness-provider" },
     },
   };
   for (const name of [
@@ -214,6 +215,10 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
       __esModule: true,
       default: component,
     };
+  modules["@/initializers/QuranSyncInitializer"] = {
+    __esModule: true,
+    default: "quran-sync-initializer",
+  };
   // Font assets aren't loaded by this harness.
   const source = readFileSync(
     new URL("../src/app/_layout.tsx", pathToFileURL(__filename).href),
@@ -221,7 +226,8 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
   );
   for (const [, asset] of source.matchAll(/require\("([^"]+)"\)/g))
     modules[asset] = 1;
-  const tree = load("../src/app/_layout.tsx", modules).default();
+  const RootLayout = load("../src/app/_layout.tsx", modules).default;
+  const tree = RootLayout();
   function find(node, type) {
     if (!node || typeof node !== "object") return null;
     if (node.type === type) return node;
@@ -235,9 +241,16 @@ test("database-open errors reach bootstrap UI and retry remounts the same databa
   assert.equal(sqlite.props.databaseName, "quran-v2.db");
   sqlite.props.onError(new Error("disk full"));
   await new Promise((resolve) => queueMicrotask(resolve));
-  assert.equal(react.state[5], "storage");
+  assert.equal(react.state[6], true);
+  assert.equal(react.state[4], "storage");
   assert.equal(react.state[2], false);
-  find(tree, "quran/QuranBootstrapScreen").props.onRetry();
-  assert.equal(react.state[5], null);
-  assert.equal(react.state[6], 1);
+  Object.assign(react, hooks({ 0: true, 1: true, 4: "storage", 6: true }));
+  const fallbackTree = RootLayout();
+  assert.equal(find(fallbackTree, "sqlite"), null);
+  assert.equal(find(fallbackTree, "quran-sync-initializer"), null);
+  assert.ok(find(fallbackTree, "ui/AppNavigator"));
+  find(fallbackTree, "readiness-provider").props.value.retry();
+  assert.equal(react.state[6], false);
+  assert.equal(react.state[4], null);
+  assert.equal(react.state[5], 1);
 });

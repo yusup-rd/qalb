@@ -18,8 +18,15 @@ const QiblaCompass = ({ bearing, rotation }: QiblaCompassProps) => {
 
   const MAX_DIAL_SIZE = 300;
   const SIDE_PADDING = 48;
+  const MARKER_BLEED = 42;
 
-  const dialSize = Math.max(0, Math.min(width - SIDE_PADDING, MAX_DIAL_SIZE));
+  // The Qibla badge sits outside the circular dial. Include its 39px overflow
+  // plus a small rendering margin on both sides so the SVG does not clip it.
+  const dialSize = Math.max(
+    0,
+    Math.min(width - SIDE_PADDING - MARKER_BLEED * 2, MAX_DIAL_SIZE),
+  );
+  const viewportSize = dialSize + MARKER_BLEED * 2;
 
   const dialAnimatedStyle = useAnimatedStyle(
     () => ({
@@ -35,8 +42,8 @@ const QiblaCompass = ({ bearing, rotation }: QiblaCompassProps) => {
   return (
     <View
       style={{
-        width: dialSize,
-        height: dialSize,
+        width: viewportSize,
+        height: viewportSize,
       }}
       className="relative"
     >
@@ -44,14 +51,15 @@ const QiblaCompass = ({ bearing, rotation }: QiblaCompassProps) => {
         style={[
           {
             position: "absolute",
-            width: dialSize,
-            height: dialSize,
+            width: viewportSize,
+            height: viewportSize,
           },
           dialAnimatedStyle,
         ]}
       >
         <CompassDial
-          size={dialSize}
+          size={viewportSize}
+          dialSize={dialSize}
           color={colors.primary}
           mutedColor={colors.mutedForeground}
           cardColor={colors.card}
@@ -64,6 +72,7 @@ const QiblaCompass = ({ bearing, rotation }: QiblaCompassProps) => {
         size={dialSize}
         color={colors.primary}
         cardColor={colors.card}
+        style={{ left: MARKER_BLEED, top: MARKER_BLEED }}
       />
     </View>
   );

@@ -20,9 +20,9 @@ function loadModule(file, modules) {
   const exports = {};
   const moduleRequire = createRequire(file instanceof URL ? file : pathToFileURL(file).href);
   new Function("exports", "require", outputText)(exports, (name) => {
+    if (name in modules) return modules[name];
     if (name === "react" || name === "react/jsx-runtime")
       return moduleRequire(name);
-    if (name in modules) return modules[name];
     if (
       name === "react-native" ||
       name.startsWith("expo-") ||
@@ -47,12 +47,31 @@ const { SQLiteProvider } = loadModule(sqliteHooksPath, {
   "./SQLiteDatabase": {},
   "./pathUtils": {},
 });
-const { default: QuranReadinessGate, QuranReadinessContext } = loadModule(
+let readiness = false;
+const reactWithReadiness = {
+  ...React,
+  useContext: () => ({
+    ready: readiness,
+    progress: { stage: "checking" },
+    error: null,
+    retry() {},
+  }),
+};
+const { default: QuranReadinessGate } = loadModule(
   new URL(
     "../src/components/quran/QuranReadinessGate.tsx",
     pathToFileURL(__filename).href,
   ),
-  {},
+  {
+    react: reactWithReadiness,
+    "@/components/quran/QuranBootstrapScreen": {
+      __esModule: true,
+      default: () => null,
+    },
+    "@/lib/quran/bootstrap-progress": {
+      initialQuranBootstrapProgress: () => ({ stage: "checking" }),
+    },
+  },
 );
 
 test("reproduces SQLiteProvider retaining its child when only children change", () => {
@@ -84,14 +103,10 @@ test("retained readiness gate opens from context and keeps queries gated on fail
   const retainedChild = SQLiteProvider.compare(previous, next)
     ? previous.children
     : next.children;
-  const render = (ready) =>
-    renderToStaticMarkup(
-      React.createElement(
-        QuranReadinessContext.Provider,
-        { value: ready },
-        retainedChild,
-      ),
-    );
+  const render = (ready) => {
+    readiness = ready;
+    return renderToStaticMarkup(retainedChild);
+  };
   assert.equal(render(false), "");
   assert.equal(render(true), "<main>Quran</main>");
   assert.equal(render(false), "");

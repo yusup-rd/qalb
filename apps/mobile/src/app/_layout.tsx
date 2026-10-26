@@ -1,28 +1,28 @@
 import AppNavigator from "@/components/ui/AppNavigator";
 import AppStatusBar from "@/components/ui/AppStatusBar";
-import QuranBootstrapScreen from "@/components/quran/QuranBootstrapScreen";
-import QuranReadinessGate, {
-  QuranReadinessContext,
-} from "@/components/quran/QuranReadinessGate";
+import { QuranReadinessContext } from "@/components/quran/QuranReadinessGate";
 import "@/global.css";
 import { initializeLanguage } from "@/i18n";
 import LocationInitializer from "@/initializers/LocationInitializer";
 import NotificationInitializer from "@/initializers/NotificationInitializer";
 import QuranSyncInitializer from "@/initializers/QuranSyncInitializer";
 import { setupNotificationHandler } from "@/lib/notifications";
-import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { initializeQuranDatabase } from "@/lib/quran/sync";
+import {
+  hasLocalQuran,
+  initializeQuranDatabase,
+  prepareQuranDatabase,
+} from "@/lib/quran/sync";
 import { initialQuranBootstrapProgress } from "@/lib/quran/bootstrap-progress";
 import {
   getQuranBootstrapErrorKind,
   type QuranBootstrapErrorKind,
 } from "@/lib/quran/bootstrap-error";
+import { QuranAudioProvider } from "@/providers/QuranAudioProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { SQLiteProvider, type SQLiteDatabase } from "expo-sqlite";
-import NetInfo from "@react-native-community/netinfo";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 
 void SplashScreen.preventAutoHideAsync();
@@ -38,7 +38,6 @@ const RootLayout = () => {
   const [bootstrapProgress, setBootstrapProgress] = useState(
     initialQuranBootstrapProgress,
   );
-  const [bootstrapDelayElapsed, setBootstrapDelayElapsed] = useState(false);
   const [quranDatabaseError, setQuranDatabaseError] =
     useState<QuranBootstrapErrorKind | null>(null);
   const splashHidden = useRef(false);
@@ -46,6 +45,7 @@ const RootLayout = () => {
   const databaseRef = useRef<SQLiteDatabase | null>(null);
   const [databaseOpenAttempt, setDatabaseOpenAttempt] = useState(0);
   const reportedOpenError = useRef<Error | null>(null);
+  const [databaseOpenFailed, setDatabaseOpenFailed] = useState(false);
 
   const handleDatabaseOpenError = useCallback((error: Error) => {
     if (reportedOpenError.current === error) return;
@@ -54,6 +54,7 @@ const RootLayout = () => {
     // after that render completes.
     queueMicrotask(() => {
       databaseRef.current = null;
+      setDatabaseOpenFailed(true);
       setQuranDatabaseError(getQuranBootstrapErrorKind(error));
       setQuranDatabaseReady(false);
     });
@@ -79,11 +80,8 @@ const RootLayout = () => {
   useEffect(() => {
     let cancelled = false;
     initializeLanguage().finally(() => {
-      if (!cancelled) {
-        setLanguageLoaded(true);
-      }
+      if (!cancelled) setLanguageLoaded(true);
     });
-
     return () => {
       cancelled = true;
     };
@@ -97,122 +95,118 @@ const RootLayout = () => {
     setRootLaidOut(true);
   }, []);
 
+  // Open SQLite and create its schema before rendering app routes. Quran
+  // content itself is downloaded later by QuranSyncInitializer in the
+  // background, after the rest of the app is already usable.
   const initializeDatabase = useCallback(async (db: SQLiteDatabase) => {
-    if (databaseInitializationInFlight.current) return;
-    databaseInitializationInFlight.current = true;
     databaseRef.current = db;
+    setDatabaseOpenFailed(false);
+    try {
+      await prepareQuranDatabase(db);
+      const ready = await hasLocalQuran(db);
+      setQuranDatabaseReady(ready);
+      setQuranDatabaseError(null);
+      setBootstrapProgress(
+        ready
+          ? {
+              ...initialQuranBootstrapProgress(),
+              stage: "complete",
+              status: "complete",
+            }
+          : initialQuranBootstrapProgress(),
+      );
+    } catch (error) {
+      setQuranDatabaseReady(false);
+      setQuranDatabaseError(getQuranBootstrapErrorKind(error));
+    }
+  }, []);
+
+  const runQuranInitialization = useCallback(async () => {
+    const db = databaseRef.current;
+    if (!db || databaseInitializationInFlight.current) return;
+
+    databaseInitializationInFlight.current = true;
+    setQuranDatabaseError(null);
     try {
       await initializeQuranDatabase(db, setBootstrapProgress);
-      setQuranDatabaseError(null);
       setQuranDatabaseReady(true);
+      setQuranDatabaseError(null);
     } catch (error) {
+      setQuranDatabaseReady(await hasLocalQuran(db));
       setQuranDatabaseError(getQuranBootstrapErrorKind(error));
-      setQuranDatabaseReady(false);
     } finally {
       databaseInitializationInFlight.current = false;
     }
   }, []);
 
   const retryDatabaseInitialization = useCallback(() => {
-    const db = databaseRef.current;
-    if (databaseInitializationInFlight.current) return;
+    if (databaseRef.current) {
+      void runQuranInitialization();
+      return;
+    }
+    reportedOpenError.current = null;
+    setDatabaseOpenFailed(false);
     setQuranDatabaseError(null);
-    setQuranDatabaseReady(false);
-    if (!db) {
-      reportedOpenError.current = null;
-      setDatabaseOpenAttempt((attempt) => attempt + 1);
+    setDatabaseOpenAttempt((attempt) => attempt + 1);
+  }, [runQuranInitialization]);
+
+  const quranReadiness = useMemo(
+    () => ({
+      ready: quranDatabaseReady,
+      progress: bootstrapProgress,
+      error: quranDatabaseError,
+      retry: retryDatabaseInitialization,
+    }),
+    [
+      bootstrapProgress,
+      quranDatabaseError,
+      quranDatabaseReady,
+      retryDatabaseInitialization,
+    ],
+  );
+
+  useEffect(() => {
+    if (!fontsLoaded || !languageLoaded || !rootLaidOut || splashHidden.current)
       return;
-    }
-    void initializeDatabase(db);
-  }, [initializeDatabase]);
-
-  useEffect(() => {
-    if (!quranDatabaseError) return;
-    let wasReachable: boolean | null = null;
-    const subscription = NetInfo.addEventListener((state) => {
-      const isReachable =
-        state.isConnected === true && state.isInternetReachable !== false;
-      if (wasReachable === false && isReachable) {
-        retryDatabaseInitialization();
-      }
-      wasReachable = isReachable;
-    });
-    return subscription;
-  }, [quranDatabaseError, retryDatabaseInitialization]);
-
-  // Avoid flashing setup UI for an already complete local database.
-  useEffect(() => {
-    if (!fontsLoaded || !languageLoaded || quranDatabaseReady) return;
-    const timer = setTimeout(() => setBootstrapDelayElapsed(true), 300);
-    return () => clearTimeout(timer);
-  }, [fontsLoaded, languageLoaded, quranDatabaseReady]);
-
-  const showBootstrap =
-    !quranDatabaseReady &&
-    (bootstrapDelayElapsed ||
-      quranDatabaseError !== null ||
-      bootstrapProgress.stage !== "checking");
-
-  useEffect(() => {
-    if (
-      !fontsLoaded ||
-      !languageLoaded ||
-      !rootLaidOut ||
-      (!quranDatabaseReady && !showBootstrap) ||
-      splashHidden.current
-    ) {
-      return;
-    }
 
     splashHidden.current = true;
     void SplashScreen.hideAsync().catch((error: unknown) => {
       splashHidden.current = false;
       console.warn("Failed to hide splash screen", error);
     });
-  }, [
-    fontsLoaded,
-    languageLoaded,
-    quranDatabaseReady,
-    showBootstrap,
-    rootLaidOut,
-  ]);
+  }, [fontsLoaded, languageLoaded, rootLaidOut]);
 
-  if (fontError) {
-    throw fontError;
-  }
+  if (fontError) throw fontError;
+  if (!fontsLoaded || !languageLoaded) return null;
 
-  if (!fontsLoaded || !languageLoaded) {
-    return null;
-  }
+  const appContent = (
+    <QuranAudioProvider>
+      {!databaseOpenFailed && (
+        <QuranSyncInitializer onInitialize={runQuranInitialization} />
+      )}
+      <LocationInitializer />
+      <NotificationInitializer />
+      <AppNavigator />
+    </QuranAudioProvider>
+  );
 
   return (
     <ThemeProvider>
       <View className="flex-1" onLayout={handleRootLayout}>
         <AppStatusBar />
-        {showBootstrap && (
-          <QuranBootstrapScreen
-            progress={bootstrapProgress}
-            error={quranDatabaseError}
-            onRetry={retryDatabaseInitialization}
-          />
-        )}
-        {/* The provider withholds its children until onInit resolves. */}
-        <QuranReadinessContext.Provider value={quranDatabaseReady}>
-          <SQLiteProvider
-            key={databaseOpenAttempt}
-            databaseName="quran-v2.db"
-            onInit={initializeDatabase}
-            onError={handleDatabaseOpenError}
-          >
-            <QuranReadinessGate>
-              <QuranAudioProvider>
-                <QuranSyncInitializer />
-                <LocationInitializer />
-                <NotificationInitializer />
-                <AppNavigator />
-              </QuranAudioProvider>
-            </QuranReadinessGate>
-          </SQLiteProvider>
+        <QuranReadinessContext.Provider value={quranReadiness}>
+          {databaseOpenFailed ? (
+            appContent
+          ) : (
+            <SQLiteProvider
+              key={databaseOpenAttempt}
+              databaseName="quran-v2.db"
+              onInit={initializeDatabase}
+              onError={handleDatabaseOpenError}
+            >
+              {appContent}
+            </SQLiteProvider>
+          )}
         </QuranReadinessContext.Provider>
       </View>
     </ThemeProvider>

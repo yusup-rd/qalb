@@ -1,12 +1,10 @@
-import i18n from "@/i18n";
 import { getDistanceMeters } from "@/lib/mosque-distance";
 import { withTimeout } from "@/lib/with-timeout";
 import type { LocationPermissionStatus } from "@/store/locationStore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, AppState } from "react-native";
+import { AppState } from "react-native";
 
 interface UserLocation {
   latitude: number;
@@ -59,38 +57,6 @@ export function useUserLocation() {
     let permissionConfirmed = false;
 
     try {
-      const disclosureAccepted = await AsyncStorage.getItem(
-        "@qalb/location-disclosure-v1",
-      );
-      if (disclosureAccepted !== "accepted") {
-        const accepted = await new Promise<boolean>((resolve) => {
-          Alert.alert(
-            i18n.t("prayerTimes.location.disclosure.title"),
-            i18n.t("prayerTimes.location.disclosure.message"),
-            [
-              {
-                text: i18n.t("prayerTimes.location.disclosure.notNow"),
-                style: "cancel",
-                onPress: () => resolve(false),
-              },
-              {
-                text: i18n.t("prayerTimes.location.disclosure.continue"),
-                onPress: () => resolve(true),
-              },
-            ],
-            { cancelable: true, onDismiss: () => resolve(false) },
-          );
-        });
-
-        if (!accepted) {
-          setPermissionStatus("denied");
-          setErrorKey("prayerTimes.locationError.permissionNotGranted");
-          return;
-        }
-
-        await AsyncStorage.setItem("@qalb/location-disclosure-v1", "accepted");
-      }
-
       let permission = await Location.getForegroundPermissionsAsync();
 
       if (!permission.granted) {

@@ -1,93 +1,95 @@
 # Qalb API
 
-The API is a NestJS service for Quran Content Sync, mosque search, reverse
-geocoding, route estimates, Islamic calendar events, and gold/silver prices.
-The Expo app consumes these endpoints; see the [mobile guide](../mobile/README.md)
-and [repository overview](../../README.md).
+The Qalb API is a NestJS service used by the mobile app for Quran content
+updates and network-backed features. It connects the app to external data
+providers while keeping provider credentials on the server.
 
-## Structure
+## Responsibilities
 
-- `src/main.ts` — Nest application startup and global configuration.
-- `src/modules/` — controllers and providers grouped by API feature.
-- `test/` — Vitest unit and end-to-end tests.
-- `dist/` — compiled output created by the build command.
+- Synchronize Quran.Foundation content and serve versioned snapshots and
+  changes to the mobile app.
+- Find nearby mosques and return route estimates.
+- Reverse-geocode coordinates into a place name.
+- Provide Islamic calendar events and current gold and silver prices.
+- Cache provider responses and persist Quran sync data in Redis.
 
-The modules isolate upstream integrations and validate their inputs and
-responses. Quran Content Sync writes the app's projected dataset and sync
-metadata to Redis as a single committed value, preserving the last valid data
-when refreshes fail. Credentials and sync tokens remain server-side.
+```mermaid
+flowchart LR
+  App[Qalb mobile app] --> API[NestJS API]
+  API <--> Redis[(Redis)]
+  API --> Quran[Quran.Foundation]
+  API --> Providers[Calendar, maps, routing, and metals providers]
+```
 
-## Setup and commands
+## Run locally
 
-Use Node.js 22.13 or newer and Yarn Classic (1.x). From the repository root:
+Use Node.js 22.13 or newer and Yarn Classic (1.x). Install dependencies from
+the repository root:
 
 ```sh
 yarn install --frozen-lockfile
 ```
 
-Copy `.env.example` to `.env.local`, set values for the integrations you use,
-and start the development server:
+Copy `apps/api/.env.example` to `apps/api/.env.local`. Set `REDIS_URL` to a
+Redis instance reachable by the API. Add credentials for integrations you want
+to use. Start the development server from the repository root:
 
 ```sh
 yarn workspace api start:dev
 ```
 
-Available scripts, run from the repository root:
+The default local API origin is `http://localhost:3000`. Set the mobile app's
+`EXPO_PUBLIC_API_URL` to this origin, or to an address reachable from your
+device when testing on a physical phone. See the [mobile app guide](../mobile/README.md).
+
+## Configuration
+
+The checked-in `.env.example` lists defaults and all supported variables. Keep
+real credentials in the untracked `.env.local` file or deployment environment.
+
+| Variables | Used for |
+| --- | --- |
+| `PORT`, `LOG_LEVEL` | HTTP port and log verbosity |
+| `REDIS_URL` | Quran sync storage, cache, and shared rate limiting |
+| `QURAN_FOUNDATION_ENV` | Quran.Foundation environment |
+| `QURAN_FOUNDATION_CLIENT_ID`, `QURAN_FOUNDATION_CLIENT_SECRET` | Quran.Foundation credentials |
+| `QURAN_SYNC_TIMEZONE`, `QURAN_SYNC_HOUR` | Weekly Quran sync schedule |
+| `METALS_API_KEY`, `METALS_API_URL` | Gold and silver price provider |
+| `ALADHAN_API_URL` | Islamic calendar provider |
+| `MOSQUES_API_URL` | Nearby mosque provider |
+| `NOMINATIM_API_URL` | Reverse geocoding provider |
+| `ROUTING_API_URL` | Route estimates |
+
+Quran synchronization requires Redis and valid Quran.Foundation credentials.
+Other integrations can use their configured public endpoints; add provider
+credentials in the API environment where required. Never put API secrets in
+mobile `EXPO_PUBLIC_*` variables.
+
+## HTTP endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/quran/status` | Quran content availability and sync status |
+| `GET` | `/api/quran/snapshot` | Current Quran content snapshot |
+| `GET` | `/api/quran/changes` | Changes since a client revision |
+| `GET` | `/api/mosques/nearby` | Nearby mosque results |
+| `GET` | `/api/reverse-geocoding` | Place name for coordinates |
+| `POST` | `/api/routing/route` | Route estimate |
+| `POST` | `/api/routing/metrics` | Route metrics |
+| `GET` | `/api/islamic-events/calendar` | Islamic calendar events |
+| `GET` | `/api/metals/latest` | Latest gold and silver prices |
+
+## Checks and builds
+
+Run from the repository root:
 
 ```sh
-yarn workspace api start
-yarn workspace api start:dev
-yarn workspace api start:debug
 yarn workspace api lint
 yarn workspace api test
-yarn workspace api test:watch
-yarn workspace api test:cov
 yarn workspace api test:e2e
 yarn workspace api build
 yarn tsc --noEmit -p apps/api/tsconfig.json
 ```
 
-The project uses Vitest for unit and e2e tests and Oxlint for linting. The
-repository-level TypeScript command checks the API tsconfig.
-
-## Environment
-
-Set variables in `.env.local` or the API runtime environment. Do not place API
-credentials in mobile `EXPO_PUBLIC_*` variables.
-
-- `PORT`, `LOG_LEVEL` — server port and logging level.
-- `REDIS_URL` — durable Quran dataset, sync state, and shared request limiting.
-- `QURAN_FOUNDATION_ENV`, `QURAN_FOUNDATION_CLIENT_ID`,
-  `QURAN_FOUNDATION_CLIENT_SECRET` — Quran.Foundation Content Sync environment
-  and credentials.
-- `QURAN_SYNC_TIMEZONE`, `QURAN_SYNC_HOUR` — weekly sync schedule settings.
-- `METALS_API_KEY`, `METALS_API_URL` — metals data provider.
-- `ALADHAN_API_URL` — Islamic calendar provider.
-- `MOSQUES_API_URL` — nearby mosque provider.
-- `NOMINATIM_API_URL` — reverse geocoding provider.
-- `ROUTING_API_URL` — route estimation provider.
-
-The example file documents current defaults and local values. Supply real
-credentials through an untracked local file or deployment configuration.
-
-## Routes and integrations
-
-- `GET /api/quran/status`, `/api/quran/snapshot`, `/api/quran/changes`
-  — Quran availability, full content snapshot, and revision changes.
-- `GET /api/mosques/nearby` — nearby mosque results.
-- `GET /api/reverse-geocoding` — locality lookup.
-- `POST /api/routing/route`, `/api/routing/metrics` — route estimates and
-  routing metrics.
-- `GET /api/islamic-events/calendar` — Islamic calendar data.
-- `GET /api/metals/latest` — latest gold and silver prices.
-
-Quran sync is scheduled for Monday at the configured hour (default 03:00 UTC)
-and also checks for a due catch-up run when the service starts or the Quran
-status endpoint is requested. The mobile client caches its local snapshot and
-uses the API revision endpoints for updates. The API does not bundle Quran
-content into the mobile app.
-
-Public Nominatim requests share a Redis rate-limit slot; if Redis or the slot is
-unavailable, locality lookup returns 503 so the mobile app can use its
-platform-geocoder fallback. Upstream requests have a ten-second deadline.
-Public demo routing/geocoding services do not guarantee production availability.
+The API uses Oxlint and Vitest. Unit tests are in `src/`; HTTP end-to-end tests
+are in `test/`.

@@ -28,6 +28,22 @@ export interface QuranDataset {
   chapterAudio: Record<string, unknown>[];
 }
 
+function normalizeAudioRows(rows: Record<string, unknown>[]) {
+  return rows.map((row) =>
+    typeof row.url === 'string' && row.url.startsWith('//')
+      ? { ...row, url: `https:${row.url}` }
+      : row,
+  );
+}
+
+function normalizeDatasetAudioUrls(dataset: QuranDataset): QuranDataset {
+  return {
+    ...dataset,
+    ayahAudio: normalizeAudioRows(dataset.ayahAudio),
+    chapterAudio: normalizeAudioRows(dataset.chapterAudio),
+  };
+}
+
 interface QuranSyncState {
   schemaVersion: 1;
   resourcesFilter: string;
@@ -68,6 +84,73 @@ interface SyncMutation {
   record_key: string | null;
   data: Record<string, unknown> | null;
   snapshot_url: string | null;
+}
+
+type QuranSyncStage =
+  | 'configuration'
+  | 'redis_lock'
+  | 'redis_read'
+  | 'quran_foundation_auth'
+  | 'quran_content_sync'
+  | 'snapshot_fetch'
+  | 'dataset_validation'
+  | 'redis_commit';
+
+class QuranFoundationHttpError extends Error {
+  constructor(readonly status: number) {
+    super('Quran.Foundation request failed.');
+    this.name = 'QuranFoundationHttpError';
+  }
+}
+
+class QuranSyncDiagnosticError extends Error {
+  constructor(
+    readonly stage: QuranSyncStage,
+    readonly failureReason: 'quran_foundation_http' | 'unexpected_error',
+    readonly errorType: string,
+    readonly upstreamStatus?: number,
+    message = 'Quran Content Sync failed.',
+  ) {
+    super(message);
+    this.name = 'QuranSyncDiagnosticError';
+  }
+}
+
+function toSyncDiagnosticError(
+  stage: QuranSyncStage,
+  error: unknown,
+): QuranSyncDiagnosticError {
+  if (error instanceof QuranSyncDiagnosticError) return error;
+
+  if (error instanceof QuranFoundationHttpError) {
+    return new QuranSyncDiagnosticError(
+      stage,
+      'quran_foundation_http',
+      error.name,
+      error.status,
+    );
+  }
+
+  const errorType =
+    error instanceof Error && /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(error.name)
+      ? error.name
+      : 'UnknownError';
+
+  return new QuranSyncDiagnosticError(
+    stage,
+    'unexpected_error',
+    errorType,
+    undefined,
+    error instanceof Error ? error.message : 'Quran Content Sync failed.',
+  );
+}
+
+function getQuranFoundationEnvironment(): 'production' | 'prelive' | 'invalid' {
+  const environment = process.env.QURAN_FOUNDATION_ENV ?? 'production';
+  if (environment === 'production' || environment === 'prelive') {
+    return environment;
+  }
+  return 'invalid';
 }
 
 interface QfSnapshot {
@@ -336,11 +419,7 @@ function validateCompleteDataset(dataset: QuranDataset): void {
   }
 }
 
-const mergeSnapshot = (
-  dataset: QuranDataset,
-  snapshot: QfSnapshot,
-  bootstrap = false,
-) => {
+const mergeSnapshot = (dataset: QuranDataset, snapshot: QfSnapshot) => {
   const projected = projectSnapshot(snapshot);
   validateResourceSnapshot(snapshot, projected);
   if (snapshot.resource_group === 'quran_core') {
@@ -579,7 +658,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
       this.cachedState = state;
     }
     return {
-      ...state.dataset,
+      ...normalizeDatasetAudioUrls(state.dataset),
       revision: state.revision,
       syncedAt: state.lastSuccessfulSyncAt,
     };
@@ -609,7 +688,10 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
       if (!cached || cached.fromRevision !== revision) {
         cached = {
           fromRevision: revision,
-          changes: diffDatasets(state.previous.dataset, state.dataset),
+          changes: diffDatasets(
+            normalizeDatasetAudioUrls(state.previous.dataset),
+            normalizeDatasetAudioUrls(state.dataset),
+          ),
         };
         this.cachedDiffs.set(state.revision, cached);
         if (this.cachedDiffs.size > 2)
@@ -625,7 +707,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     }
     return {
       kind: 'full' as const,
-      ...state.dataset,
+      ...normalizeDatasetAudioUrls(state.dataset),
       revision: state.revision,
       syncedAt: state.lastSuccessfulSyncAt,
     };
@@ -648,11 +730,25 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         Math.random() * Math.min(baseMs * 0.2, 60_000),
       );
       this.retryAt = Date.now() + baseMs + jitterMs;
-      const errorCode = error instanceof Error ? error.name : 'UnknownError';
+      const diagnostic = toSyncDiagnosticError(
+        'configuration',
+        error,
+      );
       this.pino.warn(
         {
           event: 'sync_failed',
-          errorCode,
+          syncStage: diagnostic.stage,
+          failureReason: diagnostic.failureReason,
+          errorCode: diagnostic.errorType,
+          ...(diagnostic.upstreamStatus === undefined
+            ? {}
+            : { upstreamStatus: diagnostic.upstreamStatus }),
+          quranFoundationEnvironment: getQuranFoundationEnvironment(),
+          quranFoundationCredentialsConfigured: Boolean(
+            process.env.QURAN_FOUNDATION_CLIENT_ID &&
+              process.env.QURAN_FOUNDATION_CLIENT_SECRET,
+          ),
+          redisConfigured: this.redis.isConfigured(),
           retryAt: new Date(this.retryAt).toISOString(),
         },
         'Quran Content Sync failed; retaining the last committed dataset and cursor',
@@ -663,35 +759,43 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async runSync(): Promise<void> {
-    if (!this.redis.isConfigured()) {
-      throw new Error(
-        'Durable Redis storage is required for Quran Content Sync.',
-      );
-    }
-    const clientId = process.env.QURAN_FOUNDATION_CLIENT_ID;
-    const clientSecret = process.env.QURAN_FOUNDATION_CLIENT_SECRET;
-    if (!clientId || !clientSecret) {
-      throw new Error(
-        'Quran.Foundation Content API credentials are not configured.',
-      );
-    }
-
-    const lockValue = randomUUID();
-    if (!(await this.redis.acquireLock(LOCK_KEY, lockValue, LOCK_TTL_MS)))
-      return;
+    let stage: QuranSyncStage = 'configuration';
+    let lockValue: string | undefined;
+    let lockAcquired = false;
     let lockLost = false;
-    const lockRenewalTimer = setInterval(() => {
-      void this.redis
-        .renewLock(LOCK_KEY, lockValue, LOCK_TTL_MS)
-        .then((renewed) => {
-          if (!renewed) lockLost = true;
-        })
-        .catch(() => {
-          lockLost = true;
-        });
-    }, 60_000);
-    lockRenewalTimer.unref?.();
+    let lockRenewalTimer: ReturnType<typeof setInterval> | undefined;
     try {
+      if (!this.redis.isConfigured()) {
+        throw new Error(
+          'Durable Redis storage is required for Quran Content Sync.',
+        );
+      }
+      const clientId = process.env.QURAN_FOUNDATION_CLIENT_ID;
+      const clientSecret = process.env.QURAN_FOUNDATION_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error(
+          'Quran.Foundation Content API credentials are not configured.',
+        );
+      }
+
+      stage = 'redis_lock';
+      lockValue = randomUUID();
+      if (!(await this.redis.acquireLock(LOCK_KEY, lockValue, LOCK_TTL_MS)))
+        return;
+      lockAcquired = true;
+      lockRenewalTimer = setInterval(() => {
+        void this.redis
+          .renewLock(LOCK_KEY, lockValue!, LOCK_TTL_MS)
+          .then((renewed) => {
+            if (!renewed) lockLost = true;
+          })
+          .catch(() => {
+            lockLost = true;
+          });
+      }, 60_000);
+      lockRenewalTimer.unref?.();
+
+      stage = 'redis_read';
       const metadata =
         await this.redis.getPersistent<QuranSyncMetadata>(STATUS_KEY);
       const timeZone = process.env.QURAN_SYNC_TIMEZONE ?? 'UTC';
@@ -717,10 +821,12 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         this.stateKey,
       );
 
+      stage = 'quran_foundation_auth';
       const token = await this.getAccessToken(clientId, clientSecret);
       let dataset: QuranDataset;
       let syncToken: string | null = previous?.syncToken ?? null;
       let pages: SyncEnvelope[];
+      stage = 'quran_content_sync';
       try {
         pages = await this.getSyncPages(token, clientId, syncToken);
       } catch (error) {
@@ -740,6 +846,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
 
       if (!previous || !syncToken) {
         dataset = emptyDataset();
+        stage = 'snapshot_fetch';
         const snapshotMutations = mutations.filter(
           (item) =>
             item.type === 'RESOURCE_CREATE' ||
@@ -772,11 +879,13 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
             clientId,
             mutation.snapshot_url,
           );
-          mergeSnapshot(dataset, snapshot, true);
+          mergeSnapshot(dataset, snapshot);
         }
+        stage = 'dataset_validation';
         validateCompleteDataset(dataset);
       } else {
         dataset = structuredClone(previous.dataset);
+        stage = 'snapshot_fetch';
         for (const mutation of mutations.sort(
           (left, right) => left.sequence - right.sequence,
         )) {
@@ -794,10 +903,12 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
             applyMutation(dataset, mutation);
           }
         }
+        stage = 'dataset_validation';
         validateDatasetIntegrity(dataset);
         validateCompleteDataset(dataset);
       }
 
+      stage = 'redis_commit';
       const lastSuccessfulSyncAt = new Date().toISOString();
       const revision = createHash('sha256')
         .update(JSON.stringify(dataset))
@@ -862,9 +973,13 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         },
         'Quran Content Sync committed',
       );
+    } catch (error) {
+      throw toSyncDiagnosticError(stage, error);
     } finally {
-      clearInterval(lockRenewalTimer);
-      await this.redis.releaseLock(LOCK_KEY, lockValue);
+      if (lockRenewalTimer) clearInterval(lockRenewalTimer);
+      if (lockAcquired && lockValue) {
+        await this.redis.releaseLock(LOCK_KEY, lockValue);
+      }
     }
   }
 
@@ -891,9 +1006,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     });
     if (!response.ok) {
       await response.body?.cancel().catch(() => undefined);
-      throw new Error(
-        `Quran.Foundation token request failed (${response.status}).`,
-      );
+      throw new QuranFoundationHttpError(response.status);
     }
     const body = (await response.json()) as { access_token?: unknown };
     if (typeof body.access_token !== 'string' || !body.access_token) {
@@ -931,9 +1044,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     });
     if (!response.ok) {
       await response.body?.cancel().catch(() => undefined);
-      throw new Error(
-        `Quran.Foundation Content Sync request failed (${response.status}).`,
-      );
+      throw new QuranFoundationHttpError(response.status);
     }
     const body: unknown = await response.json();
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -993,7 +1104,10 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
     const { content } = this.getApiBases();
     if (!path.startsWith('/'))
       throw new Error('Content Sync snapshot URL was invalid.');
-    const url = new URL(path, content);
+    // Quran.Foundation returns root-relative `/api/v4/...` paths that must be
+    // prefixed with the environment's `/content` base path. Passing `path`
+    // directly to `new URL(path, content)` would discard that base path.
+    const url = new URL(`${content}${path}`);
     if (url.origin !== new URL(content).origin) {
       throw new Error('Content Sync snapshot URL changed host.');
     }
@@ -1015,7 +1129,11 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   private isRejectedSyncToken(error: unknown) {
-    return error instanceof Error && /\(400\)|\(422\)/.test(error.message);
+    return (
+      (error instanceof QuranFoundationHttpError &&
+        [400, 422].includes(error.status)) ||
+      (error instanceof Error && /\(400\)|\(422\)/.test(error.message))
+    );
   }
 }
 

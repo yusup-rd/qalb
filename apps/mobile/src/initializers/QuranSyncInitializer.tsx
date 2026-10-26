@@ -46,7 +46,11 @@ defineTask(QURAN_BACKGROUND_SYNC_TASK, async () => {
   }
 });
 
-export default function QuranSyncInitializer() {
+export default function QuranSyncInitializer({
+  onInitialize,
+}: {
+  onInitialize: () => Promise<void>;
+}) {
   const db = useSQLiteContext();
 
   useEffect(() => {
@@ -69,26 +73,39 @@ export default function QuranSyncInitializer() {
       }
     })();
 
-    const refresh = () => {
-      void refreshQuranDatabase(db).catch((error: unknown) => {
+    const refresh = async () => {
+      if (await hasLocalQuran(db)) {
+        await refreshQuranDatabase(db);
+      } else {
+        await onInitialize();
+      }
+    };
+
+    const refreshSafely = () => {
+      void refresh().catch((error: unknown) => {
         if (active && __DEV__) {
           console.warn(
-            "Quran update unavailable; continuing with the saved database.",
+            "Quran update unavailable; continuing without blocking the app.",
             error instanceof Error ? error.message : "Unknown error",
           );
         }
       });
     };
 
-    refresh();
-    const refreshInterval = setInterval(refresh, 24 * 60 * 60 * 1000);
+    refreshSafely();
+    const refreshInterval = setInterval(
+      refreshSafely,
+      24 * 60 * 60 * 1000,
+    );
     const networkSubscription = NetInfo.addEventListener((state) => {
-      if (state.isConnected && state.isInternetReachable !== false) refresh();
+      if (state.isConnected && state.isInternetReachable !== false) {
+        refreshSafely();
+      }
     });
     const appStateSubscription = AppState.addEventListener(
       "change",
       (state) => {
-        if (state === "active") refresh();
+        if (state === "active") refreshSafely();
       },
     );
 
@@ -98,7 +115,7 @@ export default function QuranSyncInitializer() {
       networkSubscription();
       appStateSubscription.remove();
     };
-  }, [db]);
+  }, [db, onInitialize]);
 
   return null;
 }

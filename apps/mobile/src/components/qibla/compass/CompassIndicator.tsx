@@ -4,12 +4,14 @@ interface CompassIndicatorProps {
   size: number;
   color: string;
   cardColor: string;
+  style?: { left: number; top: number };
 }
 
 const CompassIndicator = ({
   size,
   color,
   cardColor,
+  style,
 }: CompassIndicatorProps) => {
   const center = size / 2;
 
@@ -18,7 +20,7 @@ const CompassIndicator = ({
       pointerEvents="none"
       width={size}
       height={size}
-      style={{ position: "absolute" }}
+      style={[{ position: "absolute" }, style]}
     >
       {/* Pointer shadow */}
       <Path
