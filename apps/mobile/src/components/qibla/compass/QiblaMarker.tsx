@@ -19,13 +19,12 @@ const QiblaMarker = ({
   badgeColor,
 }: QiblaMarkerProps) => {
   const radians = (bearing * Math.PI) / 180;
+  const badgeSize = 34;
+  const half = badgeSize / 2;
   const markerRadius = radius + 25;
 
   const x = center + Math.sin(radians) * markerRadius;
   const y = center - Math.cos(radians) * markerRadius;
-
-  const badgeSize = 34;
-  const half = badgeSize / 2;
 
   return (
     <G>
@@ -56,7 +55,7 @@ const QiblaMarker = ({
       <Circle cx={x} cy={y} r={13} fill={accentColor} opacity={0.3} />
 
       {/* Kaaba */}
-      <G transform={`rotate(-135 ${x} ${y})`}>
+      <G transform={`rotate(${bearing} ${x} ${y})`}>
         <Rect
           x={x - 8}
           y={y - 9}

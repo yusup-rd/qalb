@@ -5,6 +5,7 @@ import QiblaMarker from "./QiblaMarker";
 
 interface CompassDialProps {
   size: number;
+  dialSize: number;
   color: string;
   mutedColor: string;
   cardColor: string;
@@ -36,6 +37,7 @@ const LABEL_ROTATIONS: Record<number, number> = {
 
 const CompassDial = ({
   size,
+  dialSize,
   color,
   mutedColor,
   cardColor,
@@ -47,7 +49,7 @@ const CompassDial = ({
   });
 
   const center = size / 2;
-  const outerRadius = center - 7;
+  const outerRadius = dialSize / 2 - 7;
   const rimRadius = outerRadius - 5;
   const innerRadius = rimRadius - 8;
   const labelRadius = innerRadius - 29;
