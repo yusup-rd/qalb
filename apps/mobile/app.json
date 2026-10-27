@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/app/icon.png",
+      "bundleIdentifier": "com.yusuprd.qalb",
       "config": {
         "usesNonExemptEncryption": false
       },
