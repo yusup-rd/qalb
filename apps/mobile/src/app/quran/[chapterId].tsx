@@ -2,22 +2,20 @@ import { AyahCard } from "@/components/quran/AyahCard";
 import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
-import { useQuranChapter } from "@/hooks/useQuran";
+import { useQuranChapter, useQuranChapters } from "@/hooks/useQuran";
 import { saveLastOpenedSurah } from "@/lib/quran-reading";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useQuranAudio } from "@/providers/QuranAudioProvider";
 import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import type { QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { styled } from "nativewind";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ListRenderItem } from "react-native";
-import { Alert, FlatList, Text, View } from "react-native";
-import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
-
-const SafeAreaView = styled(NativeSafeAreaView);
+import { Alert, FlatList, Pressable, Text, View } from "react-native";
+const AyahSeparator = () => <View className="h-4" />;
 
 type ReaderItem =
   | { type: "ayah"; id: string; verse: QuranVerseWithContent }
@@ -28,9 +26,28 @@ const QuranReaderContent = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
   const { i18n } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ chapterId: string }>();
+  const params = useLocalSearchParams<{
+    chapterId: string;
+    chapterName?: string;
+  }>();
+  const { colors } = useTheme();
   const chapterId = Number(params.chapterId);
-  const { chapter, verses, error, loading } = useQuranChapter(chapterId);
+  const {
+    chapter: loadedChapter,
+    verses,
+    error,
+    loading,
+  } = useQuranChapter(chapterId);
+  const { chapters } = useQuranChapters();
+  const chapter =
+    chapters.find((item) => item.id === chapterId) ?? loadedChapter;
+  const chapterLoading = loading;
+  const nextChapter = chapters.find(
+    (item) => item.chapterNumber === (chapter?.chapterNumber ?? 0) + 1,
+  );
+  const previousChapter = chapters.find(
+    (item) => item.chapterNumber === (chapter?.chapterNumber ?? 0) - 1,
+  );
   const showTranslation = useQuranPreferencesStore(
     (state) => state.showTranslation,
   );
@@ -41,8 +58,12 @@ const QuranReaderContent = () => {
   const [listenRequesting, setListenRequesting] = useState(false);
   const audioUrls = useMemo(
     () =>
-      verses.flatMap((verse) => (verse.audio?.url ? [verse.audio.url] : [])),
-    [verses],
+      chapterLoading
+        ? []
+        : verses.flatMap((verse) =>
+            verse.audio?.url ? [verse.audio.url] : [],
+          ),
+    [chapterLoading, verses],
   );
   const isListening = queueActive && Boolean(status?.playing);
   const translationLanguage = i18n.language.startsWith("ru")
@@ -63,7 +84,7 @@ const QuranReaderContent = () => {
               message: t("loadError", { message: error.message }),
             },
           ]
-        : loading
+        : chapterLoading
           ? Array.from({ length: 6 }, (_, index) => ({
               type: "skeleton" as const,
               id: `ayah-skeleton-${index}`,
@@ -75,7 +96,7 @@ const QuranReaderContent = () => {
                 id: `ayah-${verse.id}`,
                 verse,
               })),
-    [error, loading, t, verses],
+    [error, chapterLoading, t, verses],
   );
 
   const handleListen = useCallback(async () => {
@@ -122,41 +143,29 @@ const QuranReaderContent = () => {
   );
 
   const renderHeader = (
-    <View className="bg-background -mx-5 px-5 pb-3">
-      {!loading && chapter ? (
+    <View className="bg-background -mx-5 px-5 py-3">
+      {chapter ? (
         <View className="flex-row items-center justify-between gap-5">
           <View className="w-[30%] items-start gap-3">
-            <SmoothPressable
-              accessibilityRole="button"
-              accessibilityLabel={t("goBack")}
-              className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
-              onPress={() => router.replace("/(tabs)/quran")}
-            >
-              <Fa name="book-quran" size={11} className="text-primary" />
-              <Text
-                numberOfLines={1}
-                className="text-foreground font-sans-semibold text-[11px]"
-              >
-                {t("goBack")}
-              </Text>
-            </SmoothPressable>
-
-            {chapter.chapterNumber < 114 ? (
+            {nextChapter ? (
               <SmoothPressable
                 accessibilityRole="button"
                 accessibilityLabel={t("nextSurah")}
-                className="bg-card h-11 max-w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
+                className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
                     pathname: "/quran/[chapterId]",
-                    params: { chapterId: String(chapter.id + 1) },
+                    params: {
+                      chapterId: String(nextChapter.id),
+                      chapterName: nextChapter.nameSimple,
+                    },
                   })
                 }
               >
                 <Fa name="chevron-left" size={11} className="text-primary" />
                 <Text
                   numberOfLines={1}
-                  className="text-center text-foreground font-sans-semibold text-[11px]"
+                  className="text-foreground font-sans-semibold text-center text-[11px]"
                 >
                   {t("nextSurah")}
                 </Text>
@@ -170,63 +179,46 @@ const QuranReaderContent = () => {
           <View className="min-w-0 flex-1 items-center gap-0.5">
             <Text
               numberOfLines={1}
-              className="text-center text-primary font-sans-bold writingDirection-rtl text-lg"
+              className="text-primary font-sans-bold writingDirection-rtl text-center text-lg"
             >
               {chapter.nameArabic}
             </Text>
             <Text
               numberOfLines={1}
-              className="text-center text-muted-foreground font-sans-semibold text-[11px]"
+              className="text-muted-foreground font-sans-semibold text-center text-[11px]"
             >
               {chapter.nameSimple}
             </Text>
-            <Text className="text-center text-muted-foreground font-sans-regular text-[10px]">
+            <Text className="text-muted-foreground font-sans-regular text-center text-[10px]">
               {t("surahPosition", {
                 current: chapter.chapterNumber,
                 total: 114,
               })}
             </Text>
-            <Text className="text-center text-muted-foreground font-sans-regular text-[10px]">
+            <Text className="text-muted-foreground font-sans-regular text-center text-[10px]">
               {t("ayahs", { count: chapter.versesCount })}
             </Text>
           </View>
 
           <View className="w-[30%] items-end gap-3">
-            <SmoothPressable
-              accessibilityRole="button"
-              accessibilityLabel={t("listenSurah")}
-              disabled={listenRequesting || audioUrls.length === 0}
-              className="bg-primary h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
-              onPress={handleListen}
-            >
-              <Fa
-                name={isListening ? "pause" : "headphones"}
-                size={11}
-                className="text-primary-foreground"
-              />
-              <Text
-                numberOfLines={1}
-                className="text-center text-primary-foreground font-sans-semibold text-[11px]"
-              >
-                {t("listenSurah")}
-              </Text>
-            </SmoothPressable>
-
-            {chapter.chapterNumber > 1 ? (
+            {previousChapter ? (
               <SmoothPressable
                 accessibilityRole="button"
                 accessibilityLabel={t("previousSurah")}
-                className="bg-card h-11 max-w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
+                className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
                     pathname: "/quran/[chapterId]",
-                    params: { chapterId: String(chapter.id - 1) },
+                    params: {
+                      chapterId: String(previousChapter.id),
+                      chapterName: previousChapter.nameSimple,
+                    },
                   })
                 }
               >
                 <Text
                   numberOfLines={1}
-                  className="text-center text-foreground font-sans-semibold text-[11px]"
+                  className="text-foreground font-sans-semibold text-center text-[11px]"
                 >
                   {t("previousSurah")}
                 </Text>
@@ -245,13 +237,56 @@ const QuranReaderContent = () => {
   const keyExtractor = useCallback((item: ReaderItem) => item.id, []);
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={["top"]}>
+    <View className="bg-background flex-1">
+      <Stack.Screen
+        options={{
+          title: chapter?.nameSimple ?? params.chapterName ?? "",
+          headerRight: ({ tintColor }) => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(isListening ? "pauseSurah" : "listenSurah")}
+              disabled={
+                listenRequesting || (!isListening && audioUrls.length === 0)
+              }
+              onPress={handleListen}
+              style={{
+                width: 44,
+                height: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Fa
+                name={isListening ? "pause" : "headphones"}
+                size={20}
+                color={tintColor ?? colors.foreground}
+              />
+            </Pressable>
+          ),
+          unstable_headerRightItems: () => [
+            {
+              type: "button",
+              identifier: "surah-audio",
+              label: t(isListening ? "pauseSurah" : "listenSurah"),
+              icon: {
+                type: "sfSymbol",
+                name: isListening ? "pause.fill" : "headphones",
+              },
+              disabled:
+                listenRequesting || (!isListening && audioUrls.length === 0),
+              onPress: handleListen,
+            },
+          ],
+        }}
+      />
       <FlatList
+        contentInsetAdjustmentBehavior="automatic"
         className="bg-background flex-1 px-5"
-        contentContainerClassName="gap-4 pb-5"
+        contentContainerClassName="pb-5"
         data={items}
         initialNumToRender={10}
         ListHeaderComponent={renderHeader}
+        ItemSeparatorComponent={AyahSeparator}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         maxToRenderPerBatch={10}
@@ -261,7 +296,7 @@ const QuranReaderContent = () => {
         updateCellsBatchingPeriod={50}
         windowSize={5}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

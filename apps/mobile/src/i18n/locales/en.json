@@ -449,6 +449,7 @@
     "surahPosition": "{{current}} of {{total}}",
     "nextSurah": "Next",
     "previousSurah": "Previous",
+    "pauseSurah": "Pause surah",
     "listenSurah": "Listen Surah",
     "noAyahs": "No ayahs found for this Surah.",
     "loadError": "This Surah could not be loaded: {{message}}",

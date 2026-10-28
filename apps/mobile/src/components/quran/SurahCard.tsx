@@ -17,7 +17,10 @@ export const SurahCard = memo(function SurahCard({
     <Link
       href={{
         pathname: "/quran/[chapterId]",
-        params: { chapterId: String(chapter.id) },
+        params: {
+          chapterId: String(chapter.id),
+          chapterName: chapter.nameSimple,
+        },
       }}
       asChild
     >

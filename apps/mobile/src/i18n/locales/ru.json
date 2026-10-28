@@ -449,6 +449,7 @@
     "surahPosition": "{{current}} из {{total}}",
     "nextSurah": "Следующая",
     "previousSurah": "Предыдущая",
+    "pauseSurah": "Приостановить суру",
     "listenSurah": "Слушать суру",
     "noAyahs": "Аяты этой суры не найдены.",
     "loadError": "Не удалось загрузить суру: {{message}}",
