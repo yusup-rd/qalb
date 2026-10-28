@@ -122,25 +122,30 @@ const QuranReaderContent = () => {
   );
 
   const renderHeader = (
-    <View className="bg-background -mx-5 gap-4 px-5 pb-4">
+    <View className="bg-background -mx-5 px-5 pb-3">
       {!loading && chapter ? (
-        <View className="items-center gap-1">
-          <Text className="text-primary font-sans-bold writingDirection-rtl text-2xl">
-            {chapter.nameArabic}
-          </Text>
-          <Text className="text-muted-foreground font-sans-regular">
-            {chapter.nameSimple} · {t("ayahs", { count: chapter.versesCount })}
-          </Text>
-        </View>
-      ) : null}
+        <View className="flex-row items-center justify-between gap-5">
+          <View className="w-[30%] items-start gap-3">
+            <SmoothPressable
+              accessibilityRole="button"
+              accessibilityLabel={t("goBack")}
+              className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
+              onPress={() => router.replace("/(tabs)/quran")}
+            >
+              <Fa name="book-quran" size={11} className="text-primary" />
+              <Text
+                numberOfLines={1}
+                className="text-foreground font-sans-semibold text-[11px]"
+              >
+                {t("goBack")}
+              </Text>
+            </SmoothPressable>
 
-      {!loading && chapter ? (
-        <View className="flex-row items-center justify-between gap-2">
-          <View className="flex-row items-center gap-2">
             {chapter.chapterNumber < 114 ? (
               <SmoothPressable
+                accessibilityRole="button"
                 accessibilityLabel={t("nextSurah")}
-                className="bg-card size-9 items-center justify-center rounded-full shadow-sm"
+                className="bg-card h-11 max-w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
                     pathname: "/quran/[chapterId]",
@@ -148,43 +153,70 @@ const QuranReaderContent = () => {
                   })
                 }
               >
-                <Fa name="arrow-left" size={13} className="text-primary" />
+                <Fa name="chevron-left" size={11} className="text-primary" />
+                <Text
+                  numberOfLines={1}
+                  className="text-center text-foreground font-sans-semibold text-[11px]"
+                >
+                  {t("nextSurah")}
+                </Text>
               </SmoothPressable>
             ) : null}
-
-            <SmoothPressable
-              accessibilityLabel={t("allSurahs")}
-              className="bg-card flex-row items-center gap-2 rounded-full px-3 py-2 shadow-sm"
-              onPress={() => router.replace("/(tabs)/quran")}
-            >
-              <Fa name="book-quran" size={13} className="text-primary" />
-              <Text className="text-foreground font-sans-semibold text-xs">
-                {t("allSurahs")}
-              </Text>
-            </SmoothPressable>
+            {chapter.chapterNumber >= 114 ? (
+              <View className="h-11 w-full" />
+            ) : null}
           </View>
 
-          <View className="flex-row items-center gap-2">
+          <View className="min-w-0 flex-1 items-center gap-0.5">
+            <Text
+              numberOfLines={1}
+              className="text-center text-primary font-sans-bold writingDirection-rtl text-lg"
+            >
+              {chapter.nameArabic}
+            </Text>
+            <Text
+              numberOfLines={1}
+              className="text-center text-muted-foreground font-sans-semibold text-[11px]"
+            >
+              {chapter.nameSimple}
+            </Text>
+            <Text className="text-center text-muted-foreground font-sans-regular text-[10px]">
+              {t("surahPosition", {
+                current: chapter.chapterNumber,
+                total: 114,
+              })}
+            </Text>
+            <Text className="text-center text-muted-foreground font-sans-regular text-[10px]">
+              {t("ayahs", { count: chapter.versesCount })}
+            </Text>
+          </View>
+
+          <View className="w-[30%] items-end gap-3">
             <SmoothPressable
+              accessibilityRole="button"
               accessibilityLabel={t("listenSurah")}
               disabled={listenRequesting || audioUrls.length === 0}
-              className="bg-primary flex-row items-center gap-2 rounded-full px-3 py-2 shadow-sm"
+              className="bg-primary h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
               onPress={handleListen}
             >
               <Fa
                 name={isListening ? "pause" : "headphones"}
-                size={13}
+                size={11}
                 className="text-primary-foreground"
               />
-              <Text className="text-primary-foreground font-sans-semibold text-xs">
+              <Text
+                numberOfLines={1}
+                className="text-center text-primary-foreground font-sans-semibold text-[11px]"
+              >
                 {t("listenSurah")}
               </Text>
             </SmoothPressable>
 
             {chapter.chapterNumber > 1 ? (
               <SmoothPressable
+                accessibilityRole="button"
                 accessibilityLabel={t("previousSurah")}
-                className="bg-card size-9 items-center justify-center rounded-full shadow-sm"
+                className="bg-card h-11 max-w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
                     pathname: "/quran/[chapterId]",
@@ -192,8 +224,17 @@ const QuranReaderContent = () => {
                   })
                 }
               >
-                <Fa name="arrow-right" size={13} className="text-primary" />
+                <Text
+                  numberOfLines={1}
+                  className="text-center text-foreground font-sans-semibold text-[11px]"
+                >
+                  {t("previousSurah")}
+                </Text>
+                <Fa name="chevron-right" size={11} className="text-primary" />
               </SmoothPressable>
+            ) : null}
+            {chapter.chapterNumber <= 1 ? (
+              <View className="h-11 w-full" />
             ) : null}
           </View>
         </View>
