@@ -449,6 +449,8 @@
     "surahPosition": "{{current}} of {{total}}",
     "nextSurah": "Next",
     "previousSurah": "Previous",
+    "nextSurahAccessibilityLabel": "Next surah",
+    "previousSurahAccessibilityLabel": "Previous surah",
     "pauseSurah": "Pause surah",
     "listenSurah": "Listen Surah",
     "noAyahs": "No ayahs found for this Surah.",

@@ -197,7 +197,7 @@ const QuranReaderContent = () => {
             {nextChapter ? (
               <SmoothPressable
                 accessibilityRole="button"
-                accessibilityLabel={t("nextSurah")}
+                accessibilityLabel={t("nextSurahAccessibilityLabel")}
                 className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
@@ -251,7 +251,7 @@ const QuranReaderContent = () => {
             {previousChapter ? (
               <SmoothPressable
                 accessibilityRole="button"
-                accessibilityLabel={t("previousSurah")}
+                accessibilityLabel={t("previousSurahAccessibilityLabel")}
                 className="bg-card h-11 w-full flex-row items-center justify-center gap-2 rounded-xl px-3 shadow-sm"
                 onPress={() =>
                   router.replace({
