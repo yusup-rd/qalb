@@ -189,7 +189,10 @@ const QuickAccessCard = ({
     if (type === "quran" && lastOpenedSurah) {
       router.push({
         pathname: "/quran/[chapterId]",
-        params: { chapterId: String(lastOpenedSurah.id) },
+        params: {
+          chapterId: String(lastOpenedSurah.id),
+          chapterName: lastOpenedSurah.nameSimple,
+        },
       });
       return;
     }

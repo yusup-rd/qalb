@@ -27,6 +27,7 @@ const AppNavigator = () => {
         name="(tabs)"
         options={{
           animation: "fade",
+          title: t("tabs.quran"),
           headerShown: false,
         }}
       />
@@ -60,11 +61,20 @@ const AppNavigator = () => {
 
       <Stack.Screen
         name="quran/[chapterId]"
-        options={{
+        options={({ route }) => ({
           animation: "fade",
           gestureEnabled: false,
-          headerShown: false,
-        }}
+          title:
+            (route.params as { chapterName?: string } | undefined)
+              ?.chapterName ?? "",
+          headerShown: true,
+          headerTransparent: false,
+          headerStyle: { backgroundColor: colors.card },
+          headerTintColor: colors.foreground,
+          headerShadowVisible: false,
+          headerBackTitle: t("tabs.quran"),
+          headerBackButtonDisplayMode: "minimal",
+        })}
       />
     </Stack>
   );

@@ -1,6 +1,9 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativewind } = require("nativewind/metro");
- 
+const { checkCssOpacity } = require("./scripts/check-css-opacity");
+
+checkCssOpacity();
+
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
