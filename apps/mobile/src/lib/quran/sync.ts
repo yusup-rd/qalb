@@ -1,4 +1,5 @@
 import { apiRequest } from "@/api/client";
+import { clearQuranChapterCache } from "./chapter-cache";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
 import { getQuranBootstrapErrorKind } from "./bootstrap-error";
 import {
@@ -208,6 +209,7 @@ async function refreshQuranDatabaseOnce(
     }
     reporter?.stage("saving");
     await applyChangesTransactionally(db, changes);
+    clearQuranChapterCache(db);
     await recordSuccessfulQuranCheck(db);
     return true;
   }
@@ -215,6 +217,7 @@ async function refreshQuranDatabaseOnce(
   validateQuranSnapshot(snapshot);
   reporter?.stage("saving");
   await applySnapshotTransactionally(db, snapshot, reporter);
+  clearQuranChapterCache(db);
   await recordSuccessfulQuranCheck(db);
   return true;
 }

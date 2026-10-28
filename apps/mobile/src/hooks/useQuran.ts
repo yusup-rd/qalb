@@ -1,8 +1,12 @@
 import {
+  getCachedQuranChapter,
+  loadQuranChapter,
+  type QuranChapterData,
+} from "@/lib/quran/chapter-cache";
+import {
   getAyahOfDay,
   getChapterById,
   getChapters,
-  getVersesByChapterId,
   searchChapters,
   searchQuran,
 } from "@/lib/quran/repository";
@@ -82,44 +86,44 @@ export const useAyahOfDay = () => {
 
 export const useQuranChapter = (chapterId: number) => {
   const db = useSQLiteContext();
-  const [chapter, setChapter] = useState<QuranChapter | null>(null);
-  const [verses, setVerses] = useState<QuranVerseWithContent[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<{
+    db: typeof db;
+    chapterId: number;
+    data?: QuranChapterData;
+    error: Error | null;
+  }>(() => ({
+    db,
+    chapterId,
+    data: getCachedQuranChapter(db, chapterId),
+    error: null,
+  }));
 
   useEffect(() => {
     let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      setLoading(true);
-      setError(null);
-      setChapter(null);
-      setVerses([]);
-    });
-    Promise.all([
-      getChapterById(db, chapterId),
-      getVersesByChapterId(db, chapterId),
-    ])
-      .then(([loadedChapter, loadedVerses]) => {
-        if (cancelled) return;
-        setChapter(loadedChapter);
-        setVerses(loadedVerses);
+    loadQuranChapter(db, chapterId)
+      .then((data) => {
+        if (!cancelled) setResult({ db, chapterId, data, error: null });
       })
-      .catch((nextError) => {
-        if (cancelled) return;
-        setError(nextError);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
+      .catch((error: Error) => {
+        if (!cancelled) setResult({ db, chapterId, error });
       });
-
     return () => {
       cancelled = true;
     };
-  }, [chapterId, db]);
+  }, [db, chapterId]);
 
-  return { chapter, verses, error, loading };
+  const current =
+    result.db === db && result.chapterId === chapterId ? result : null;
+  // Read prefetched content during render, never after the first loading frame.
+  const data = getCachedQuranChapter(db, chapterId) ?? current?.data;
+  const error = current?.error ?? null;
+  return {
+    chapter: data?.chapter ?? null,
+    chapters: data?.chapters ?? [],
+    verses: data?.verses ?? [],
+    loading: !data && !error,
+    error,
+  };
 };
 
 export const useQuranSearch = (query: string) => {

@@ -5,6 +5,7 @@ import ts from "typescript";
 import * as progressModule from "../src/lib/quran/bootstrap-progress.ts";
 import * as errorModule from "../src/lib/quran/bootstrap-error.ts";
 import * as validationModule from "../src/lib/quran/snapshot-validation.ts";
+import * as chapterCacheModule from "../src/lib/quran/chapter-cache.ts";
 import { completeSnapshot } from "./quran-snapshot-fixture.js";
 
 // Exercise the production orchestration with explicit API/native-boundary mocks.
@@ -26,6 +27,7 @@ function loadSync(apiRequest) {
     "./snapshot-validation": validationModule,
     "./bootstrap-error": errorModule,
     "./bootstrap-progress": progressModule,
+    "./chapter-cache": chapterCacheModule,
   };
   new Function("require", "exports", outputText)((name) => {
     assert.ok(name in modules, `Unexpected import: ${name}`);

@@ -63,6 +63,7 @@ const AppNavigator = () => {
         name="quran/[chapterId]"
         options={({ route }) => ({
           animation: "fade",
+          gestureEnabled: false,
           title:
             (route.params as { chapterName?: string } | undefined)
               ?.chapterName ?? "",

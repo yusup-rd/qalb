@@ -2,9 +2,9 @@ import { AyahCard } from "@/components/quran/AyahCard";
 import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
-import { useQuranChapter, useQuranChapters } from "@/hooks/useQuran";
+import { useQuranChapter } from "@/hooks/useQuran";
 import { saveLastOpenedSurah } from "@/lib/quran-reading";
-import { getVersesByChapterId } from "@/lib/quran/repository";
+import { loadQuranChapter } from "@/lib/quran/chapter-cache";
 import { useQuranAudio } from "@/providers/QuranAudioProvider";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
@@ -43,11 +43,11 @@ const QuranReaderContent = () => {
   const chapterId = Number(params.chapterId);
   const {
     chapter: loadedChapter,
+    chapters,
     verses,
     error,
     loading,
   } = useQuranChapter(chapterId);
-  const { chapters } = useQuranChapters();
   const chapter =
     chapters.find((item) => item.id === chapterId) ?? loadedChapter;
   const chapterLoading = loading;
@@ -57,6 +57,15 @@ const QuranReaderContent = () => {
   const previousChapter = chapters.find(
     (item) => item.chapterNumber === (chapter?.chapterNumber ?? 0) - 1,
   );
+  useEffect(() => {
+    for (const neighbor of [previousChapter, nextChapter]) {
+      if (neighbor)
+        void loadQuranChapter(db, neighbor.id).catch(() => {
+          // Speculative failures remain retryable when the surah is opened.
+        });
+    }
+  }, [db, previousChapter, nextChapter]);
+
   const showTranslation = useQuranPreferencesStore(
     (state) => state.showTranslation,
   );
@@ -122,7 +131,7 @@ const QuranReaderContent = () => {
     setListenRequesting(true);
     try {
       const urls = chapterLoading
-        ? (await getVersesByChapterId(db, chapterId)).flatMap((verse) =>
+        ? (await loadQuranChapter(db, chapterId)).verses.flatMap((verse) =>
             verse.audio?.url ? [verse.audio.url] : [],
           )
         : audioUrls;
