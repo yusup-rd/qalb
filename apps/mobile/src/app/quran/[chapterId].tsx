@@ -4,13 +4,20 @@ import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
 import { useQuranChapter, useQuranChapters } from "@/hooks/useQuran";
 import { saveLastOpenedSurah } from "@/lib/quran-reading";
-import { useTheme } from "@/providers/ThemeProvider";
+import { getVersesByChapterId } from "@/lib/quran/repository";
 import { useQuranAudio } from "@/providers/QuranAudioProvider";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import type { QuranVerseWithContent } from "@/types/quran";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import NetInfo from "@react-native-community/netinfo";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  Stack,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ListRenderItem } from "react-native";
@@ -26,6 +33,8 @@ const QuranReaderContent = () => {
   const { t } = useTranslation(undefined, { keyPrefix: "quran" });
   const { i18n } = useTranslation();
   const router = useRouter();
+  const navigation = useNavigation();
+  const db = useSQLiteContext();
   const params = useLocalSearchParams<{
     chapterId: string;
     chapterName?: string;
@@ -66,6 +75,10 @@ const QuranReaderContent = () => {
     [chapterLoading, verses],
   );
   const isListening = queueActive && Boolean(status?.playing);
+  // Loading is not evidence that this surah has no audio.
+  const listenDisabled =
+    listenRequesting ||
+    (!isListening && !chapterLoading && audioUrls.length === 0);
   const translationLanguage = i18n.language.startsWith("ru")
     ? "russian"
     : "english";
@@ -100,6 +113,7 @@ const QuranReaderContent = () => {
   );
 
   const handleListen = useCallback(async () => {
+    if (listenRequesting || !navigation.isFocused()) return;
     if (isListening) {
       await pause();
       return;
@@ -107,18 +121,42 @@ const QuranReaderContent = () => {
 
     setListenRequesting(true);
     try {
+      const urls = chapterLoading
+        ? (await getVersesByChapterId(db, chapterId)).flatMap((verse) =>
+            verse.audio?.url ? [verse.audio.url] : [],
+          )
+        : audioUrls;
+      if (!navigation.isFocused()) return;
+      if (urls.length === 0) {
+        Alert.alert(t("audioTitle"), t("audioError"));
+        return;
+      }
       const { isConnected } = await NetInfo.fetch();
+      if (!navigation.isFocused()) return;
       if (isConnected === false) {
         Alert.alert(t("audioTitle"), t("audioOffline"));
         return;
       }
-      await playQueue(audioUrls);
+      await playQueue(urls);
     } catch {
-      Alert.alert(t("audioTitle"), t("audioError"));
+      if (navigation.isFocused()) {
+        Alert.alert(t("audioTitle"), t("audioError"));
+      }
     } finally {
       setListenRequesting(false);
     }
-  }, [audioUrls, isListening, pause, playQueue, t]);
+  }, [
+    audioUrls,
+    chapterId,
+    chapterLoading,
+    db,
+    isListening,
+    listenRequesting,
+    navigation,
+    pause,
+    playQueue,
+    t,
+  ]);
 
   const renderItem = useCallback<ListRenderItem<ReaderItem>>(
     ({ item }) => {
@@ -245,9 +283,7 @@ const QuranReaderContent = () => {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t(isListening ? "pauseSurah" : "listenSurah")}
-              disabled={
-                listenRequesting || (!isListening && audioUrls.length === 0)
-              }
+              disabled={listenDisabled}
               onPress={handleListen}
               style={{
                 width: 44,
@@ -272,8 +308,7 @@ const QuranReaderContent = () => {
                 type: "sfSymbol",
                 name: isListening ? "pause.fill" : "headphones",
               },
-              disabled:
-                listenRequesting || (!isListening && audioUrls.length === 0),
+              disabled: listenDisabled,
               onPress: handleListen,
             },
           ],
