@@ -4,14 +4,13 @@ import { FontAwesome6 as Fa } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { NativeTabs } from "expo-router/native-tabs";
 import { useTranslation } from "react-i18next";
-import { Platform, useColorScheme } from "react-native";
+import { Platform } from "react-native";
 
 const TabsLayout = () => {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
 
-  const nativeTabColors = getNativeTabColors(colorScheme === "dark");
+  const nativeTabColors = getNativeTabColors(resolvedMode === "dark");
 
   if (Platform.OS === "ios") {
     return (

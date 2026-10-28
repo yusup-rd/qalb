@@ -5,6 +5,11 @@ import {
   type ThemeMode,
 } from "@/constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from "expo-router";
 import React, {
   createContext,
   useCallback,
@@ -86,7 +91,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>
+      <NavigationThemeProvider
+        value={resolvedMode === "dark" ? DarkTheme : DefaultTheme}
+      >
+        {children}
+      </NavigationThemeProvider>
+    </ThemeContext.Provider>
   );
 }
 
