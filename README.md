@@ -8,7 +8,7 @@ English and Russian app for iOS and Android.
 <p align="center">
   <img src="docs/screenshots/home.png" width="130" alt="Qalb home screen with the next prayer and daily schedule" />
   <img src="docs/screenshots/prayer-times.png" width="130" alt="Prayer times calendar and daily prayer list" />
-  <img src="docs/screenshots/quran.png" width="130" alt="Quran reading with Arabic, transliteration, and translation" />
+  <img src="docs/screenshots/quran.png" width="130" alt="Al-Baqarah Quran reader with Arabic verses, transliteration, English translation, and verse playback" />
   <img src="docs/screenshots/qibla.png" width="130" alt="Qibla compass" />
   <img src="docs/screenshots/mosques.png" width="130" alt="Nearby mosques map and list" />
   <img src="docs/screenshots/tasbih.png" width="130" alt="Tasbih counter" />
