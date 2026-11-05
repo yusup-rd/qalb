@@ -1,5 +1,4 @@
 import { apiRequest } from "@/api/client";
-import { clearQuranChapterCache } from "./chapter-cache";
 import type { SQLiteBindValue, SQLiteDatabase } from "expo-sqlite";
 import { getQuranBootstrapErrorKind } from "./bootstrap-error";
 import {
@@ -7,6 +6,7 @@ import {
   type QuranBootstrapObserver,
   type QuranBootstrapReporter,
 } from "./bootstrap-progress";
+import { clearQuranChapterCache } from "./chapter-cache";
 import {
   isSecureAudioUrl,
   validateQuranSnapshot,
@@ -86,7 +86,57 @@ CREATE INDEX IF NOT EXISTS chapter_audio_reciter_id ON chapter_audio(reciter_id)
 `;
 
 const QURAN_UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
-const refreshesInFlight = new WeakMap<SQLiteDatabase, Promise<boolean>>();
+// Expo can return multiple JS handles for the same file (foreground/background).
+// Deduplicate by file, rather than by wrapper object, before any schema or writes.
+const refreshesInFlight = new Map<string | SQLiteDatabase, Promise<boolean>>();
+const preparations = new WeakMap<SQLiteDatabase, Promise<void>>();
+
+function databaseKey(db: SQLiteDatabase): string | SQLiteDatabase {
+  return db.databasePath || db;
+}
+
+function isDatabaseBusy(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    /database (?:table )?is locked|SQLITE_BUSY|SQLITE_LOCKED|Error code (?:5|6):/i.test(
+      error.message,
+    )
+  );
+}
+
+async function retryDatabaseBusy<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isDatabaseBusy(error) || attempt >= 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+    }
+  }
+}
+
+async function withQuranWriteTransaction(
+  db: SQLiteDatabase,
+  action: (transaction: SQLiteDatabase) => Promise<void>,
+): Promise<void> {
+  // Exclusive transactions open a new connection; connection pragmas are not inherited.
+  // Retry the whole rolled-back transaction, never an individual partial row write.
+  await retryDatabaseBusy(() =>
+    db.withExclusiveTransactionAsync(async (transaction) => {
+      await transaction.execAsync("PRAGMA busy_timeout = 5000;");
+      await action(transaction);
+    }),
+  );
+}
+
+function logSyncComplete(
+  result: "unchanged" | "incremental" | "full",
+  revision: string,
+): void {
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.info("Quran SQLite sync completed.", { result, revision });
+  }
+}
 
 export function isQuranUpdateCheckDue(
   lastSuccessfulCheckAt: string | null | undefined,
@@ -119,7 +169,20 @@ export async function initializeQuranDatabase(
 }
 
 export async function prepareQuranDatabase(db: SQLiteDatabase): Promise<void> {
-  await db.execAsync(schema);
+  const existing = preparations.get(db);
+  if (existing) return existing;
+  const preparation = retryDatabaseBusy(async () => {
+    // WAL lets Quran readers continue while an update writes on another connection.
+    await db.execAsync(
+      "PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;",
+    );
+    await db.execAsync(schema);
+  }).catch((error) => {
+    preparations.delete(db);
+    throw error;
+  });
+  preparations.set(db, preparation);
+  return preparation;
 }
 
 export async function refreshQuranDatabase(
@@ -127,12 +190,13 @@ export async function refreshQuranDatabase(
   reporter?: QuranBootstrapReporter,
   force = false,
 ): Promise<boolean> {
-  const inFlight = refreshesInFlight.get(db);
+  const key = databaseKey(db);
+  const inFlight = refreshesInFlight.get(key);
   if (inFlight) return inFlight;
   const refresh = refreshQuranDatabaseOnce(db, reporter, force).finally(() => {
-    refreshesInFlight.delete(db);
+    refreshesInFlight.delete(key);
   });
-  refreshesInFlight.set(db, refresh);
+  refreshesInFlight.set(key, refresh);
   return refresh;
 }
 
@@ -141,7 +205,7 @@ async function refreshQuranDatabaseOnce(
   reporter?: QuranBootstrapReporter,
   force = false,
 ): Promise<boolean> {
-  await db.execAsync(schema);
+  await prepareQuranDatabase(db);
   const localReady = await hasLocalQuran(db);
   const checkState = await db.getFirstAsync<{
     last_successful_check_at: string | null;
@@ -182,6 +246,7 @@ async function refreshQuranDatabaseOnce(
   );
   if (localReady && current?.revision === status.revision) {
     await recordSuccessfulQuranCheck(db);
+    logSyncComplete("unchanged", current.revision);
     return false;
   }
 
@@ -211,6 +276,7 @@ async function refreshQuranDatabaseOnce(
     await applyChangesTransactionally(db, changes);
     clearQuranChapterCache(db);
     await recordSuccessfulQuranCheck(db);
+    logSyncComplete("incremental", changes.revision);
     return true;
   }
   const snapshot = changes as QuranSnapshot;
@@ -219,6 +285,7 @@ async function refreshQuranDatabaseOnce(
   await applySnapshotTransactionally(db, snapshot, reporter);
   clearQuranChapterCache(db);
   await recordSuccessfulQuranCheck(db);
+  logSyncComplete("full", snapshot.revision);
   return true;
 }
 
@@ -302,7 +369,7 @@ async function applyChangesTransactionally(
   db: SQLiteDatabase,
   batch: QuranChanges,
 ): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withQuranWriteTransaction(db, async (transaction) => {
     for (const change of [...batch.changes].reverse()) {
       const spec = tableColumns[change.table];
       if (
@@ -382,7 +449,7 @@ async function applySnapshotTransactionally(
     snapshot.chapterAudio.length;
   let completedRows = 0;
   reporter?.rows(0, totalRows);
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withQuranWriteTransaction(db, async (transaction) => {
     await transaction.execAsync(`
       DELETE FROM ayah_audio;
       DELETE FROM chapter_audio;

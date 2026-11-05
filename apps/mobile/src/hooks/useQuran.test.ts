@@ -1,13 +1,13 @@
 import { beforeEach, expect, it, jest as mockJestApi } from "@jest/globals";
-import { act, renderHook, waitFor } from "@testing-library/react-native";
-import type { SQLiteDatabase } from "expo-sqlite";
-import { getChapters, getVersesByChapterId } from "@/lib/quran/repository";
 import {
   clearQuranChapterCache,
   getCachedQuranChapter,
   loadQuranChapter,
 } from "@/lib/quran/chapter-cache";
+import { getChapters, getVersesByChapterId } from "@/lib/quran/repository";
 import type { QuranChapter, QuranVerseWithContent } from "@/types/quran";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
+import type { SQLiteDatabase } from "expo-sqlite";
 import { useQuranChapter } from "./useQuran";
 
 const mockDb = {} as SQLiteDatabase;
@@ -126,4 +126,15 @@ it("reloads an in-flight read invalidated by a Quran sync", async () => {
   resolveOld(verses);
   expect((await pending).verses).toBe(updated);
   expect(getCachedQuranChapter(mockDb, 1)?.verses).toBe(updated);
+});
+
+it("background connection invalidation reaches the foreground cache for the same file", async () => {
+  const foreground = { databasePath: "/qalb/quran.db" } as SQLiteDatabase;
+  const background = { databasePath: "/qalb/quran.db" } as SQLiteDatabase;
+  const anotherFile = { databasePath: "/qalb/another.db" } as SQLiteDatabase;
+  await loadQuranChapter(foreground, 1);
+  expect(getCachedQuranChapter(background, 1)?.chapter.id).toBe(1);
+  expect(getCachedQuranChapter(anotherFile, 1)).toBeUndefined();
+  clearQuranChapterCache(background);
+  expect(getCachedQuranChapter(foreground, 1)).toBeUndefined();
 });

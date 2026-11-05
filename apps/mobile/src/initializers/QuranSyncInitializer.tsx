@@ -1,23 +1,19 @@
-import {
-  hasLocalQuran,
-  initializeQuranDatabase,
-  refreshQuranDatabase,
-} from "@/lib/quran/sync";
+import { hasLocalQuran, refreshQuranDatabase } from "@/lib/quran/sync";
+import NetInfo from "@react-native-community/netinfo";
 import {
   BackgroundTaskResult,
   BackgroundTaskStatus,
   getStatusAsync,
   registerTaskAsync,
 } from "expo-background-task";
-import { defineTask, isTaskRegisteredAsync } from "expo-task-manager";
 import {
   openDatabaseAsync,
   useSQLiteContext,
   type SQLiteDatabase,
 } from "expo-sqlite";
-import NetInfo from "@react-native-community/netinfo";
-import { AppState } from "react-native";
+import { defineTask, isTaskRegisteredAsync } from "expo-task-manager";
 import { useEffect } from "react";
+import { AppState } from "react-native";
 
 const QURAN_BACKGROUND_SYNC_TASK = "qalb-quran-content-sync";
 const QURAN_DATABASE_NAME = "quran-v2.db";
@@ -26,12 +22,11 @@ const BACKGROUND_SYNC_INTERVAL_MINUTES = 24 * 60;
 defineTask(QURAN_BACKGROUND_SYNC_TASK, async () => {
   let database: SQLiteDatabase | undefined;
   try {
-    database = await openDatabaseAsync(QURAN_DATABASE_NAME);
-    if (await hasLocalQuran(database)) {
-      await refreshQuranDatabase(database);
-    } else {
-      await initializeQuranDatabase(database);
-    }
+    // Closing this task's handle must never close the UI's cached connection.
+    database = await openDatabaseAsync(QURAN_DATABASE_NAME, {
+      useNewConnection: true,
+    });
+    await refreshQuranDatabase(database);
     return BackgroundTaskResult.Success;
   } catch (error) {
     if (__DEV__) {
@@ -93,10 +88,7 @@ export default function QuranSyncInitializer({
     };
 
     refreshSafely();
-    const refreshInterval = setInterval(
-      refreshSafely,
-      24 * 60 * 60 * 1000,
-    );
+    const refreshInterval = setInterval(refreshSafely, 24 * 60 * 60 * 1000);
     const networkSubscription = NetInfo.addEventListener((state) => {
       if (state.isConnected && state.isInternetReachable !== false) {
         refreshSafely();
