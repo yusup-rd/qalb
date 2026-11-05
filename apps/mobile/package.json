@@ -84,7 +84,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
+    "lint": "expo lint . --max-warnings 0",
     "i18n:check": "node scripts/check-i18n.js",
     "test": "jest",
     "test:coverage": "jest --coverage"

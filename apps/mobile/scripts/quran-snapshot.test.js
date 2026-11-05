@@ -1,4 +1,3 @@
-import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { getQuranBootstrapErrorKind } from "../src/lib/quran/bootstrap-error.ts";
 import { validateQuranSnapshot } from "../src/lib/quran/snapshot-validation.ts";

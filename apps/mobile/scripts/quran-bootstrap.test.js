@@ -1,11 +1,14 @@
-import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { pathToFileURL } from "node:url";
 import ts from "typescript";
-import * as progressModule from "../src/lib/quran/bootstrap-progress.ts";
 import * as errorModule from "../src/lib/quran/bootstrap-error.ts";
-import * as validationModule from "../src/lib/quran/snapshot-validation.ts";
+import * as progressModule from "../src/lib/quran/bootstrap-progress.ts";
 import * as chapterCacheModule from "../src/lib/quran/chapter-cache.ts";
+import * as validationModule from "../src/lib/quran/snapshot-validation.ts";
 import { completeSnapshot } from "./quran-snapshot-fixture.js";
 
 // Exercise the production orchestration with explicit API/native-boundary mocks.
@@ -29,10 +32,14 @@ function loadSync(apiRequest) {
     "./bootstrap-progress": progressModule,
     "./chapter-cache": chapterCacheModule,
   };
-  new Function("require", "exports", outputText)((name) => {
-    assert.ok(name in modules, `Unexpected import: ${name}`);
-    return modules[name];
-  }, exports);
+  new Function("require", "exports", "__DEV__", outputText)(
+    (name) => {
+      assert.ok(name in modules, `Unexpected import: ${name}`);
+      return modules[name];
+    },
+    exports,
+    false,
+  );
   return exports;
 }
 
@@ -360,4 +367,217 @@ test("an observer exception cannot abort a database transaction", async () => {
     throw new Error("Broken UI observer");
   });
   assert.equal(db.committed, true);
+});
+
+test("separate foreground/background handles for one file share a sync before any SQL", async () => {
+  const first = Object.assign(
+    database({ ready: true, revision: "test-revision" }),
+    { databasePath: "/quran.db" },
+  );
+  const second = {
+    databasePath: "/quran.db",
+    execAsync() {
+      assert.fail("Follower must not prepare or write during active sync");
+    },
+  };
+  let finish;
+  let requests = 0;
+  const { refreshQuranDatabase } = loadSync(() => {
+    requests++;
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  });
+  const foreground = refreshQuranDatabase(first);
+  const background = refreshQuranDatabase(second);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(requests, 1);
+  finish({ available: true, revision: "test-revision" });
+  assert.deepEqual(await Promise.all([foreground, background]), [false, false]);
+});
+
+test("schema preparation is shared per handle and failed preparation remains retryable", async () => {
+  const { prepareQuranDatabase } = loadSync(successfulApi);
+  let calls = 0;
+  let fail = true;
+  const db = {
+    async execAsync() {
+      calls++;
+      if (fail) throw new Error("disk full");
+    },
+  };
+  await assert.rejects(prepareQuranDatabase(db), /disk full/);
+  assert.equal(calls, 1);
+  fail = false;
+  await Promise.all([prepareQuranDatabase(db), prepareQuranDatabase(db)]);
+  assert.equal(calls, 3);
+  await prepareQuranDatabase(db);
+  assert.equal(calls, 3);
+});
+
+test("a busy update retries the rolled-back transaction without downloading again", async () => {
+  const db = database();
+  const transaction = db.withExclusiveTransactionAsync.bind(db);
+  let attempts = 0;
+  let requests = 0;
+  db.withExclusiveTransactionAsync = async (action) => {
+    attempts++;
+    await transaction(async (txn) => {
+      await action(txn);
+      if (attempts === 1) throw new Error("Error code 5: database is locked");
+    });
+  };
+  const { refreshQuranDatabase } = loadSync(async (path) => {
+    requests++;
+    return successfulApi(path);
+  });
+  assert.equal(await refreshQuranDatabase(db), true);
+  assert.equal(attempts, 2);
+  assert.equal(requests, 2);
+  assert.equal(db.committed, true);
+  assert.equal(db.rolledBack, true);
+});
+
+test("persistent lock contention stops after three transactions and keeps the old revision", async () => {
+  const db = database({ ready: true, revision: "old-revision" });
+  let attempts = 0;
+  db.withExclusiveTransactionAsync = async () => {
+    attempts++;
+    throw new Error("database is locked");
+  };
+  const { refreshQuranDatabase } = loadSync(async (path) =>
+    path.includes("status")
+      ? { available: true, revision: "new-revision" }
+      : {
+          kind: "incremental",
+          fromRevision: "old-revision",
+          revision: "new-revision",
+          syncedAt: new Date().toISOString(),
+          changes: [],
+        },
+  );
+  await assert.rejects(refreshQuranDatabase(db), /database is locked/);
+  assert.equal(attempts, 3);
+  assert.equal(db.committed, false);
+  assert.deepEqual(await db.getFirstAsync("SELECT revision"), {
+    revision: "old-revision",
+  });
+});
+
+test("real SQLite keeps readers available during updates and rolls back invalid changes", async () => {
+  const folder = mkdtempSync(join(tmpdir(), "qalb-sync-test-"));
+  const file = join(folder, "quran.db");
+  const base = new DatabaseSync(file);
+  let reader;
+  const adapt = (connection) => ({
+    databasePath: file,
+    async execAsync(sql) {
+      connection.exec(sql);
+    },
+    async getFirstAsync(sql, ...args) {
+      return connection.prepare(sql).get(...args) ?? null;
+    },
+    async runAsync(sql, ...args) {
+      return connection.prepare(sql).run(...args);
+    },
+    async prepareAsync(sql) {
+      const statement = connection.prepare(sql);
+      return {
+        async executeAsync(values) {
+          statement.run(...values);
+        },
+        async finalizeAsync() {},
+      };
+    },
+  });
+  const db = {
+    ...adapt(base),
+    async withExclusiveTransactionAsync(action) {
+      const connection = new DatabaseSync(file);
+      try {
+        connection.exec("BEGIN");
+        await action(adapt(connection));
+        connection.exec("COMMIT");
+      } catch (error) {
+        connection.exec("ROLLBACK");
+        throw error;
+      } finally {
+        connection.close();
+      }
+    },
+  };
+  let next = completeSnapshot();
+  const sync = loadSync(async (path) =>
+    path.includes("status")
+      ? { available: true, revision: next.revision }
+      : next,
+  );
+  try {
+    assert.equal(await sync.refreshQuranDatabase(db, undefined, true), true);
+    assert.equal(base.prepare("PRAGMA journal_mode").get().journal_mode, "wal");
+    reader = new DatabaseSync(file);
+    reader.exec("BEGIN");
+    const old = reader
+      .prepare("SELECT text_uthmani FROM verses WHERE id = 1")
+      .get().text_uthmani;
+    next = {
+      kind: "incremental",
+      fromRevision: "test-revision",
+      revision: "updated",
+      syncedAt: new Date().toISOString(),
+      changes: [
+        {
+          table: "verses",
+          upserts: [
+            {
+              id: 1,
+              chapter_id: 1,
+              verse_number: 1,
+              verse_key: "1:1",
+              text_uthmani: "updated text",
+            },
+          ],
+          deletes: [],
+        },
+      ],
+    };
+    assert.equal(await sync.refreshQuranDatabase(db, undefined, true), true);
+    assert.equal(
+      reader.prepare("SELECT text_uthmani FROM verses WHERE id = 1").get()
+        .text_uthmani,
+      old,
+    );
+    reader.exec("COMMIT");
+    assert.equal(
+      reader.prepare("SELECT text_uthmani FROM verses WHERE id = 1").get()
+        .text_uthmani,
+      "updated text",
+    );
+    assert.equal(
+      base.prepare("SELECT revision FROM quran_sync_state").get().revision,
+      "updated",
+    );
+    next = {
+      ...next,
+      fromRevision: "updated",
+      revision: "invalid",
+      changes: [{ table: "verses", upserts: [], deletes: [1] }],
+    };
+    await assert.rejects(
+      sync.refreshQuranDatabase(db, undefined, true),
+      /invalid relationships|FOREIGN KEY constraint failed/,
+    );
+    assert.equal(
+      base.prepare("SELECT revision FROM quran_sync_state").get().revision,
+      "updated",
+    );
+    assert.equal(
+      base.prepare("SELECT COUNT(*) AS total FROM verses").get().total,
+      6236,
+    );
+  } finally {
+    reader?.close();
+    base.close();
+    rmSync(folder, { recursive: true, force: true });
+  }
 });
