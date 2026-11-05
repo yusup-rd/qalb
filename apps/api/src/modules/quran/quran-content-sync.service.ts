@@ -5,12 +5,19 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
+import { promisify } from 'node:util';
+import { gzip, gunzip } from 'node:zlib';
 import { PinoLogger } from 'nestjs-pino';
 import { RedisService } from '../../common/redis.service.js';
 
 export const QURAN_RESOURCE_FILTER =
   'quran_core:1;translations:45,57,85;recitations:6';
 const STATE_KEY = 'qalb:quran:content-sync:v1';
+const CHUNKED_STATE_KEY = 'qalb:quran:content-sync:v2';
+const PROGRESS_KEY = 'qalb:quran:content-sync:progress:v2';
+const CHUNK_BYTES = 512 * 1024;
+const compress = promisify(gzip);
+const decompress = promisify(gunzip);
 const STATUS_KEY = 'qalb:quran:content-sync:status:v1';
 const LOCK_KEY = 'qalb:quran:content-sync:lock';
 const LOCK_TTL_MS = 15 * 60 * 1000;
@@ -44,7 +51,26 @@ function normalizeDatasetAudioUrls(dataset: QuranDataset): QuranDataset {
   };
 }
 
+interface DatasetChunks {
+  encoding: 'gzip-base64';
+  keys: string[];
+  hashes: string[];
+  bytes: number;
+  hash: string;
+}
+
+interface StoredQuranState {
+  schemaVersion: 2;
+  resourcesFilter: string;
+  syncToken: string;
+  lastSuccessfulSyncAt: string;
+  revision: string;
+  dataset: DatasetChunks;
+  previous: { revision: string; dataset: DatasetChunks } | null;
+}
+
 interface QuranSyncState {
+  storage?: StoredQuranState;
   schemaVersion: 1;
   resourcesFilter: string;
   syncToken: string;
@@ -585,7 +611,6 @@ const applyMutation = (dataset: QuranDataset, mutation: SyncMutation) => {
 
 @Injectable()
 export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
-  private readonly stateKey = STATE_KEY;
   private timer?: NodeJS.Timeout;
   private inFlight?: Promise<void>;
   private retryAt = 0;
@@ -650,7 +675,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         ? this.cachedState
         : null;
     if (!state) {
-      state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
+      state = await this.readState();
       if (!state)
         throw new ServiceUnavailableException(
           'Quran content is not available yet.',
@@ -676,7 +701,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         ? this.cachedState
         : null;
     if (!state) {
-      state = await this.redis.getPersistent<QuranSyncState>(this.stateKey);
+      state = await this.readState();
       if (!state)
         throw new ServiceUnavailableException(
           'Quran content is not available yet.',
@@ -730,10 +755,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         Math.random() * Math.min(baseMs * 0.2, 60_000),
       );
       this.retryAt = Date.now() + baseMs + jitterMs;
-      const diagnostic = toSyncDiagnosticError(
-        'configuration',
-        error,
-      );
+      const diagnostic = toSyncDiagnosticError('configuration', error);
       this.pino.warn(
         {
           event: 'sync_failed',
@@ -746,7 +768,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
           quranFoundationEnvironment: getQuranFoundationEnvironment(),
           quranFoundationCredentialsConfigured: Boolean(
             process.env.QURAN_FOUNDATION_CLIENT_ID &&
-              process.env.QURAN_FOUNDATION_CLIENT_SECRET,
+            process.env.QURAN_FOUNDATION_CLIENT_SECRET,
           ),
           redisConfigured: this.redis.isConfigured(),
           retryAt: new Date(this.retryAt).toISOString(),
@@ -817,9 +839,7 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         Date.parse(metadata.lastSuccessfulSyncAt) >= dueAt.getTime()
       )
         return;
-      const previous = await this.redis.getPersistent<QuranSyncState>(
-        this.stateKey,
-      );
+      const previous = await this.readState();
 
       stage = 'quran_foundation_auth';
       const token = await this.getAccessToken(clientId, clientSecret);
@@ -934,30 +954,66 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
           'Quran Content Sync lost its Redis lock before commit; retaining the last committed dataset and cursor.',
         );
       }
+      const oldStorage = previous?.storage;
+      const staged =
+        revision === previous?.revision && oldStorage
+          ? oldStorage.dataset
+          : await this.stageDataset(dataset, lockValue, 'current');
+      const prior = nextState.previous;
+      const priorChunks = !prior
+        ? null
+        : prior.revision === previous?.revision && oldStorage
+          ? oldStorage.dataset
+          : prior.revision === oldStorage?.previous?.revision
+            ? oldStorage.previous.dataset
+            : await this.stageDataset(prior.dataset, lockValue, 'previous');
+      const stored: StoredQuranState = {
+        schemaVersion: 2,
+        resourcesFilter: QURAN_RESOURCE_FILTER,
+        syncToken: finalToken,
+        lastSuccessfulSyncAt,
+        revision,
+        dataset: staged,
+        previous:
+          prior && priorChunks
+            ? { revision: prior.revision, dataset: priorChunks }
+            : null,
+      };
+      const activeKeys = [
+        ...new Set([...staged.keys, ...(priorChunks?.keys ?? [])]),
+      ];
+      const retiredKeys = oldStorage
+        ? [
+            ...oldStorage.dataset.keys,
+            ...(oldStorage.previous?.dataset.keys ?? []),
+          ]
+        : [STATE_KEY];
       if (
-        !(await this.redis.setPersistentWithLock(
-          this.stateKey,
-          nextState,
+        lockLost ||
+        !(await this.redis.activateQuranChunks(
+          CHUNKED_STATE_KEY,
+          stored,
+          STATUS_KEY,
+          {
+            revision,
+            lastSuccessfulSyncAt,
+            counts: {
+              chapters: dataset.chapters.length,
+              verses: dataset.verses.length,
+              translations: dataset.translations.length,
+              transliterations: dataset.transliterations.length,
+              ayahAudio: dataset.ayahAudio.length,
+            },
+          } satisfies QuranSyncMetadata,
           LOCK_KEY,
           lockValue,
-          {
-            key: STATUS_KEY,
-            value: {
-              revision,
-              lastSuccessfulSyncAt,
-              counts: {
-                chapters: dataset.chapters.length,
-                verses: dataset.verses.length,
-                translations: dataset.translations.length,
-                transliterations: dataset.transliterations.length,
-                ayahAudio: dataset.ayahAudio.length,
-              },
-            } satisfies QuranSyncMetadata,
-          },
+          activeKeys,
+          retiredKeys,
+          PROGRESS_KEY,
         ))
-      ) {
+      )
         throw new Error('Durable Quran dataset commit failed.');
-      }
+      nextState.storage = stored;
       this.cachedState = nextState;
       this.cachedDiffs.clear();
       this.pino.info(
@@ -981,6 +1037,135 @@ export class QuranContentSyncService implements OnModuleInit, OnModuleDestroy {
         await this.redis.releaseLock(LOCK_KEY, lockValue);
       }
     }
+  }
+
+  private async readState(): Promise<QuranSyncState | null> {
+    const stored =
+      await this.redis.getPersistent<StoredQuranState>(CHUNKED_STATE_KEY);
+    if (!stored)
+      return this.redis.getLargePersistent<QuranSyncState>(STATE_KEY);
+    if (
+      stored.schemaVersion !== 2 ||
+      stored.resourcesFilter !== QURAN_RESOURCE_FILTER ||
+      stored.revision !== stored.dataset.hash ||
+      (stored.previous &&
+        stored.previous.revision !== stored.previous.dataset.hash)
+    ) {
+      throw new Error('Unsupported Quran storage manifest.');
+    }
+    const dataset = await this.readChunks(stored.dataset);
+    const previous = stored.previous
+      ? {
+          revision: stored.previous.revision,
+          dataset: await this.readChunks(stored.previous.dataset),
+        }
+      : null;
+    return { ...stored, schemaVersion: 1, dataset, previous, storage: stored };
+  }
+
+  private async readChunks(descriptor: DatasetChunks): Promise<QuranDataset> {
+    if (
+      descriptor.encoding !== 'gzip-base64' ||
+      !descriptor.keys.length ||
+      descriptor.keys.length !== descriptor.hashes.length
+    ) {
+      throw new Error('Invalid Quran chunk manifest.');
+    }
+    const parts: Buffer[] = [];
+    for (const [index, key] of descriptor.keys.entries()) {
+      const encoded = await this.redis.getPersistent<string>(key);
+      if (typeof encoded !== 'string')
+        throw new Error('Quran chunk is missing.');
+      const part = Buffer.from(encoded, 'base64');
+      if (
+        createHash('sha256').update(part).digest('hex') !==
+        descriptor.hashes[index]
+      ) {
+        throw new Error('Quran chunk integrity verification failed.');
+      }
+      parts.push(part);
+    }
+    const bytes = await decompress(Buffer.concat(parts));
+    if (
+      bytes.length !== descriptor.bytes ||
+      createHash('sha256').update(bytes).digest('hex') !== descriptor.hash
+    ) {
+      throw new Error('Quran dataset integrity verification failed.');
+    }
+    return JSON.parse(bytes.toString('utf8')) as QuranDataset;
+  }
+
+  private async stageDataset(
+    dataset: QuranDataset,
+    owner: string,
+    role: string,
+  ): Promise<DatasetChunks> {
+    const bytes = Buffer.from(JSON.stringify(dataset));
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const compressed = await compress(bytes);
+    const descriptor: DatasetChunks = {
+      encoding: 'gzip-base64',
+      keys: [],
+      hashes: [],
+      bytes: bytes.length,
+      hash,
+    };
+    const total = Math.ceil(compressed.length / CHUNK_BYTES);
+    this.pino.info(
+      {
+        event: 'storage_staging',
+        role,
+        datasetBytes: bytes.length,
+        compressedBytes: compressed.length,
+        totalBatches: total,
+      },
+      'Staging Quran content',
+    );
+    for (let index = 0; index < total; index += 1) {
+      const part = compressed.subarray(
+        index * CHUNK_BYTES,
+        (index + 1) * CHUNK_BYTES,
+      );
+      const key = `qalb:quran:chunks:${owner}:${role}:${index}`;
+      descriptor.keys.push(key);
+      descriptor.hashes.push(createHash('sha256').update(part).digest('hex'));
+      for (let attempt = 1; ; attempt += 1) {
+        try {
+          await this.redis.writeQuranChunk(
+            key,
+            part.toString('base64'),
+            LOCK_KEY,
+            owner,
+            PROGRESS_KEY,
+            {
+              owner,
+              role,
+              hash,
+              totalBatches: total,
+              completedBatches: index + 1,
+              attempt,
+              updatedAt: new Date().toISOString(),
+            },
+          );
+          break;
+        } catch (error) {
+          if (
+            attempt >= 3 ||
+            !(await this.redis.renewLock(LOCK_KEY, owner, LOCK_TTL_MS))
+          )
+            throw error;
+          this.pino.warn(
+            { event: 'storage_batch_retry', role, batch: index, attempt },
+            'Retrying Quran storage batch',
+          );
+          await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+        }
+      }
+    }
+    // Read back every batch, checking both individual and complete serialized bytes.
+    // Activation only receives small manifests, never Quran content.
+    await this.readChunks(descriptor);
+    return descriptor;
   }
 
   private async getAccessToken(clientId: string, clientSecret: string) {
