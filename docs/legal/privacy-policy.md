@@ -1,6 +1,6 @@
 # Qalb Privacy Policy
 
-**Last updated: 24 October 2026**
+**Last updated: 9 November 2026**
 
 Qalb is a free, noncommercial Islamic companion app maintained as a personal hobby project by an independent developer. For privacy questions or requests, contact [yusuprd@icloud.com](mailto:yusuprd@icloud.com).
 
@@ -12,7 +12,7 @@ Qalb is a free, noncommercial Islamic companion app maintained as a personal hob
 
 **Notifications.** If you enable prayer reminders and allow notifications, Qalb calculates prayer times on your device and schedules reminders locally through the operating system, up to seven days ahead. Qalb does not send your schedule to a remote push-notification service. Notification content may be visible to people with access to your device.
 
-**Network and diagnostics.** When your device contacts the Qalb API, the API host receives ordinary connection data such as your IP address and request time. The application request logger records request methods and is configured to remove request URLs, query strings, route parameters, authorization headers, cookies, and referrers. Error logs may contain additional diagnostic details. Network providers and third-party services may also process connection data.
+**Network and diagnostics.** When your device contacts the Qalb API, the API host receives connection data such as your IP address and request time. Application logs can include request methods, response status, timing, connection addresses, and forwarded IP headers. The logger removes request URLs, query strings, route parameters, authorization headers, cookies, and referrers from its request records. Error logs can include error messages and stack traces. We use these logs to operate and troubleshoot the service.
 
 ## Services that receive information
 
@@ -26,11 +26,13 @@ The Qalb API forwards request data to the service needed for the feature:
 - [AlAdhan](https://aladhan.com/prayer-times-api) receives the requested calendar month and year. Qalb does not send your coordinates for this request.
 - [metals.dev](https://metals.dev/policy/terms) receives a server request for gold and silver prices in USD per gram. The API key is used by the server and is not included in the app.
 
-Maps are displayed using Apple Maps on iOS and Google Maps on Android. Those providers may receive map requests and information used to display your location and selected places. If the Qalb API locality lookup fails, the device platform’s geocoder may receive your coordinates. When you play Quran recitation, the app streams audio from [QuranicAudio mirrors](https://quranicaudio.com/about), which receive the audio request and ordinary network information. [Expo Updates](https://expo.dev/privacy) checks for app updates when Qalb loads and may receive update-check information such as device operating system and a randomized update identifier.
+Maps are displayed using Apple Maps on iOS and Google Maps on Android. Those providers may receive map requests and information used to display your location and selected places. If the Qalb API locality lookup fails, the device platform’s geocoder may receive your coordinates. When you play Quran recitation, the app streams audio from [QuranicAudio mirrors](https://quranicaudio.com/about), which receive the audio request and ordinary network information.
+
+[Expo Update](https://docs.expo.dev/eas-update/store-privacy-declarations/) checks for updates when Qalb loads. It receives build and update information and stores the IP address and a random installation ID with each request record. After a launch failure, Expo may also receive failed update IDs and the launch error text. It keeps the failed update IDs in the request record and deletes raw logs containing launch error text after three days. Expo uses this information to deliver updates, measure update usage, and identify failed installations. It does not use it for advertising or tracking.
 
 Qalb’s API is hosted through Render and can use Upstash Redis for temporary response caching when Redis is configured. Upstash receives the cached API responses and cache keys described below. The providers process requests under their own terms and privacy notices; Qalb does not control their independent retention or processing locations.
 
-Qalb has no user accounts, advertising, analytics, crash-reporting SDK, remote push notifications, paid features, or payment processing. Using an Islamic companion app and its location features may reveal religious interests from your device or network activity, but Qalb does not create a user profile from that information. Contacting the developer opens your email app; Qalb does not send the email itself.
+Qalb has no user accounts, advertising, remote push notifications, paid features, or payment processing. Using an Islamic companion app and its location features may reveal religious interests from your device or network activity, but Qalb does not create a user profile from that information. Contacting the developer opens your email app; Qalb does not send the email itself.
 
 ## Storage and retention
 
