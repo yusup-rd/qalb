@@ -73,13 +73,16 @@ the workspace guides for device setup, environment details, and commands:
 
 ## Repository map
 
-| Path              | Purpose                                        |
-| ----------------- | ---------------------------------------------- |
-| `apps/mobile`     | Expo app for iOS, Android, and web             |
-| `apps/api`        | NestJS API and Quran content synchronization   |
-| `packages/shared` | Types shared between the mobile app and API    |
-| `docs/legal`      | Privacy policy and terms of use                |
-| `legal-site`      | Static site that publishes the legal documents |
+| Path              | Purpose                                      |
+| ----------------- | -------------------------------------------- |
+| `apps/mobile`     | Expo app for iOS, Android, and web           |
+| `apps/api`        | NestJS API and Quran content synchronization |
+| `packages/shared` | Types shared between the mobile app and API  |
+| `docs/legal`      | Privacy policy and terms of use              |
+| `apps/web`        | Qalb website, support, and legal documents   |
+
+See the [website guide](apps/web/README.md) for local development, Netlify
+deployment, and Android preview downloads.
 
 ## Project checks
 

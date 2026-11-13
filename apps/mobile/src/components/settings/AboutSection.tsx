@@ -27,9 +27,13 @@ export default function AboutSection() {
   const language = (i18n.resolvedLanguage ?? i18n.language).startsWith("ru")
     ? "ru"
     : "en";
+  const legalSiteUrl =
+    process.env.EXPO_PUBLIC_LEGAL_SITE_URL?.trim().replace(/\/+$/, "") ||
+    "https://qalb.yusuprd.com";
+  const legalLanguagePath = language === "ru" ? "ru/" : "";
   const legalUrls = {
-    privacy: `https://yusup-rd.github.io/qalb/privacy/${language === "ru" ? "ru/" : ""}`,
-    terms: `https://yusup-rd.github.io/qalb/terms/${language === "ru" ? "ru/" : ""}`,
+    privacy: `${legalSiteUrl}/privacy/${legalLanguagePath}`,
+    terms: `${legalSiteUrl}/terms/${legalLanguagePath}`,
   };
   const openLegalUrl = (url: string) => {
     void Linking.openURL(url).catch(() =>
