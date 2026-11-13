@@ -1,0 +1,12 @@
+[build]
+  command = "yarn workspace @qalb/web build"
+  publish = "apps/web/dist/client"
+
+[build.environment]
+  NODE_VERSION = "24"
+  YARN_VERSION = "1.22.22"
+
+[[redirects]]
+  from = "/*"
+  to = "/404/index.html"
+  status = 404

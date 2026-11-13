@@ -1,0 +1,26 @@
+export const navigation = {
+  en: {
+    skip: "Skip to content",
+    main: "Main navigation",
+    footer: "Footer navigation",
+    language: "Language",
+    legal: "Legal documents",
+    privacy: "Privacy Policy",
+    terms: "Terms of Use",
+    support: "Support",
+    github: "GitHub",
+    download: "Get the app",
+  },
+  ru: {
+    skip: "Перейти к содержанию",
+    main: "Основная навигация",
+    footer: "Дополнительная навигация",
+    language: "Язык",
+    legal: "Юридические документы",
+    privacy: "Конфиденциальность",
+    terms: "Условия использования",
+    support: "Поддержка",
+    github: "GitHub",
+    download: "Скачать",
+  },
+};
