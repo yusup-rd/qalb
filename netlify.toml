@@ -6,6 +6,9 @@
   NODE_VERSION = "24"
   YARN_VERSION = "1.22.22"
 
+[functions]
+  directory = "apps/web/netlify/functions"
+
 [[redirects]]
   from = "/*"
   to = "/404/index.html"
