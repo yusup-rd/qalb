@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import logo from "../assets/qalb-mark.webp";
-import { androidPreview } from "../content/android-preview";
 import { homeCopy } from "../content/home";
 import { getSiteLocation, localizedPath } from "../content/language";
 
@@ -46,14 +45,11 @@ export default function Home() {
             <div id="download" className="download">
               <a
                 className="button button-primary pressable"
-                href={androidPreview.url}
+                href="/downloads/android-preview"
               >
                 <ArrowDownToLine size={19} aria-hidden="true" /> {copy.download}
               </a>
-              <p>
-                {copy.preview} · v{androidPreview.version} · {copy.build}{" "}
-                {androidPreview.build}
-              </p>
+              <p>{copy.preview}</p>
             </div>
           </div>
         </div>

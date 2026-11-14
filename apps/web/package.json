@@ -13,6 +13,7 @@
     "preview": "vite preview --outDir dist/client"
   },
   "dependencies": {
+    "@netlify/blobs": "10.1.0",
     "lucide-react": "1.72.0",
     "markdown-it": "15.0.3",
     "react": "19.3.1",
