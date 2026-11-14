@@ -15,7 +15,15 @@ export async function savePreview(preview) {
   // Concurrent deliveries can race. Re-read after a conditional write loses.
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const current = await previews.getWithMetadata(key, { type: "json" });
-    if (preview.createdAt <= (current?.data ?? androidPreview).createdAt)
+    const latest = current?.data ?? androidPreview;
+    if (preview.createdAt < latest.createdAt) return;
+    if (
+      preview.createdAt === latest.createdAt &&
+      (preview.url !== latest.url ||
+        (latest.version && latest.build) ||
+        !preview.version ||
+        !preview.build)
+    )
       return;
 
     const options = current

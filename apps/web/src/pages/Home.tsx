@@ -1,5 +1,4 @@
 import {
-  ArrowDownToLine,
   ArrowRight,
   BookOpen,
   Clock3,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import logo from "../assets/qalb-mark.webp";
+import { AndroidPreviewDownload } from "../components/AndroidPreviewDownload";
 import { homeCopy } from "../content/home";
 import { getSiteLocation, localizedPath } from "../content/language";
 
@@ -42,15 +42,11 @@ export default function Home() {
               <br className="hidden sm:block" /> <span>{copy.emphasis}</span>
             </h1>
             <p className="hero-description">{copy.intro}</p>
-            <div id="download" className="download">
-              <a
-                className="button button-primary pressable"
-                href="/downloads/android-preview"
-              >
-                <ArrowDownToLine size={19} aria-hidden="true" /> {copy.download}
-              </a>
-              <p>{copy.preview}</p>
-            </div>
+            <AndroidPreviewDownload
+              download={copy.download}
+              preview={copy.preview}
+              build={copy.build}
+            />
           </div>
         </div>
       </section>
