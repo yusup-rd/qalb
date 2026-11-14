@@ -10,6 +10,7 @@ export const homeCopy = {
       "Prayer, Quran, and remembrance in one free app. Built to make the rhythms of everyday Muslim life easier to keep.",
     download: "Download Android APK",
     preview: "Android preview",
+    build: "Build",
     featuresTitle: "Faith throughout your day",
     featuresIntro:
       "From checking the next prayer to winding down with a few moments of dhikr.",
@@ -61,6 +62,7 @@ export const homeCopy = {
       "Намаз, Коран и поминание Аллаха в одном бесплатном приложении. Qalb помогает сохранять привычный ритм мусульманской жизни.",
     download: "Скачать APK для Android",
     preview: "Тестовая версия для Android",
+    build: "Сборка",
     featuresTitle: "Вера в течение дня",
     featuresIntro:
       "От первого взгляда на расписание намазов до нескольких минут зикра в конце дня.",

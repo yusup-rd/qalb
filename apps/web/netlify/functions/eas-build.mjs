@@ -40,6 +40,8 @@ export default async function easBuildWebhook(request) {
   }
 
   const url = build.artifacts?.buildUrl;
+  const version = build.metadata.appVersion;
+  const buildNumber = build.metadata.appBuildVersion;
   const createdAt = Date.parse(build.createdAt);
   const expiresAt =
     build.expirationDate == null ? null : Date.parse(build.expirationDate);
@@ -71,7 +73,13 @@ export default async function easBuildWebhook(request) {
     ) {
       return new Response("APK download unavailable", { status: 503 });
     }
-    await savePreview({ url, createdAt, expiresAt });
+    await savePreview({
+      url,
+      createdAt,
+      expiresAt,
+      version: typeof version === "string" ? version.trim() : null,
+      build: typeof buildNumber === "string" ? buildNumber.trim() : null,
+    });
   } catch (error) {
     console.error("Could not update the Android preview", error.name);
     return new Response("Could not update Android preview", { status: 503 });
