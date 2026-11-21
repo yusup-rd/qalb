@@ -1,4 +1,5 @@
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
+import { QuranCredits } from "@/components/quran/QuranCredits";
 import type { AyahOfDay } from "@/hooks/useQuran";
 import { useQuranPreferencesStore } from "@/store/quranPreferencesStore";
 import { FontAwesome6 as Fa } from "@expo/vector-icons";
@@ -55,6 +56,7 @@ const AyahCard = ({ ayah }: { ayah: AyahOfDay | null }) => {
           </Text>
         ) : null}
 
+        <QuranCredits />
         <View className="flex-row items-center justify-between gap-2 self-end">
           <SmoothPressable
             className="bg-primary/10 flex-row items-center gap-1 rounded-full px-4 py-2"

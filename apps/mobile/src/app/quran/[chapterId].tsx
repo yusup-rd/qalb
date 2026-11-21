@@ -1,4 +1,5 @@
 import { AyahCard } from "@/components/quran/AyahCard";
+import { QuranCredits } from "@/components/quran/QuranCredits";
 import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
@@ -278,6 +279,7 @@ const QuranReaderContent = () => {
           </View>
         </View>
       ) : null}
+      <QuranCredits />
     </View>
   );
 

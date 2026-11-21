@@ -143,11 +143,18 @@ export function isQuranUpdateCheckDue(
   lastAttemptAt: string | null | undefined,
   now = Date.now(),
 ): boolean {
-  const timestamps = [lastSuccessfulCheckAt, lastAttemptAt]
-    .map((value) => (value ? Date.parse(value) : Number.NaN))
-    .filter(Number.isFinite);
-  if (timestamps.length === 0) return true;
-  return now - Math.max(...timestamps) >= QURAN_UPDATE_CHECK_INTERVAL_MS;
+  const successfulAt = lastSuccessfulCheckAt
+    ? Date.parse(lastSuccessfulCheckAt)
+    : Number.NaN;
+  if (
+    Number.isFinite(successfulAt) &&
+    now - successfulAt < QURAN_UPDATE_CHECK_INTERVAL_MS
+  ) {
+    return false;
+  }
+  // A failed request must not postpone the next successful sync by a week.
+  const attemptedAt = lastAttemptAt ? Date.parse(lastAttemptAt) : Number.NaN;
+  return !Number.isFinite(attemptedAt) || now - attemptedAt >= 5 * 60 * 1000;
 }
 
 export async function initializeQuranDatabase(

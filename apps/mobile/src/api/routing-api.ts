@@ -21,10 +21,15 @@ export const fetchRoute = (
 ) => {
   const key = `route:driving:${coordinateKey(origin)}:${coordinateKey(destination)}`;
   return requestCached(key, ROUTE_CACHE_TTL_MS, () =>
-    apiRequest<Route>("/api/routing/route", {
-      method: "POST",
-      body: JSON.stringify({ origin, destination }),
-    }),
+    // These POST endpoints only calculate routes and are safe to retry.
+    apiRequest<Route>(
+      "/api/routing/route",
+      {
+        method: "POST",
+        body: JSON.stringify({ origin, destination }),
+      },
+      { maxAttempts: 3 },
+    ),
   );
 };
 
@@ -41,10 +46,14 @@ export const fetchRouteMetrics = (
     key,
     ROUTE_METRICS_CACHE_TTL_MS,
     () =>
-      apiRequest<RouteMetrics[]>("/api/routing/metrics", {
-        method: "POST",
-        body: JSON.stringify({ origin, destinations }),
-      }),
+      apiRequest<RouteMetrics[]>(
+        "/api/routing/metrics",
+        {
+          method: "POST",
+          body: JSON.stringify({ origin, destinations }),
+        },
+        { maxAttempts: 3 },
+      ),
     { allowStaleOnError: true },
   );
 };

@@ -1,3 +1,4 @@
+import { QuranCreditDetails } from "@/components/quran/QuranCredits";
 import SettingsSection from "@/components/settings/SettingsSection";
 import { SmoothPressable } from "@/components/ui/animated/SmoothPressable";
 import SheetWrapper from "@/components/ui/SheetWrapper";
@@ -88,9 +89,7 @@ export default function AboutSection() {
           <Text className="text-foreground font-sans-semibold text-sm">
             {t("about.dataCredits")}
           </Text>
-          <Text className="text-muted-foreground font-sans text-xs">
-            {t("about.credits")}
-          </Text>
+          <QuranCreditDetails />
           <LicenseLink
             label={t("about.locationCredits")}
             url="https://www.openstreetmap.org/copyright"

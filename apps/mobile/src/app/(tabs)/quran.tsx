@@ -1,4 +1,5 @@
 import { AyahCard } from "@/components/quran/AyahCard";
+import { QuranCredits } from "@/components/quran/QuranCredits";
 import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SurahCard } from "@/components/quran/SurahCard";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
@@ -17,6 +18,7 @@ import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
+const QuranItemSeparator = () => <View className="h-3" />;
 
 type QuranListItem =
   | {
@@ -251,6 +253,7 @@ const QuranLibrary = () => {
           onChangeText={handleQueryChange}
         />
       </View>
+      <QuranCredits />
     </View>
   );
 
@@ -261,11 +264,12 @@ const QuranLibrary = () => {
       <FlatList
         className="bg-background flex-1 px-5"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="gap-3 pb-5"
+        contentContainerClassName="pb-5"
         data={listItems}
         initialNumToRender={10}
         keyboardDismissMode="on-drag"
         ListHeaderComponent={renderHeader}
+        ItemSeparatorComponent={QuranItemSeparator}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         maxToRenderPerBatch={10}
