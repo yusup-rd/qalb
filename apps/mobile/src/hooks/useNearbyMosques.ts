@@ -10,6 +10,7 @@ import NetInfo from "@react-native-community/netinfo";
 interface RouteMetricsState {
   requestKey: string;
   metrics: Record<string, RouteMetrics>;
+  failed: boolean;
 }
 
 interface RouteMetricsDestination {
@@ -90,13 +91,14 @@ export const useNearbyMosques = (
   const [loadedLocationKey, setLoadedLocationKey] = useState<string | null>(
     null,
   );
+  const [routeMetricsState, setRouteMetricsState] =
+    useState<RouteMetricsState | null>(null);
   const retry = useCallback(() => {
     setLoadedLocationKey(null);
     setFailedLocationKey(null);
+    setRouteMetricsState(null);
     setAttempt((value) => value + 1);
   }, []);
-  const [routeMetricsState, setRouteMetricsState] =
-    useState<RouteMetricsState | null>(null);
   const locationKey =
     latitude == null || longitude == null ? null : `${latitude}:${longitude}`;
 
@@ -140,7 +142,7 @@ export const useNearbyMosques = (
   }, [latitude, longitude, locationKey, attempt]);
 
   useEffect(() => {
-    if (failedLocationKey === null) return;
+    if (failedLocationKey === null && !routeMetricsState?.failed) return;
     let wasOffline = false;
     return NetInfo.addEventListener((state) => {
       const online =
@@ -148,7 +150,7 @@ export const useNearbyMosques = (
       if (wasOffline && online) retry();
       wasOffline = !online;
     });
-  }, [failedLocationKey, retry]);
+  }, [failedLocationKey, routeMetricsState?.failed, retry]);
 
   const currentMosques =
     mosquesState?.locationKey === locationKey
@@ -246,6 +248,7 @@ export const useNearbyMosques = (
         setRouteMetricsState({
           requestKey: routeMetricsRequestKey,
           metrics: nextMetrics,
+          failed: false,
         });
       } catch (error) {
         if (cancelled) {
@@ -257,6 +260,7 @@ export const useNearbyMosques = (
         setRouteMetricsState({
           requestKey: routeMetricsRequestKey,
           metrics: {},
+          failed: true,
         });
       }
     };
@@ -271,6 +275,7 @@ export const useNearbyMosques = (
     longitude,
     routeMetricsDestinationsSignature,
     routeMetricsRequestKey,
+    attempt,
   ]);
 
   const routeMetricsLoading =
