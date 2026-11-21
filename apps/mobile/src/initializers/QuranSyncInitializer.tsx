@@ -88,7 +88,7 @@ export default function QuranSyncInitializer({
     };
 
     refreshSafely();
-    const refreshInterval = setInterval(refreshSafely, 24 * 60 * 60 * 1000);
+    const refreshInterval = setInterval(refreshSafely, 5 * 60 * 1000);
     const networkSubscription = NetInfo.addEventListener((state) => {
       if (state.isConnected && state.isInternetReachable !== false) {
         refreshSafely();

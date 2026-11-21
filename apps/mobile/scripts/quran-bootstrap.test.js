@@ -165,6 +165,14 @@ test("seven-day check interval is due at the boundary and for missing timestamps
     ),
     false,
   );
+  assert.equal(
+    isQuranUpdateCheckDue(
+      new Date(now - 30 * DAY).toISOString(),
+      new Date(now - 5 * 60 * 1000).toISOString(),
+      now,
+    ),
+    true,
+  );
 });
 
 test("valid local Quran with a recent successful check makes no request", async () => {
@@ -196,7 +204,7 @@ test("unchanged status after seven days records the successful content check", a
   assert.deepEqual(requests, ["/api/quran/status"]);
 });
 
-test("failed status keeps the last success and suppresses reload retries for seven days", async () => {
+test("failed status briefly throttles reload retries and retries after five minutes", async () => {
   const lastSuccessfulCheckAt = new Date(now - 8 * DAY).toISOString();
   const db = database({ ready: true, lastSuccessfulCheckAt });
   let requests = 0;
@@ -208,6 +216,14 @@ test("failed status keeps the last success and suppresses reload retries for sev
   assert.equal(await refreshQuranDatabase(db), false);
   assert.equal(requests, 1);
   assert.equal(db.committed, false);
+  const originalNow = Date.now;
+  Date.now = () => originalNow() + 5 * 60 * 1000;
+  try {
+    await assert.rejects(refreshQuranDatabase(db), /404/);
+    assert.equal(requests, 2);
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 test("concurrent refresh invocations share the same Quran request", async () => {
