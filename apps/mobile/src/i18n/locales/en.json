@@ -402,6 +402,14 @@
     "info": "Zakat is generally calculated at 2.5% of zakatable wealth once it reaches the Nisab threshold and the applicable Hawl period has passed. For personal religious circumstances, consult a qualified scholar."
   },
   "quran": {
+    "credits": {
+      "source": "Quran data provided by Quran.Foundation",
+      "english": "English translation by M. A. S. Abdel Haleem",
+      "russian": "Russian translation by Elmir Kuliev",
+      "recitation": "Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio",
+      "title": "Quran sources and credits",
+      "transliteration": "English transliteration provided by Quran.Foundation"
+    },
     "title": "Quran",
     "bootstrap": {
       "loadingTitle": "Preparing Quran content",
@@ -589,8 +597,10 @@
         "description": "Qalb is a free Islamic companion designed to make Quran reading and everyday worship tools easy to access.",
         "free": "Qalb is intended to remain free to use.",
         "version": "Version {{version}}",
+        "quranTerms": "Quran.Foundation Developer Terms",
+        "quranOfflineSync": "Offline content and sync requirements",
+        "quranAttribution": "Quran content attribution requirements",
         "dataCredits": "Data sources and credits",
-        "credits": "Quran data provided by Quran.Foundation. Recitation by Mahmoud Khalil Al-Husary, hosted by QuranicAudio.",
         "locationCredits": "Locality and routing data © OpenStreetMap contributors · ODbL",
         "locationServices": "Locality lookup via Nominatim. Routes calculated with OSRM.",
         "softwareNotices": "Open-source software notices",

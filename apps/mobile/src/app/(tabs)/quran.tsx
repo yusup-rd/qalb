@@ -1,4 +1,5 @@
 import { AyahCard } from "@/components/quran/AyahCard";
+import { QuranCredits } from "@/components/quran/QuranCredits";
 import QuranReadinessGate from "@/components/quran/QuranReadinessGate";
 import { SurahCard } from "@/components/quran/SurahCard";
 import { AyahCardSkeleton } from "@/components/ui/skeletons/AyahCardSkeleton";
@@ -251,6 +252,7 @@ const QuranLibrary = () => {
           onChangeText={handleQueryChange}
         />
       </View>
+      <QuranCredits />
     </View>
   );
 
