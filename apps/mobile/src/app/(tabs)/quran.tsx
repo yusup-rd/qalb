@@ -18,6 +18,7 @@ import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView as NativeSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(NativeSafeAreaView);
+const QuranItemSeparator = () => <View className="h-3" />;
 
 type QuranListItem =
   | {
@@ -263,11 +264,12 @@ const QuranLibrary = () => {
       <FlatList
         className="bg-background flex-1 px-5"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="gap-3 pb-5"
+        contentContainerClassName="pb-5"
         data={listItems}
         initialNumToRender={10}
         keyboardDismissMode="on-drag"
         ListHeaderComponent={renderHeader}
+        ItemSeparatorComponent={QuranItemSeparator}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         maxToRenderPerBatch={10}
